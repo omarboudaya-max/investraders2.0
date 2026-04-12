@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Investrade — Launch. Trade. Grow.</title>
+  <meta name="description" content="A premium networking and acceleration platform that bridges the gap between ambitious innovators and strategic investors, offering end-to-end support from AI-powered training to venture scaling." />
+  <meta property="og:title" content="Investrade" />
+  <meta property="og:description" content="A premium networking and acceleration platform that bridges the gap between ambitious innovators and strategic investors." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar" id="navbar">
+    <div class="container nav-inner">
+      <a href="#" class="nav-logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+            <polyline points="16 7 22 7 22 13"></polyline>
+          </svg>
+        </div>
+        <span>Investrade</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#features" class="nav-link">Features</a></li>
+        <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
+        <li><a href="#ecosystem" class="nav-link">Ecosystem</a></li>
+        <li><a href="#pricing" class="nav-link">Pricing</a></li>
+        <li><a href="#testimonials" class="nav-link">Testimonials</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="#login" class="btn btn-ghost" id="loginBtn">Sign In</a>
+        <a href="#register" class="btn btn-primary" id="getStartedBtn">Get Started</a>
+      </div>
+
+      <button class="nav-hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#features" class="mobile-link">Features</a>
+    <a href="#how-it-works" class="mobile-link">How It Works</a>
+    <a href="#ecosystem" class="mobile-link">Ecosystem</a>
+    <a href="#pricing" class="mobile-link">Pricing</a>
+    <a href="#testimonials" class="mobile-link">Testimonials</a>
+    <div class="mobile-actions">
+      <a href="#login" class="btn btn-ghost w-full">Sign In</a>
+      <a href="#register" class="btn btn-primary w-full">Get Started Free</a>
+    </div>
+  </div>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero" id="hero">
+    <div class="hero-bg-orb orb-1"></div>
+    <div class="hero-bg-orb orb-2"></div>
+    <div class="hero-bg-orb orb-3"></div>
+
+    <div class="container hero-inner">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>Now in Open Beta &mdash; Join 2,400+ innovators</span>
+      </div>
+
+      <h1 class="hero-title">
+        Where <span class="gradient-text">Innovators</span> Meet<br />
+        <span class="gradient-text-gold">Strategic Investors</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        A premium networking and acceleration platform that bridges the gap between ambitious founders and strategic investors — offering end-to-end support from AI-powered training to venture scaling.
+      </p>
+
+      <div class="hero-cta">
+        <a href="#register" class="btn btn-primary btn-lg">
+          Start for Free
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+        <a href="#how-it-works" class="btn btn-outline btn-lg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+          See How It Works
+        </a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-number">2,400+</span>
+          <span class="stat-label">Active Members</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number">$48M+</span>
+          <span class="stat-label">Capital Connected</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number">320+</span>
+          <span class="stat-label">Deals Closed</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number">94%</span>
+          <span class="stat-label">Satisfaction Rate</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero dashboard mockup -->
+    <div class="container">
+      <div class="hero-dashboard">
+        <div class="dashboard-bar">
+          <div class="db-dots">
+            <span class="db-dot red"></span>
+            <span class="db-dot yellow"></span>
+            <span class="db-dot green"></span>
+          </div>
+          <span class="db-url">app.investrade.io/dashboard</span>
+          <div class="db-actions">
+            <span class="db-icon">⟳</span>
+          </div>
+        </div>
+        <div class="dashboard-body">
+          <div class="db-sidebar">
+            <div class="db-sidebar-item active">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              Dashboard
+            </div>
+            <div class="db-sidebar-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              Network
+            </div>
+            <div class="db-sidebar-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              Deals
+            </div>
+            <div class="db-sidebar-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+              AI Coach
+            </div>
+            <div class="db-sidebar-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              Messages
+            </div>
+          </div>
+          <div class="db-main">
+            <div class="db-header">
+              <h3>Welcome back, Alex 👋</h3>
+              <span class="db-tag">Pro Member</span>
+            </div>
+            <div class="db-cards">
+              <div class="db-card primary">
+                <div class="db-card-label">Portfolio Value</div>
+                <div class="db-card-value">$1.24M</div>
+                <div class="db-card-change positive">↑ 12.4% this month</div>
+              </div>
+              <div class="db-card">
+                <div class="db-card-label">Active Deals</div>
+                <div class="db-card-value">7</div>
+                <div class="db-card-change positive">↑ 2 new</div>
+              </div>
+              <div class="db-card">
+                <div class="db-card-label">Network Score</div>
+                <div class="db-card-value">892</div>
+                <div class="db-card-change positive">↑ Top 5%</div>
+              </div>
+            </div>
+            <div class="db-chart-area">
+              <div class="db-chart-title">Investment Activity</div>
+              <div class="db-chart">
+                <div class="chart-bar" style="height:45%"><span>Jan</span></div>
+                <div class="chart-bar" style="height:60%"><span>Feb</span></div>
+                <div class="chart-bar" style="height:40%"><span>Mar</span></div>
+                <div class="chart-bar" style="height:80%"><span>Apr</span></div>
+                <div class="chart-bar active" style="height:95%"><span>May</span></div>
+                <div class="chart-bar" style="height:70%"><span>Jun</span></div>
+                <div class="chart-bar" style="height:85%"><span>Jul</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TRUSTED BY ===== -->
+  <section class="trusted-by">
+    <div class="container">
+      <p class="trusted-label">Trusted by founders and investors from</p>
+      <div class="trusted-logos">
+        <span class="trusted-logo">Y Combinator</span>
+        <span class="trusted-logo">Sequoia Capital</span>
+        <span class="trusted-logo">a16z</span>
+        <span class="trusted-logo">500 Startups</span>
+        <span class="trusted-logo">TechCrunch</span>
+        <span class="trusted-logo">Forbes</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-badge">Platform Features</div>
+        <h2 class="section-title">Everything You Need to <span class="gradient-text">Launch & Grow</span></h2>
+        <p class="section-subtitle">From initial pitch to final close, Investrade provides the tools, network, and intelligence to accelerate your venture journey.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card card-blue">
+          <div class="feature-icon icon-blue">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+          </div>
+          <h3>AI-Powered Pitch Coach</h3>
+          <p>Get real-time feedback on your pitch deck, financial projections, and investor presentation from our proprietary AI trained on thousands of successful funding rounds.</p>
+          <ul class="feature-list">
+            <li>Score your pitch in seconds</li>
+            <li>Identify weak points before investors do</li>
+            <li>Benchmarks against funded startups</li>
+          </ul>
+        </div>
+
+        <div class="feature-card card-violet">
+          <div class="feature-icon icon-violet">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
+          <h3>Curated Investor Network</h3>
+          <p>Access a vetted network of 1,200+ angels, VCs, family offices, and strategic partners actively deploying capital across sectors and stages.</p>
+          <ul class="feature-list">
+            <li>Smart investor-startup matching</li>
+            <li>Direct warm introductions</li>
+            <li>Investor thesis & portfolio insights</li>
+          </ul>
+        </div>
+
+        <div class="feature-card card-emerald">
+          <div class="feature-icon icon-emerald">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+          </div>
+          <h3>Deal Flow Management</h3>
+          <p>Track every investor interaction, term sheet, and due diligence request in one unified deal room designed for fast-moving fundraising processes.</p>
+          <ul class="feature-list">
+            <li>Kanban-style pipeline view</li>
+            <li>Auto-follow-up reminders</li>
+            <li>Secure document sharing</li>
+          </ul>
+        </div>
+
+        <div class="feature-card card-amber">
+          <div class="feature-icon icon-amber">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+          </div>
+          <h3>Acceleration Programs</h3>
+          <p>Join cohort-based programs led by seasoned entrepreneurs and operators. From MVP to market fit to Series A readiness — structured mentorship that works.</p>
+          <ul class="feature-list">
+            <li>12-week structured programs</li>
+            <li>Expert mentor matching</li>
+            <li>Demo day with 200+ investors</li>
+          </ul>
+        </div>
+
+        <div class="feature-card card-rose">
+          <div class="feature-icon icon-rose">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          </div>
+          <h3>Market Intelligence</h3>
+          <p>Stay ahead with real-time market data, competitive analyses, industry reports, and valuation benchmarks across 50+ sectors and 120+ countries.</p>
+          <ul class="feature-list">
+            <li>Live funding trend reports</li>
+            <li>Sector-specific valuations</li>
+            <li>Competitor tracking alerts</li>
+          </ul>
+        </div>
+
+        <div class="feature-card card-indigo">
+          <div class="feature-icon icon-indigo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          </div>
+          <h3>Legal & Cap Table Tools</h3>
+          <p>Manage your cap table, generate term sheets, track SAFEs & convertible notes, and access pre-vetted legal templates — all within the platform.</p>
+          <ul class="feature-list">
+            <li>Cap table modeling</li>
+            <li>SAFE & convertible note generator</li>
+            <li>Scenario dilution analysis</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="section bg-muted" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-badge">Simple Process</div>
+        <h2 class="section-title">From Sign-Up to <span class="gradient-text">Funded</span> in 4 Steps</h2>
+        <p class="section-subtitle">We've cut through the noise to give you the clearest, fastest path from idea to investment.</p>
+      </div>
+
+      <div class="steps-container">
+        <div class="step-line"></div>
+        <div class="steps-grid">
+          <div class="step-item">
+            <div class="step-number">01</div>
+            <div class="step-content">
+              <h3>Build Your Profile</h3>
+              <p>Create a comprehensive startup or investor profile. Our AI analyzes your data to generate a personalized readiness score and action plan.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">02</div>
+            <div class="step-content">
+              <h3>Get AI-Coached</h3>
+              <p>Access our AI pitch coach to refine your narrative, validate your business model, and prepare compelling financial projections — before your first investor meeting.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">03</div>
+            <div class="step-content">
+              <h3>Connect & Pitch</h3>
+              <p>Get matched with the right investors based on thesis alignment, stage, sector and check size. Request intros, schedule calls, and pitch confidently.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">04</div>
+            <div class="step-content">
+              <h3>Close & Scale</h3>
+              <p>Manage due diligence, negotiate terms, close your round, and transition into our post-investment acceleration program to hit your next milestone.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ECOSYSTEM ===== -->
+  <section class="section" id="ecosystem">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-badge">The Ecosystem</div>
+        <h2 class="section-title">One Platform, Two Sides of the <span class="gradient-text">Cap Table</span></h2>
+        <p class="section-subtitle">Whether you're raising or deploying capital, Investrade is built for both sides of the deal.</p>
+      </div>
+
+      <div class="ecosystem-grid">
+        <div class="ecosystem-card founders-card">
+          <div class="eco-icon">🚀</div>
+          <h3>For Founders & Innovators</h3>
+          <p>Everything you need to build, pitch, and close your funding round with confidence.</p>
+          <ul class="eco-list">
+            <li><span class="eco-check">✓</span> AI pitch scoring & coaching</li>
+            <li><span class="eco-check">✓</span> Warm investor introductions</li>
+            <li><span class="eco-check">✓</span> Deal room & data room</li>
+            <li><span class="eco-check">✓</span> Cap table management</li>
+            <li><span class="eco-check">✓</span> Acceleration cohort access</li>
+            <li><span class="eco-check">✓</span> Post-funding growth support</li>
+          </ul>
+          <a href="#register" class="btn btn-primary">Join as Founder</a>
+        </div>
+
+        <div class="ecosystem-divider">
+          <div class="eco-divider-line"></div>
+          <div class="eco-divider-icon">⚡</div>
+          <div class="eco-divider-line"></div>
+        </div>
+
+        <div class="ecosystem-card investors-card">
+          <div class="eco-icon">💼</div>
+          <h3>For Investors & VCs</h3>
+          <p>Source high-quality, pre-vetted deal flow and manage your investment portfolio intelligently.</p>
+          <ul class="eco-list">
+            <li><span class="eco-check">✓</span> Curated, pre-vetted startups</li>
+            <li><span class="eco-check">✓</span> AI-powered deal scoring</li>
+            <li><span class="eco-check">✓</span> Portfolio analytics dashboard</li>
+            <li><span class="eco-check">✓</span> Co-investor syndicate tools</li>
+            <li><span class="eco-check">✓</span> Market pulse & reports</li>
+            <li><span class="eco-check">✓</span> Direct founder communications</li>
+          </ul>
+          <a href="#register" class="btn btn-outline">Join as Investor</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PRICING ===== -->
+  <section class="section bg-muted" id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-badge">Simple Pricing</div>
+        <h2 class="section-title">Invest in Your <span class="gradient-text">Growth</span></h2>
+        <p class="section-subtitle">Transparent pricing with no hidden fees. Upgrade or downgrade anytime.</p>
+      </div>
+
+      <div class="pricing-toggle">
+        <button class="toggle-btn active" id="monthlyBtn" onclick="setMonthly()">Monthly</button>
+        <button class="toggle-btn" id="annualBtn" onclick="setAnnual()">Annual <span class="save-badge">Save 20%</span></button>
+      </div>
+
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="plan-header">
+            <span class="plan-badge">Starter</span>
+            <div class="plan-price">
+              <span class="price-currency">$</span>
+              <span class="price-amount" data-monthly="0" data-annual="0">0</span>
+              <span class="price-period">/month</span>
+            </div>
+            <p class="plan-desc">Perfect for early-stage founders exploring the platform.</p>
+          </div>
+          <ul class="plan-features">
+            <li><span class="feat-check">✓</span> Basic startup profile</li>
+            <li><span class="feat-check">✓</span> 5 investor profile views/month</li>
+            <li><span class="feat-check">✓</span> AI pitch score (3x/month)</li>
+            <li><span class="feat-check">✓</span> Community forum access</li>
+            <li class="feat-disabled"><span class="feat-x">✗</span> Investor introductions</li>
+            <li class="feat-disabled"><span class="feat-x">✗</span> Deal room</li>
+            <li class="feat-disabled"><span class="feat-x">✗</span> Acceleration programs</li>
+          </ul>
+          <a href="#register" class="btn btn-outline w-full">Get Started Free</a>
+        </div>
+
+        <div class="pricing-card featured">
+          <div class="featured-badge">Most Popular</div>
+          <div class="plan-header">
+            <span class="plan-badge">Pro</span>
+            <div class="plan-price">
+              <span class="price-currency">$</span>
+              <span class="price-amount" data-monthly="79" data-annual="63">79</span>
+              <span class="price-period">/month</span>
+            </div>
+            <p class="plan-desc">For serious founders actively raising their round.</p>
+          </div>
+          <ul class="plan-features">
+            <li><span class="feat-check">✓</span> Full startup profile with media</li>
+            <li><span class="feat-check">✓</span> Unlimited investor browsing</li>
+            <li><span class="feat-check">✓</span> Unlimited AI pitch coaching</li>
+            <li><span class="feat-check">✓</span> 10 warm investor intros/month</li>
+            <li><span class="feat-check">✓</span> Deal room (up to 5 active)</li>
+            <li><span class="feat-check">✓</span> Cap table basic tools</li>
+            <li class="feat-disabled"><span class="feat-x">✗</span> Acceleration programs</li>
+          </ul>
+          <a href="#register" class="btn btn-primary w-full">Start Pro Trial</a>
+        </div>
+
+        <div class="pricing-card">
+          <div class="plan-header">
+            <span class="plan-badge">Venture</span>
+            <div class="plan-price">
+              <span class="price-currency">$</span>
+              <span class="price-amount" data-monthly="249" data-annual="199">249</span>
+              <span class="price-period">/month</span>
+            </div>
+            <p class="plan-desc">For high-growth startups and institutional investors.</p>
+          </div>
+          <ul class="plan-features">
+            <li><span class="feat-check">✓</span> Everything in Pro</li>
+            <li><span class="feat-check">✓</span> Unlimited investor intros</li>
+            <li><span class="feat-check">✓</span> Unlimited deal rooms</li>
+            <li><span class="feat-check">✓</span> Full cap table & legal tools</li>
+            <li><span class="feat-check">✓</span> Acceleration program access</li>
+            <li><span class="feat-check">✓</span> Priority investor matching</li>
+            <li><span class="feat-check">✓</span> Dedicated success manager</li>
+          </ul>
+          <a href="#register" class="btn btn-outline w-full">Start Venture Trial</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TESTIMONIALS ===== -->
+  <section class="section" id="testimonials">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-badge">Success Stories</div>
+        <h2 class="section-title">What Our Members <span class="gradient-text">Say</span></h2>
+        <p class="section-subtitle">Don't take our word for it — hear from founders and investors who've transformed their ventures through Investrade.</p>
+      </div>
+
+      <div class="testimonials-grid">
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"Investrade connected us with our lead investor in just 3 weeks. The AI pitch coach alone helped us raise our deck quality from a 6 to a 9 out of 10. We closed our seed round 40% oversubscribed."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">SK</div>
+            <div class="author-info">
+              <span class="author-name">Sarah Kim</span>
+              <span class="author-role">CEO, NovaBio — $2.4M Seed Raised</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card featured-testimonial">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"As a VC, deal flow quality is everything. Investrade's pre-vetting and AI scoring saves my team 15+ hours per week. We've deployed capital into 4 companies found through the platform this quarter alone."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:linear-gradient(135deg,#0ea5e9,#6366f1)">MR</div>
+            <div class="author-info">
+              <span class="author-name">Marcus Reed</span>
+              <span class="author-role">Partner, Apex Ventures — $150M AUM</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"The acceleration program was transformative. Our revenue grew 3x during the 12-week cohort. We graduated with a signed term sheet and two more investor conversations in the pipeline."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:linear-gradient(135deg,#10b981,#0ea5e9)">JL</div>
+            <div class="author-info">
+              <span class="author-name">James Liu</span>
+              <span class="author-role">Founder, FlowSync — Series A Ready</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"I was a solo founder with a great idea but no network. Investrade gave me access to mentors, investors, and co-founders. Six months later, I have a team of 5 and $800K in pre-seed funding."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">AP</div>
+            <div class="author-info">
+              <span class="author-name">Aisha Patel</span>
+              <span class="author-role">Founder, GreenStack — $800K Pre-Seed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA BANNER ===== -->
+  <section class="cta-section">
+    <div class="cta-orb cta-orb-1"></div>
+    <div class="cta-orb cta-orb-2"></div>
+    <div class="container cta-inner">
+      <h2 class="cta-title">Ready to Launch, Trade & Grow?</h2>
+      <p class="cta-subtitle">Join thousands of founders and investors already accelerating their potential on Investrade. Start free, upgrade when you're ready.</p>
+      <div class="cta-actions">
+        <a href="#register" class="btn btn-white btn-lg">
+          Get Started — It's Free
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+        <a href="#" class="btn btn-ghost-white btn-lg">Talk to Sales</a>
+      </div>
+      <p class="cta-note">No credit card required · Cancel anytime · GDPR compliant</p>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="nav-logo">
+            <div class="logo-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                <polyline points="16 7 22 7 22 13"></polyline>
+              </svg>
+            </div>
+            <span>Investrade</span>
+          </a>
+          <p class="footer-desc">Bridging the gap between ambitious innovators and strategic investors through intelligent tools, curated networks, and structured acceleration.</p>
+          <div class="footer-socials">
+            <a href="#" class="social-link" aria-label="Twitter">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <a href="#" class="social-link" aria-label="LinkedIn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </a>
+            <a href="#" class="social-link" aria-label="YouTube">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <ul>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#">AI Coach</a></li>
+            <li><a href="#">Deal Rooms</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Ecosystem</h4>
+          <ul>
+            <li><a href="#">For Founders</a></li>
+            <li><a href="#">For Investors</a></li>
+            <li><a href="#">Acceleration</a></li>
+            <li><a href="#">Mentors</a></li>
+            <li><a href="#">Partners</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Press</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Cookie Policy</a></li>
+            <li><a href="#">GDPR</a></li>
+            <li><a href="#">Security</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 Investrade. All rights reserved. Not financial advice.</p>
+        <p>Built for innovators, by innovators.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== AUTH MODALS ===== -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('loginModal')">&times;</button>
+      <div class="modal-logo">
+        <div class="logo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+        </div>
+        <span>Investrade</span>
+      </div>
+      <h2 class="modal-title">Welcome back</h2>
+      <p class="modal-subtitle">Sign in to your account to continue</p>
+      <form class="auth-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="loginEmail">Email address</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">
+            Password
+            <a href="#" class="form-link">Forgot password?</a>
+          </label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-full btn-lg">Sign In</button>
+      </form>
+      <p class="modal-footer-text">Don't have an account? <a href="#" onclick="switchModal('loginModal','registerModal')">Create one free</a></p>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="registerModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('registerModal')">&times;</button>
+      <div class="modal-logo">
+        <div class="logo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+        </div>
+        <span>Investrade</span>
+      </div>
+      <h2 class="modal-title">Create your account</h2>
+      <p class="modal-subtitle">Start your journey — free forever, no credit card needed</p>
+
+      <div class="role-selector">
+        <button class="role-btn active" id="founderRole" onclick="selectRole('founder')">
+          <span>🚀</span> I'm a Founder
+        </button>
+        <button class="role-btn" id="investorRole" onclick="selectRole('investor')">
+          <span>💼</span> I'm an Investor
+        </button>
+      </div>
+
+      <form class="auth-form" onsubmit="handleRegister(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First name</label>
+            <input type="text" id="firstName" placeholder="Alex" required />
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last name</label>
+            <input type="text" id="lastName" placeholder="Johnson" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="regEmail">Email address</label>
+          <input type="email" id="regEmail" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Password</label>
+          <input type="password" id="regPassword" placeholder="Min. 8 characters" required minlength="8" />
+        </div>
+        <div class="form-group">
+          <label for="company">Company / Startup name (optional)</label>
+          <input type="text" id="company" placeholder="Your company name" />
+        </div>
+        <div class="form-check">
+          <input type="checkbox" id="agreeTerms" required />
+          <label for="agreeTerms">I agree to the <a href="#" class="form-link">Terms of Service</a> and <a href="#" class="form-link">Privacy Policy</a></label>
+        </div>
+        <button type="submit" class="btn btn-primary w-full btn-lg">Create Account</button>
+      </form>
+      <p class="modal-footer-text">Already have an account? <a href="#" onclick="switchModal('registerModal','loginModal')">Sign in</a></p>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
