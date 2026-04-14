@@ -9,13 +9,13 @@ import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/fireb
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCd58MwM5VHd_4p9nTYcrwp18hd7WKmGVg",
-  authDomain: "investraders-422ea.firebaseapp.com",
-  projectId: "investraders-422ea",
-  storageBucket: "investraders-422ea.firebasestorage.app",
-  messagingSenderId: "927287442999",
-  appId: "1:927287442999:web:17bedc885b0a5e347b89b2",
-  measurementId: "G-0RGK08KMPD"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
