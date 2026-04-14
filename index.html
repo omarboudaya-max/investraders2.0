@@ -389,28 +389,47 @@
         <p class="section-subtitle">Learn the exact tools, workflows, and prompts to accelerate your startup from idea to Series A—taught by top ecosystem founders.</p>
       </div>
 
-      <div class="courses-container" style="max-width: 900px; margin: 0 auto; background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.08);">
-        <div style="padding: 2rem; border-bottom: 1px solid var(--border);">
-          <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Free Masterclass: AI for Founders</h3>
-          <p style="color: var(--muted-fg);">Duration: 45 minutes • Full access for all registered users</p>
+      <div class="courses-container" style="max-width: 1000px; margin: 0 auto; background: var(--card); border-radius: 24px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.08); display: flex; flex-wrap: wrap;">
+        
+        <!-- Left Side: Course Info -->
+        <div style="flex: 1 1 400px; padding: 3rem; display: flex; flex-direction: column; justify-content: center;">
+          <div style="display: inline-block; padding: 0.4rem 1rem; background: rgba(99,102,241,0.1); color: var(--primary); border-radius: 30px; font-size: 0.875rem; font-weight: 600; width: fit-content; margin-bottom: 1.5rem;">Free Masterclass</div>
+          <h3 style="font-size: 2.2rem; margin-bottom: 1rem; line-height: 1.2;">AI for Founders: Build & <br/>Scale Faster</h3>
+          <p style="color: var(--muted-fg); margin-bottom: 2rem; line-height: 1.6; font-size: 1.1rem;">Skip the busywork. Learn the exact prompt infrastructures, automation workflows, and AI tools used by top startups to reach MVP in days instead of months.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2.5rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <span style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(16,185,129,0.1); color: #10b981; border-radius: 50%; flex-shrink: 0;">✓</span>
+              <span style="font-weight: 500;">Automated Market Research</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <span style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(16,185,129,0.1); color: #10b981; border-radius: 50%; flex-shrink: 0;">✓</span>
+              <span style="font-weight: 500;">Advanced Prompt Engineering</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <span style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(16,185,129,0.1); color: #10b981; border-radius: 50%; flex-shrink: 0;">✓</span>
+              <span style="font-weight: 500;">No-code MVP Development</span>
+            </div>
+          </div>
+          
+          <div style="margin-top: auto;">
+             <a href="#register" class="btn btn-primary w-full" style="justify-content: center;">Join Community to Unlock Materials</a>
+          </div>
         </div>
-        <div style="display: flex; justify-content: center; padding: 2rem 0; background: #0a0a0a; overflow: hidden;">
-          <!-- YOUTUBE SHORT IFRAME -->
+
+        <!-- Right Side: Video -->
+        <div style="flex: 1 1 340px; display: flex; justify-content: center; align-items: center; padding: 2rem; background: #0a0a0a; position: relative;">
+          <!-- Subtle Glow Effect -->
+          <div style="position: absolute; width: 80%; height: 80%; background: var(--primary); filter: blur(100px); opacity: 0.15; border-radius: 50%;"></div>
+          
           <iframe id="courseVideo" 
-            style="width: 100%; max-width: 340px; aspect-ratio: 9/16; border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"
+            style="width: 100%; max-width: 320px; aspect-ratio: 9/16; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); position: relative; z-index: 2;"
             src="https://www.youtube.com/embed/i_kmrDifdoI?rel=0" 
             title="How to build your startup using AI" 
             frameborder="0" 
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
             allowfullscreen>
           </iframe>
-        </div>
-        <div style="padding: 2rem; display: flex; justify-content: space-between; align-items: center;">
-          <div style="display: flex; gap: 1rem;">
-            <span style="background: rgba(99,102,241,0.1); color: #6366f1; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.875rem; font-weight: 500;">✓ Prompt Engineering</span>
-            <span style="background: rgba(16,185,129,0.1); color: #10b981; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.875rem; font-weight: 500;">✓ AI Market Research</span>
-          </div>
-          <a href="#register" class="btn btn-primary">Join Community to Unlock Materials</a>
         </div>
       </div>
     </div>
