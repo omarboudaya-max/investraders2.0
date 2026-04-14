@@ -187,6 +187,16 @@ window.selectRole = function(role) {
   selectedRole = role;
   $('#founderRole').classList.toggle('active', role === 'founder');
   $('#investorRole').classList.toggle('active', role === 'investor');
+  
+  const founderFields = $('#founderFields');
+  const investorFields = $('#investorFields');
+  if (role === 'founder') {
+    founderFields.style.display = 'block';
+    investorFields.style.display = 'none';
+  } else {
+    founderFields.style.display = 'none';
+    investorFields.style.display = 'block';
+  }
 };
 
 // ---- Modal system ----
@@ -313,15 +323,50 @@ window.handleRegister = async function(e) {
   const lastName = $('#lastName').value.trim();
   const email = $('#regEmail').value.trim();
   const password = $('#regPassword').value;
-  const company = $('#company').value.trim();
 
   if (!firstName || !lastName || !email || !password) {
-    showToast('Please fill in all required fields.', 'error');
+    showToast('Please fill in all core fields.', 'error');
     return;
   }
   if (password.length < 8) {
     showToast('Password must be at least 8 characters.', 'error');
     return;
+  }
+
+  let extraData = {};
+  if (selectedRole === 'founder') {
+    const startupName = $('#startupName').value.trim();
+    const startupField = $('#startupField').value.trim();
+    const startupStage = $('#startupStage').value;
+    const startupEmployees = $('#startupEmployees').value;
+    const startupCapital = $('#startupCapital').value;
+    const startupYear = $('#startupYear').value.trim();
+    const startupWebsite = $('#startupWebsite').value.trim();
+    const startupDescription = $('#startupDescription').value.trim();
+    
+    if (!startupName || !startupField || !startupStage || !startupEmployees || !startupCapital || !startupYear || !startupWebsite || !startupDescription) {
+      showToast('Please fill in all startup fields.', 'error');
+      return;
+    }
+    
+    extraData = {
+      startupName, startupField, startupStage, startupEmployees, startupCapital, startupYear, startupWebsite, startupDescription
+    };
+  } else if (selectedRole === 'investor') {
+    const defaultFund = $('#company') ? $('#company').value.trim() : ''; // fallback if exists
+    const investorFund = $('#investorFund').value.trim() || defaultFund;
+    const investorFocus = $('#investorFocus').value.trim();
+    const investorTicketSize = $('#investorTicketSize').value;
+    const investorPreferredStage = $('#investorPreferredStage').value;
+
+    if (!investorFocus || !investorTicketSize || !investorPreferredStage) {
+      showToast('Please fill in all required investor fields.', 'error');
+      return;
+    }
+    
+    extraData = {
+      investorFund, investorFocus, investorTicketSize, investorPreferredStage
+    };
   }
 
   try {
@@ -338,7 +383,7 @@ window.handleRegister = async function(e) {
       firstName,
       lastName,
       email,
-      company,
+      ...extraData,
       role: selectedRole,
       joinedAt: new Date().toISOString()
     });
