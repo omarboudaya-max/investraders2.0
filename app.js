@@ -1,8 +1,27 @@
 /* =============================================
    INVESTRADE — JavaScript
-   No database, no Google Auth — pure client-side
-   Local storage for session simulation
+   Powered by Firebase Auth & Firestore
    ============================================= */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCd58MwM5VHd_4p9nTYcrwp18hd7WKmGVg",
+  authDomain: "investraders-422ea.firebaseapp.com",
+  projectId: "investraders-422ea",
+  storageBucket: "investraders-422ea.firebasestorage.app",
+  messagingSenderId: "927287442999",
+  appId: "1:927287442999:web:17bedc885b0a5e347b89b2",
+  measurementId: "G-0RGK08KMPD"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 // ---- Utility ----
 const $ = (sel) => document.querySelector(sel);
@@ -121,25 +140,47 @@ function updatePrices() {
   });
 }
 
-// ---- Auth session simulation (localStorage) ----
-let currentUser = JSON.parse(localStorage.getItem('investrade_user') || 'null');
+// ---- Auth session management (Firebase) ----
+let currentUserProfile = null;
 let selectedRole = 'founder';
 
 function updateNavForUser() {
   const loginBtn = $('#loginBtn');
   const getStartedBtn = $('#getStartedBtn');
-  if (currentUser) {
-    const initials = (currentUser.firstName?.[0] || '') + (currentUser.lastName?.[0] || '');
-    loginBtn.textContent = `Hello, ${currentUser.firstName}`;
+  
+  if (currentUserProfile) {
+    loginBtn.textContent = `Hello, ${currentUserProfile.firstName}`;
     loginBtn.href = '#';
     loginBtn.style.fontWeight = '600';
     getStartedBtn.textContent = 'Dashboard';
     getStartedBtn.href = '#';
-    getStartedBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      showToast('🚀 Your dashboard is being prepared...', 'success');
-    });
+  } else {
+    loginBtn.textContent = 'Sign In';
+    loginBtn.href = '#login';
+    loginBtn.style.fontWeight = '500';
+    getStartedBtn.textContent = 'Get Started';
+    getStartedBtn.href = '#register';
   }
+}
+
+if (auth) {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const docSnap = await getDoc(doc(db, "users", user.uid));
+        if (docSnap.exists()) {
+          currentUserProfile = docSnap.data();
+        } else {
+          currentUserProfile = { firstName: 'User' }; // fallback
+        }
+      } catch(err) {
+        console.error("Error fetching user profile:", err);
+      }
+    } else {
+      currentUserProfile = null;
+    }
+    updateNavForUser();
+  });
 }
 
 window.selectRole = function(role) {
@@ -189,13 +230,23 @@ document.addEventListener('keydown', (e) => {
 
 // ---- Trigger modals from nav ----
 $('#loginBtn').addEventListener('click', (e) => {
-  if (!currentUser) {
+  if (currentUserProfile) {
+    e.preventDefault();
+    if (auth && confirm('Do you want to sign out?')) {
+      signOut(auth).then(() => {
+        showToast('You have been signed out.', 'success');
+      });
+    }
+  } else {
     e.preventDefault();
     openModal('loginModal');
   }
 });
 $('#getStartedBtn').addEventListener('click', (e) => {
-  if (!currentUser) {
+  if (currentUserProfile) {
+    e.preventDefault();
+    showToast('🚀 Your dashboard is being prepared...', 'success');
+  } else {
     e.preventDefault();
     openModal('registerModal');
   }
@@ -216,8 +267,13 @@ $$('a[href="#login"]').forEach(btn => {
 });
 
 // ---- Login handler ----
-window.handleLogin = function(e) {
+window.handleLogin = async function(e) {
   e.preventDefault();
+  if (!auth) {
+    showToast('Firebase is not configured. Please add your credentials in app.js.', 'error', 4000);
+    return;
+  }
+
   const email = $('#loginEmail').value.trim();
   const password = $('#loginPassword').value;
 
@@ -226,25 +282,33 @@ window.handleLogin = function(e) {
     return;
   }
 
-  // Check if user exists in localStorage
-  const users = JSON.parse(localStorage.getItem('investrade_users') || '[]');
-  const found = users.find(u => u.email === email && u.password === password);
+  try {
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Signing in...';
+    submitBtn.disabled = true;
 
-  if (found) {
-    currentUser = found;
-    localStorage.setItem('investrade_user', JSON.stringify(currentUser));
+    await signInWithEmailAndPassword(auth, email, password);
     closeModal('loginModal');
-    showToast(`👋 Welcome back, ${currentUser.firstName}!`, 'success');
-    updateNavForUser();
+    showToast(`👋 Welcome back!`, 'success');
     e.target.reset();
-  } else {
-    showToast('Invalid email or password.', 'error');
+  } catch (error) {
+    console.error("Login Error:", error);
+    showToast(error.message.replace('Firebase: ', ''), 'error', 4000);
+  } finally {
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Sign In';
+    submitBtn.disabled = false;
   }
 };
 
 // ---- Register handler ----
-window.handleRegister = function(e) {
+window.handleRegister = async function(e) {
   e.preventDefault();
+  if (!auth) {
+    showToast('Firebase is not configured. Please add your credentials in app.js.', 'error', 4000);
+    return;
+  }
+
   const firstName = $('#firstName').value.trim();
   const lastName = $('#lastName').value.trim();
   const email = $('#regEmail').value.trim();
@@ -260,39 +324,37 @@ window.handleRegister = function(e) {
     return;
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    showToast('Please enter a valid email address.', 'error');
-    return;
+  try {
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Creating account...';
+    submitBtn.disabled = true;
+
+    // Create user in Firebase Auth
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCred.user;
+
+    // Save profile in Firestore
+    await setDoc(doc(db, "users", user.uid), {
+      firstName,
+      lastName,
+      email,
+      company,
+      role: selectedRole,
+      joinedAt: new Date().toISOString()
+    });
+
+    closeModal('registerModal');
+    showToast(`🎉 Welcome to Investrade, ${firstName}! Your journey starts now.`, 'success', 4000);
+    e.target.reset();
+
+  } catch (error) {
+    console.error("Register Error:", error);
+    showToast(error.message.replace('Firebase: ', ''), 'error', 5000);
+  } finally {
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Create Account';
+    submitBtn.disabled = false;
   }
-
-  const users = JSON.parse(localStorage.getItem('investrade_users') || '[]');
-  if (users.find(u => u.email === email)) {
-    showToast('An account with this email already exists.', 'error');
-    return;
-  }
-
-  const newUser = {
-    id: Date.now().toString(),
-    firstName,
-    lastName,
-    email,
-    password,
-    company,
-    role: selectedRole,
-    joinedAt: new Date().toISOString(),
-  };
-  users.push(newUser);
-  localStorage.setItem('investrade_users', JSON.stringify(users));
-
-  // Auto-login
-  currentUser = newUser;
-  localStorage.setItem('investrade_user', JSON.stringify(currentUser));
-
-  closeModal('registerModal');
-  showToast(`🎉 Welcome to Investrade, ${firstName}! Your journey starts now.`, 'success', 4000);
-  updateNavForUser();
-  e.target.reset();
 };
 
 // ---- Smooth scroll for nav links ----
@@ -337,9 +399,7 @@ style.textContent = `.nav-link.active { color: var(--foreground) !important; bac
 document.head.appendChild(style);
 
 // ---- Initialize ----
-if (currentUser) {
-  updateNavForUser();
-}
+updateNavForUser();
 
 // Animated counter for hero stats
 function animateCounter(el, target, prefix = '', suffix = '') {
@@ -374,4 +434,4 @@ const heroStats = $('.hero-stats');
 if (heroStats) heroStatsObserver.observe(heroStats);
 
 console.log('%cInvestrade Platform', 'font-size:20px;font-weight:900;color:#3730f5');
-console.log('%cBuilt with ❤️ — No database, no Google Auth. Pure client-side.', 'color:#6b7280');
+console.log('%cBuilt with ❤️ — Firebase SDK Integration.', 'color:#6b7280');
