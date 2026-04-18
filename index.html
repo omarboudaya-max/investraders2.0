@@ -435,7 +435,7 @@
           <p style="color: var(--primary); font-size: 0.9rem; font-weight: 500; margin-bottom: 1.5rem; line-height: 1.4;">NB: All course attendants will have their startups featured on Investrade on the first place</p>
           
           <div style="margin-top: auto;">
-             <a href="#register" class="btn btn-primary w-full" style="justify-content: center;">Join Community to Unlock Materials</a>
+             <button onclick="openModal('courseEnrollModal')" class="btn btn-primary w-full" style="justify-content: center;">Apply for the Course — $50</button>
           </div>
         </div>
 
@@ -804,6 +804,159 @@
         <button type="submit" class="btn btn-primary w-full btn-lg">Create Account</button>
       </form>
       <p class="modal-footer-text">Already have an account? <a href="#" onclick="switchModal('registerModal','loginModal')">Sign in</a></p>
+    </div>
+  </div>
+
+  <!-- ===== COURSE ENROLLMENT MODAL ===== -->
+  <div class="modal-overlay" id="courseEnrollModal">
+    <div class="modal" style="max-width: 600px;">
+      <button class="modal-close" onclick="closeModal('courseEnrollModal')">&times;</button>
+      <div class="modal-logo">
+        <div class="logo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+        </div>
+        <span>Investrade</span>
+      </div>
+      <h2 class="modal-title">Course Enrollment</h2>
+      <p class="modal-subtitle">How to Build Your Startup Using AI — <strong style="color: var(--primary);">$50</strong></p>
+
+      <!-- Step Indicators -->
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; align-items: center;">
+        <div id="enrollStep1Ind" style="flex: 1; height: 4px; border-radius: 4px; background: var(--primary); transition: background 0.3s;"></div>
+        <div id="enrollStep2Ind" style="flex: 1; height: 4px; border-radius: 4px; background: var(--border); transition: background 0.3s;"></div>
+        <span id="enrollStepLabel" style="font-size: 0.8rem; color: var(--muted-fg); white-space: nowrap;">Step 1 of 2</span>
+      </div>
+
+      <!-- STEP 1: Application Form -->
+      <div id="enrollStep1">
+        <form id="courseAppForm" onsubmit="handleCourseStep1(event)" class="auth-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="enrollFirstName">First Name <span style="color: var(--destructive);">*</span></label>
+              <input type="text" id="enrollFirstName" placeholder="Alex" required />
+            </div>
+            <div class="form-group">
+              <label for="enrollLastName">Last Name <span style="color: var(--destructive);">*</span></label>
+              <input type="text" id="enrollLastName" placeholder="Johnson" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="enrollAge">Age <span style="color: var(--destructive);">*</span></label>
+              <input type="number" id="enrollAge" placeholder="25" min="16" max="99" required />
+            </div>
+            <div class="form-group">
+              <label for="enrollCountry">Country <span style="color: var(--destructive);">*</span></label>
+              <input type="text" id="enrollCountry" placeholder="E.g. Tunisia, France, USA" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="enrollEmail">Email Address <span style="color: var(--destructive);">*</span></label>
+            <input type="email" id="enrollEmail" placeholder="you@example.com" required />
+          </div>
+          <div class="form-group">
+            <label for="enrollEducation">Educational Background <span style="color: var(--destructive);">*</span></label>
+            <select id="enrollEducation" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--foreground); font-family: inherit;" required>
+              <option value="" disabled selected>Select your level</option>
+              <option value="High School">High School</option>
+              <option value="Bachelor's">Bachelor's Degree</option>
+              <option value="Master's">Master's Degree</option>
+              <option value="PhD">PhD / Doctorate</option>
+              <option value="Self-taught">Self-taught / Bootcamp</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="enrollProfessional">Professional Background <span style="color: var(--destructive);">*</span></label>
+            <select id="enrollProfessional" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--foreground); font-family: inherit;" required>
+              <option value="" disabled selected>Select your field</option>
+              <option value="Tech / Engineering">Tech / Engineering</option>
+              <option value="Business / Management">Business / Management</option>
+              <option value="Finance / Investment">Finance / Investment</option>
+              <option value="Design / Creative">Design / Creative</option>
+              <option value="Marketing / Sales">Marketing / Sales</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Student">Student (no prior experience)</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="enrollMotivation">Why do you want to join this course?</label>
+            <textarea id="enrollMotivation" rows="2" placeholder="Tell us briefly about your goals..." style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--foreground); font-family: inherit; resize: vertical;"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-full btn-lg">Continue to Payment &rarr;</button>
+        </form>
+      </div>
+
+      <!-- STEP 2: Payment UI -->
+      <div id="enrollStep2" style="display: none;">
+        <div style="background: rgba(99,102,241,0.06); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 600; font-size: 0.95rem;">How to Build Your Startup Using AI</div>
+            <div style="color: var(--muted-fg); font-size: 0.85rem;">8-Module Online Masterclass · Full Access</div>
+          </div>
+          <div style="font-size: 1.6rem; font-weight: 800; color: var(--primary);">$50</div>
+        </div>
+
+        <!-- Payment method selector -->
+        <p style="font-size: 0.85rem; color: var(--muted-fg); margin-bottom: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Select Payment Method</p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.5rem;">
+          <button onclick="selectPayMethod('card')" id="payCard" class="pay-method-btn active" style="padding: 0.9rem; border-radius: 10px; border: 2px solid var(--primary); background: rgba(99,102,241,0.08); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; transition: all 0.2s;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <span style="font-size: 0.8rem; font-weight: 600;">Card</span>
+          </button>
+          <button onclick="selectPayMethod('paypal')" id="payPaypal" class="pay-method-btn" style="padding: 0.9rem; border-radius: 10px; border: 2px solid var(--border); background: transparent; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; transition: all 0.2s;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.59 3.025-2.566 6.243-8.558 6.243H9.828L8.453 21h3.392c.458 0 .85-.332.922-.784l.038-.196.733-4.63.047-.257c.072-.452.464-.784.922-.784h.58c3.76 0 6.705-1.528 7.564-5.95.359-1.845.173-3.386-.928-4.482z"/></svg>
+            <span style="font-size: 0.8rem; font-weight: 600;">PayPal</span>
+          </button>
+          <button onclick="selectPayMethod('crypto')" id="payCrypto" class="pay-method-btn" style="padding: 0.9rem; border-radius: 10px; border: 2px solid var(--border); background: transparent; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; transition: all 0.2s;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 8h4a2 2 0 0 1 0 4H9v4"/><path d="M9 12h5a2 2 0 0 1 0 4H9"/><line x1="12" y1="6" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="18"/></svg>
+            <span style="font-size: 0.8rem; font-weight: 600;">Crypto</span>
+          </button>
+        </div>
+
+        <!-- Card fields (default visible) -->
+        <div id="payCardFields" class="auth-form" style="margin-bottom: 0;">
+          <div class="form-group">
+            <label>Card Number</label>
+            <input type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="this.value=this.value.replace(/[^\d]/g,'').replace(/(\d{4})/g,'$1 ').trim()" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Expiry</label>
+              <input type="text" placeholder="MM / YY" maxlength="7" />
+            </div>
+            <div class="form-group">
+              <label>CVC</label>
+              <input type="text" placeholder="•••" maxlength="4" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Name on Card</label>
+            <input type="text" placeholder="Alex Johnson" />
+          </div>
+        </div>
+
+        <!-- PayPal placeholder -->
+        <div id="payPaypalFields" style="display: none; text-align: center; padding: 2rem; color: var(--muted-fg); border: 1px dashed var(--border); border-radius: 10px; margin-bottom: 1rem;">
+          <p style="font-size: 1rem;">🅿 You will be redirected to PayPal to complete your payment.</p>
+        </div>
+
+        <!-- Crypto placeholder -->
+        <div id="payCryptoFields" style="display: none; text-align: center; padding: 2rem; color: var(--muted-fg); border: 1px dashed var(--border); border-radius: 10px; margin-bottom: 1rem;">
+          <p style="font-size: 1rem;">₿ Crypto payment instructions will be sent to your email upon submission.</p>
+        </div>
+
+        <p style="font-size: 0.78rem; color: var(--muted-fg); margin: 1rem 0; display: flex; align-items: center; gap: 0.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Payment processing is coming soon. Your application will be saved and we'll contact you to finalize payment.
+        </p>
+
+        <div style="display: flex; gap: 0.75rem;">
+          <button onclick="goBackEnrollStep()" class="btn btn-outline" style="flex: 1;">&larr; Back</button>
+          <button onclick="handleCourseSubmit()" class="btn btn-primary" style="flex: 2;">Complete Enrollment</button>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -480,3 +480,87 @@ if (heroStats) heroStatsObserver.observe(heroStats);
 
 console.log('%cInvestrade Platform', 'font-size:20px;font-weight:900;color:#3730f5');
 console.log('%cBuilt with ❤️ — Firebase SDK Integration.', 'color:#6b7280');
+
+// ---- Course Enrollment Modal ----
+
+let courseApplicantData = {};
+
+// Step 1 → Step 2
+window.handleCourseStep1 = function(e) {
+  e.preventDefault();
+  const firstName = $('#enrollFirstName').value.trim();
+  const lastName  = $('#enrollLastName').value.trim();
+  const age       = $('#enrollAge').value.trim();
+  const country   = $('#enrollCountry').value.trim();
+  const email     = $('#enrollEmail').value.trim();
+  const education = $('#enrollEducation').value;
+  const professional = $('#enrollProfessional').value;
+  const motivation = $('#enrollMotivation').value.trim();
+
+  if (!firstName || !lastName || !age || !country || !email || !education || !professional) {
+    showToast('Please fill in all required fields.', 'error');
+    return;
+  }
+
+  courseApplicantData = { firstName, lastName, age, country, email, education, professional, motivation };
+
+  // Show step 2
+  $('#enrollStep1').style.display = 'none';
+  $('#enrollStep2').style.display = 'block';
+  $('#enrollStep2Ind').style.background = 'var(--primary)';
+  $('#enrollStepLabel').textContent = 'Step 2 of 2';
+};
+
+// Go back to step 1
+window.goBackEnrollStep = function() {
+  $('#enrollStep2').style.display = 'none';
+  $('#enrollStep1').style.display = 'block';
+  $('#enrollStep2Ind').style.background = 'var(--border)';
+  $('#enrollStepLabel').textContent = 'Step 1 of 2';
+};
+
+// Payment method switcher
+window.selectPayMethod = function(method) {
+  ['card', 'paypal', 'crypto'].forEach(m => {
+    const btn = $(`#pay${m.charAt(0).toUpperCase() + m.slice(1)}`);
+    const fields = $(`#pay${m.charAt(0).toUpperCase() + m.slice(1)}Fields`);
+    if (m === method) {
+      btn.style.border = '2px solid var(--primary)';
+      btn.style.background = 'rgba(99,102,241,0.08)';
+      fields.style.display = m === 'card' ? 'block' : 'block';
+    } else {
+      btn.style.border = '2px solid var(--border)';
+      btn.style.background = 'transparent';
+      fields.style.display = 'none';
+    }
+  });
+};
+
+// Final submit
+window.handleCourseSubmit = async function() {
+  try {
+    // Save to Firestore if available
+    if (db) {
+      const ref = doc(db, 'courseEnrollments', `${Date.now()}_${courseApplicantData.email}`);
+      await setDoc(ref, {
+        ...courseApplicantData,
+        enrolledAt: new Date().toISOString(),
+        course: 'How to Build Your Startup Using AI',
+        price: 50,
+        paymentStatus: 'pending'
+      });
+    }
+    closeModal('courseEnrollModal');
+    showToast('🎓 Application submitted! We\'ll contact you to finalize payment.', 'success', 5000);
+    // Reset form
+    $('#courseAppForm').reset();
+    $('#enrollStep1').style.display = 'block';
+    $('#enrollStep2').style.display = 'none';
+    $('#enrollStep2Ind').style.background = 'var(--border)';
+    $('#enrollStepLabel').textContent = 'Step 1 of 2';
+    courseApplicantData = {};
+  } catch(err) {
+    console.error('Enrollment error:', err);
+    showToast('Something went wrong. Please try again.', 'error', 4000);
+  }
+};
