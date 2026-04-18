@@ -255,7 +255,7 @@ $('#loginBtn').addEventListener('click', (e) => {
 $('#getStartedBtn').addEventListener('click', (e) => {
   if (currentUserProfile) {
     e.preventDefault();
-    showToast('🚀 Your dashboard is being prepared...', 'success');
+    openDashboard();
   } else {
     e.preventDefault();
     openModal('registerModal');

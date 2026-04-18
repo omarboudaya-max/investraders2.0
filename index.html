@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="google-site-verification" content="0mgDcBOmUUAQvWn1IeFp7jIcKxNe5lRrvQ8Te_9NpHw" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Investrade — Launch. Trade. Grow.</title>
@@ -957,6 +958,149 @@
           <button onclick="handleCourseSubmit()" class="btn btn-primary" style="flex: 2;">Complete Enrollment</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== DASHBOARD PAGE ===== -->
+  <div class="dashboard-page" id="dashboardPage">
+
+    <!-- Top bar -->
+    <div class="dash-topbar">
+      <div class="dash-topbar-logo">
+        <div class="logo-icon" style="width:32px;height:32px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+        </div>
+        <span>Investrade</span>
+      </div>
+      <div class="dash-topbar-right">
+        <div class="dash-user-pill">
+          <div class="dash-user-avatar" id="dashAvatarTop">U</div>
+          <span id="dashNameTop">User</span>
+        </div>
+        <span class="dash-role-badge" id="dashRoleBadge">startup</span>
+        <button class="btn btn-ghost" style="font-size:0.8rem; padding:0.4rem 0.875rem;" onclick="closeDashboard()">← Back to Site</button>
+        <button class="btn btn-outline" style="font-size:0.8rem; padding:0.4rem 0.875rem; color:hsl(0,84%,50%); border-color:hsl(0,84%,80%);" onclick="handleSignOut()">Sign Out</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="dash-body">
+
+      <!-- Sidebar -->
+      <nav class="dash-sidebar">
+        <div class="dash-nav-section">Menu</div>
+        <button class="dash-nav-item active" onclick="dashTabSwitch(this,'dashOverview')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Overview</span>
+        </button>
+        <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashProfile')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>My Profile</span>
+        </button>
+        <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashNetwork')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Network</span>
+        </button>
+        <div class="dash-nav-section">Tools</div>
+        <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashCourse')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <span>My Course</span>
+        </button>
+        <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashDeals')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Deals</span>
+        </button>
+      </nav>
+
+      <!-- Main -->
+      <main class="dash-main">
+
+        <!-- ===== OVERVIEW TAB ===== -->
+        <div id="dashOverview">
+          <div class="dash-welcome">
+            <div class="dash-welcome-text">
+              <h1 id="dashWelcomeTitle">Welcome back 👋</h1>
+              <p id="dashWelcomeSub">Here's a snapshot of your Investrade journey.</p>
+            </div>
+            <span id="dashJoinDate" style="font-size:0.78rem;color:var(--muted-fg);white-space:nowrap;"></span>
+          </div>
+
+          <!-- Featured banner -->
+          <div class="dash-featured-banner" id="dashFeaturedBanner">
+            <div class="dash-featured-icon">⭐</div>
+            <div class="dash-featured-text">
+              <h4 id="dashFeaturedTitle">Your startup is featured on Investrade</h4>
+              <p id="dashFeaturedSub">Course enrollees get priority featuring on the platform — connecting you directly with investors.</p>
+            </div>
+          </div>
+
+          <!-- Stat cards — filled by JS -->
+          <div class="dash-stats-row cols-4" id="dashStatCards"></div>
+
+          <!-- Info grid -->
+          <div class="dash-grid wide" id="dashInfoGrid"></div>
+        </div>
+
+        <!-- ===== PROFILE TAB ===== -->
+        <div id="dashProfile" style="display:none;">
+          <div class="dash-welcome">
+            <div class="dash-welcome-text">
+              <h1>My Profile</h1>
+              <p>Your complete profile information stored on Investrade.</p>
+            </div>
+          </div>
+          <div class="dash-grid" id="dashProfileGrid"></div>
+        </div>
+
+        <!-- ===== NETWORK TAB ===== -->
+        <div id="dashNetwork" style="display:none;">
+          <div class="dash-welcome">
+            <div class="dash-welcome-text">
+              <h1>Network</h1>
+              <p>Connect with investors and founders in the ecosystem.</p>
+            </div>
+          </div>
+          <div class="dash-panel" style="align-items:center;padding:3rem;text-align:center;">
+            <div style="font-size:3rem;margin-bottom:1rem;">🔌</div>
+            <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Network Coming Soon</h3>
+            <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">We are building a curated network of investors and startups. You will be notified when matching goes live.</p>
+          </div>
+        </div>
+
+        <!-- ===== COURSE TAB ===== -->
+        <div id="dashCourse" style="display:none;">
+          <div class="dash-welcome">
+            <div class="dash-welcome-text">
+              <h1>My Course</h1>
+              <p>Track your progress in the AI Startup masterclass.</p>
+            </div>
+          </div>
+          <div class="dash-panel">
+            <div class="dash-panel-header">
+              <span class="dash-panel-title">How to Build Your Startup Using AI</span>
+              <span class="dash-panel-badge">Online Masterclass</span>
+            </div>
+            <p style="font-size:0.85rem;color:var(--muted-fg);">8 modules · $50 · Full access upon payment confirmation</p>
+            <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:0.5rem;" id="dashCourseModules"></div>
+          </div>
+        </div>
+
+        <!-- ===== DEALS TAB ===== -->
+        <div id="dashDeals" style="display:none;">
+          <div class="dash-welcome">
+            <div class="dash-welcome-text">
+              <h1>Deals</h1>
+              <p>Your active investment opportunities and deal flow.</p>
+            </div>
+          </div>
+          <div class="dash-panel" style="align-items:center;padding:3rem;text-align:center;">
+            <div style="font-size:3rem;margin-bottom:1rem;">📋</div>
+            <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">No Active Deals Yet</h3>
+            <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">Once you connect with investors or startups, your deal pipeline will appear here.</p>
+          </div>
+        </div>
+
+      </main>
     </div>
   </div>
 
