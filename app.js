@@ -1004,26 +1004,26 @@ window.fetchMyCourses = async function(email) {
     if(!container) return;
 
     if (snapshot.empty) {
-      container.innerHTML = \`
+      container.innerHTML = `
         <div style="font-size:3rem;margin-bottom:1rem;">📚</div>
         <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">You haven't enrolled yet</h3>
         <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">Browse the Course Marketplace to enroll in your first masterclass.</p>
-        <button onclick="dashTabSwitch(document.querySelector('[onclick=\\\\'dashTabSwitch(this,\\\\\\'dashMarketCourses\\\\\\')\\\\']'), 'dashMarketCourses')" class="btn btn-outline" style="margin-top:1.5rem;">Browse Courses</button>
-      \`;
+        <button onclick="dashTabSwitch(document.querySelector('[onclick=\\'dashTabSwitch(this,\\'dashMarketCourses\\')\\']'), 'dashMarketCourses')" class="btn btn-outline" style="margin-top:1.5rem;">Browse Courses</button>
+      `;
     } else {
       let html = '';
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
-        html += \`
+        html += `
           <div style="text-align:left; width:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <h3 style="font-weight:700;font-size:1.2rem;">\${data.course}</h3>
-                <p style="font-size:0.85rem;color:var(--muted-fg);margin-top:0.3rem;">Status: <span style="color:var(--primary);">\${data.paymentStatus.toUpperCase()}</span> · Session Date: \${data.sessionDate}</p>
+                <h3 style="font-weight:700;font-size:1.2rem;">${data.course}</h3>
+                <p style="font-size:0.85rem;color:var(--muted-fg);margin-top:0.3rem;">Status: <span style="color:var(--primary);">${data.paymentStatus.toUpperCase()}</span> · Session Date: ${data.sessionDate}</p>
               </div>
               <div style="text-align:center;">
-                 <img src="\${data.qrUrl}" style="width:80px;height:80px;border-radius:8px;border:1px solid var(--border);" />
-                 <div style="font-family:monospace; font-size:0.75rem; color:var(--primary); margin-top:0.3rem;">\${data.accessCode}</div>
+                 <img src="${data.qrUrl}" style="width:80px;height:80px;border-radius:8px;border:1px solid var(--border);" />
+                 <div style="font-family:monospace; font-size:0.75rem; color:var(--primary); margin-top:0.3rem;">${data.accessCode}</div>
               </div>
             </div>
             <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
@@ -1035,7 +1035,7 @@ window.fetchMyCourses = async function(email) {
                </ul>
             </div>
           </div>
-        \`;
+        `;
       });
       container.innerHTML = html;
       container.style.alignItems = "flex-start";
