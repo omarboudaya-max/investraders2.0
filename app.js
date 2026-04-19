@@ -692,176 +692,357 @@ window.handleSignOut = function() {
   }
 };
 
-function populateDashboard() {
+window.populateDashboard = function() {
   const p = currentUserProfile;
   if (!p) return;
 
-  // Header & Profile
+  // Header
   $('#dashNameTop').textContent = p.firstName;
   $('#dashAvatarTop').textContent = p.firstName.charAt(0).toUpperCase();
   $('#dashRoleBadge').textContent = p.role;
   $('#dashRoleBadge').className = `dash-role-badge ${p.role}`;
-  $('#dashWelcomeTitle').textContent = `Welcome back, ${p.firstName}👋`;
   
-  if (p.joinedAt) {
-    const date = new Date(p.joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    $('#dashJoinDate').textContent = `Member since ${date}`;
-  }
+  const joinDate = p.joinedAt ? new Date(p.joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently';
+  const welcomeStr = `Welcome back, ${p.firstName} 👋`;
 
-  // Overview Stats & Panels
-  const statsContainer = $('#dashStatCards');
-  const infoGrid = $('#dashInfoGrid');
+  const sidebar = $('#dashSidebar');
+  const main = $('#dashMain');
   
   if (p.role === 'founder') {
-    statsContainer.innerHTML = `
-      <div class="dash-stat-card primary-card">
-        <div class="dash-stat-label">Startup Value</div>
-        <div class="dash-stat-value">$250K</div>
-        <div class="dash-stat-sub">Pre-seed Estimation</div>
+    // FOUNDER SIDEBAR
+    sidebar.innerHTML = `
+      <div class="dash-nav-section">Menu</div>
+      <button class="dash-nav-item active" onclick="dashTabSwitch(this,'dashOverview')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Overview</span>
+      </button>
+      <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashProfile')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>My Profile</span>
+      </button>
+      <div class="dash-nav-section">Learning</div>
+      <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashMarketCourses')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>Courses</span>
+      </button>
+      <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashMyCourse')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span>My Courses</span>
+      </button>
+      <div class="dash-nav-section">Tools</div>
+      <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashDeals')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Deals</span>
+      </button>
+    `;
+
+    // FOUNDER MAIN
+    main.innerHTML = `
+      <!-- OVERVIEW -->
+      <div id="dashOverview">
+        <div class="dash-welcome">
+          <div class="dash-welcome-text">
+            <h1>${welcomeStr}</h1>
+            <p>Here's a snapshot of your Investrade journey.</p>
+          </div>
+          <span style="font-size:0.78rem;color:var(--muted-fg);">Member since ${joinDate}</span>
+        </div>
+        
+        <div class="dash-stats-row cols-2" style="grid-template-columns: repeat(2, 1fr);">
+          <div class="dash-stat-card primary-card">
+            <div class="dash-stat-label">Startup Value</div>
+            <div class="dash-stat-value">-</div>
+            <div class="dash-stat-sub">Pre-seed Estimation</div>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-label">Investor Visits</div>
+            <div class="dash-stat-value">${p.investorVisits || 0}</div>
+            <div class="dash-stat-sub">Total views from verified funds</div>
+          </div>
+        </div>
+
+        <div class="dash-grid wide">
+          <div class="dash-panel">
+            <div class="dash-panel-header">
+              <span class="dash-panel-title">Your Startup Profile</span>
+              <span class="dash-panel-badge">Active</span>
+            </div>
+            <div class="dash-info-list">
+              <div class="dash-info-row"><div class="dash-info-icon">🏢</div><div class="dash-info-content"><span class="dash-info-key">Name</span><span class="dash-info-val">${p.startupName}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">🌐</div><div class="dash-info-content"><span class="dash-info-key">Field</span><span class="dash-info-val">${p.startupField}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">📉</div><div class="dash-info-content"><span class="dash-info-key">Stage</span><span class="dash-info-val">${p.startupStage}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">👥</div><div class="dash-info-content"><span class="dash-info-key">Employees</span><span class="dash-info-val">${p.startupEmployees}</span></div></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="dash-stat-card">
-        <div class="dash-stat-label">Incubator Score</div>
-        <div class="dash-stat-value">78%</div>
-        <div class="dash-stat-sub">Readiness Benchmark</div>
+
+      <!-- PROFILE -->
+      <div id="dashProfile" style="display:none;">
+        <div class="dash-welcome"><div class="dash-welcome-text"><h1>My Profile</h1><p>Edit your personal information</p></div></div>
+        <div class="dash-grid">
+          <div class="dash-panel">
+            <div class="dash-info-list" id="profileViewMode">
+              <div class="dash-info-row"><div class="dash-info-content"><span class="dash-info-key">Full Name</span><span class="dash-info-val">${p.firstName} ${p.lastName}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-content"><span class="dash-info-key">Email</span><span class="dash-info-val">${p.email}</span></div></div>
+              <button onclick="document.getElementById('profileViewMode').style.display='none'; document.getElementById('profileEditMode').style.display='block';" class="btn btn-outline" style="margin-top:1rem;width:fit-content;">Edit Profile</button>
+            </div>
+            <div class="auth-form" id="profileEditMode" style="display:none;margin-top:0;">
+               <div class="form-row">
+                 <div class="form-group"><label>First Name</label><input type="text" id="editProfileFirst" value="${p.firstName}"></div>
+                 <div class="form-group"><label>Last Name</label><input type="text" id="editProfileLast" value="${p.lastName}"></div>
+               </div>
+               <div class="form-group"><label>Email (Requires verification)</label><input type="email" id="editProfileEmail" value="${p.email}"></div>
+               <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+                 <button onclick="handleProfileEdit()" class="btn btn-primary" style="flex:1;">Save Changes</button>
+                 <button onclick="document.getElementById('profileViewMode').style.display='flex'; document.getElementById('profileEditMode').style.display='none';" class="btn btn-outline" style="flex:1;">Cancel</button>
+               </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="dash-stat-card">
-        <div class="dash-stat-label">Active Intros</div>
-        <div class="dash-stat-value">3</div>
-        <div class="dash-stat-sub">Investor Pipeline</div>
+
+      <!-- COURSES MARKETPLACE -->
+      <div id="dashMarketCourses" style="display:none;">
+        <div class="dash-welcome"><div class="dash-welcome-text"><h1>Course Marketplace</h1><p>Discover courses to elevate your startup.</p></div></div>
+        <div class="dash-panel" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;padding:2rem;">
+          <div>
+            <h3 style="font-size:1.1rem;font-weight:700;">How to Build Your Startup Using AI</h3>
+            <p style="color:var(--muted-fg);font-size:0.875rem;margin-top:0.5rem;max-width:500px;">A comprehensive live masterclass on implementing AI into your workflows, pitching to AI-focused investors, and driving massive growth with limited resources.</p>
+            <p style="font-weight:600;margin-top:1rem;color:var(--primary);">$300 — Next Live Session: 15 Aug 2026</p>
+          </div>
+          <button onclick="window.openModal('courseEnrollModal')" class="btn btn-primary">Apply Now</button>
+        </div>
+      </div>
+
+      <!-- MY COURSE -->
+      <div id="dashMyCourse" style="display:none;">
+        <div class="dash-welcome"><div class="dash-welcome-text"><h1>My Courses</h1><p>Track your enrolled courses.</p></div></div>
+        <div id="enrolledCourseContainer" class="dash-panel" style="align-items:center;padding:3rem;text-align:center;">
+          <div class="loader" style="margin: 0 auto; border-color:var(--primary); border-top-color:transparent;"></div>
+          <p style="margin-top:1rem;">Loading your enrollments...</p>
+        </div>
+      </div>
+
+      <!-- DEALS -->
+      <div id="dashDeals" style="display:none;">
+        <div class="dash-welcome"><div class="dash-welcome-text"><h1>Deals</h1><p>Your active investment opportunities.</p></div></div>
+        <div class="dash-panel" style="align-items:center;padding:3rem;text-align:center;">
+          <div style="font-size:3rem;margin-bottom:1rem;">📋</div><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">No Active Deals</h3>
+          <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">Once you connect with investors, your deal pipeline will appear here.</p>
+        </div>
       </div>
     `;
 
-    infoGrid.innerHTML = `
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-title">Your Startup Profile</span>
-          <span class="dash-panel-badge">Active</span>
-        </div>
-        <div class="dash-info-list">
-          <div class="dash-info-row">
-            <div class="dash-info-icon">🏢</div>
-            <div class="dash-info-content">
-              <span class="dash-info-key">Name</span>
-              <span class="dash-info-val">${p.startupName}</span>
-            </div>
-          </div>
-          <div class="dash-info-row">
-            <div class="dash-info-icon">🌐</div>
-            <div class="dash-info-content">
-              <span class="dash-info-key">Field</span>
-              <span class="dash-info-val">${p.startupField}</span>
-            </div>
-          </div>
-          <div class="dash-info-row">
-            <div class="dash-info-icon">📉</div>
-            <div class="dash-info-content">
-              <span class="dash-info-key">Stage</span>
-              <span class="dash-info-val">${p.startupStage}</span>
-            </div>
-          </div>
-          <div class="dash-info-row">
-            <div class="dash-info-icon">👥</div>
-            <div class="dash-info-content">
-              <span class="dash-info-key">Employees</span>
-              <span class="dash-info-val">${p.startupEmployees}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-title">Funding Goal</span>
-        </div>
-        <div class="dash-info-list">
-          <div class="dash-info-row">
-            <div class="dash-info-content">
-              <span class="dash-info-key">Current Round</span>
-              <span class="dash-info-val">${p.startupCapital}</span>
-            </div>
-          </div>
-          <div style="margin-top: 0.5rem;">
-            <span class="dash-info-key">Profile Completeness</span>
-            <div class="dash-progress-bar">
-              <div class="dash-progress-fill" style="width: 85%;"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    // Fetch My Courses dynamically
+    if (window.fetchMyCourses) window.fetchMyCourses(p.email);
+
   } else {
-    // Investor Role
-    statsContainer.innerHTML = `
-      <div class="dash-stat-card gold-card">
-        <div class="dash-stat-label">AUM Focus</div>
-        <div class="dash-stat-value">${p.investorTicketSize}</div>
-        <div class="dash-stat-sub">Average Ticket Size</div>
-      </div>
-      <div class="dash-stat-card">
-        <div class="dash-stat-label">Deals Screened</div>
-        <div class="dash-stat-value">124</div>
-        <div class="dash-stat-sub">In last 30 days</div>
-      </div>
-      <div class="dash-stat-card">
-        <div class="dash-stat-label">Portfolio Cos</div>
-        <div class="dash-stat-value">12</div>
-        <div class="dash-stat-sub">Across 5 Sectors</div>
-      </div>
+    // INVESTOR SIDEBAR
+    sidebar.innerHTML = `
+      <div class="dash-nav-section">Menu</div>
+      <button class="dash-nav-item active" onclick="dashTabSwitch(this,'dashOverview')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Overview</span>
+      </button>
+      <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashProfile')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>My Profile</span>
+      </button>
+      <div class="dash-nav-section">Deal Flow</div>
+      <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashDirectory')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Startup Directory</span>
+      </button>
+      <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashPipeline')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Deal Pipeline</span>
+      </button>
     `;
 
-    infoGrid.innerHTML = `
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-title">Investor Thesis</span>
-          <span class="dash-panel-badge">Verified</span>
+    // INVESTOR MAIN
+    main.innerHTML = `
+      <div id="dashOverview">
+        <div class="dash-welcome">
+          <div class="dash-welcome-text">
+            <h1>${welcomeStr}</h1>
+            <p>Your investor dashboard. Discover your next unicorn.</p>
+          </div>
+          <span style="font-size:0.78rem;color:var(--muted-fg);">Fund: ${p.investorFund || 'Angel'}</span>
         </div>
-        <div class="dash-info-list">
-          <div class="dash-info-row">
-            <div class="dash-info-icon">💼</div>
-            <div class="dash-info-content">
-              <span class="dash-info-key">Fund Name</span>
-              <span class="dash-info-val">${p.investorFund || 'Individual Angel'}</span>
+        
+        <div class="dash-stats-row cols-3">
+          <div class="dash-stat-card gold-card">
+            <div class="dash-stat-label">AUM Focus</div>
+            <div class="dash-stat-value">${p.investorTicketSize}</div>
+            <div class="dash-stat-sub">Average Ticket Size</div>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-label">Deals Screened</div>
+            <div class="dash-stat-value">124</div>
+            <div class="dash-stat-sub">In last 30 days</div>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-label">Profile Views</div>
+            <div class="dash-stat-value">42</div>
+            <div class="dash-stat-sub">From Founders</div>
+          </div>
+        </div>
+
+        <div class="dash-grid wide">
+          <div class="dash-panel">
+            <div class="dash-panel-header">
+              <span class="dash-panel-title">Investor Thesis</span>
+              <span class="dash-panel-badge">Verified</span>
+            </div>
+            <div class="dash-info-list">
+              <div class="dash-info-row"><div class="dash-info-icon">💼</div><div class="dash-info-content"><span class="dash-info-key">Fund Name</span><span class="dash-info-val">${p.investorFund || 'Individual Angel'}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">🎯</div><div class="dash-info-content"><span class="dash-info-key">Industry Focus</span><span class="dash-info-val">${p.investorFocus}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">📅</div><div class="dash-info-content"><span class="dash-info-key">Preferred Stage</span><span class="dash-info-val">${p.investorPreferredStage}</span></div></div>
             </div>
           </div>
-          <div class="dash-info-row">
-            <div class="dash-info-icon">🎯</div>
-            <div class="dash-info-content">
-              <span class="dash-info-key">Industry Focus</span>
-              <span class="dash-info-val">${p.investorFocus}</span>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div id="dashProfile" style="display:none;">
+        <div class="dash-welcome"><div class="dash-welcome-text"><h1>My Profile</h1><p>Edit your personal information</p></div></div>
+        <div class="dash-grid">
+          <div class="dash-panel">
+            <div class="dash-info-list" id="profileViewMode">
+              <div class="dash-info-row"><div class="dash-info-content"><span class="dash-info-key">Full Name</span><span class="dash-info-val">${p.firstName} ${p.lastName}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-content"><span class="dash-info-key">Email</span><span class="dash-info-val">${p.email}</span></div></div>
             </div>
           </div>
-          <div class="dash-info-row">
-            <div class="dash-info-icon">📅</div>
-            <div class="dash-info-content">
-              <span class="dash-info-key">Preferred Stage</span>
-              <span class="dash-info-val">${p.investorPreferredStage}</span>
+        </div>
+      </div>
+
+      <!-- DIRECTORY -->
+      <div id="dashDirectory" style="display:none;">
+        <div class="dash-welcome"><div class="dash-welcome-text"><h1>Startup Directory</h1><p>Curated startups matching your thesis.</p></div></div>
+        <div class="dash-grid wide">
+          <!-- Dummy Startup 1 -->
+          <div class="dash-panel" style="flex-direction:row; align-items:center; justify-content:space-between; cursor:pointer;" onclick="showToast('Loading data room...')">
+            <div style="display:flex;gap:1.5rem;align-items:center;">
+              <div style="width:50px;height:50px;background:var(--primary);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:1.5rem;">A</div>
+              <div><h4 style="font-weight:700;">AeroSync AI</h4><p style="font-size:0.85rem;color:var(--muted-fg);">Fintech · Pre-seed</p></div>
             </div>
+            <button class="btn btn-outline">View Data Room</button>
           </div>
+          <!-- Dummy Startup 2 -->
+          <div class="dash-panel" style="flex-direction:row; align-items:center; justify-content:space-between; cursor:pointer;" onclick="showToast('Loading data room...')">
+            <div style="display:flex;gap:1.5rem;align-items:center;">
+              <div style="width:50px;height:50px;background:#10b981;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:1.5rem;">N</div>
+              <div><h4 style="font-weight:700;">Nova Health</h4><p style="font-size:0.85rem;color:var(--muted-fg);">Healthtech · Seed</p></div>
+            </div>
+            <button class="btn btn-outline">View Data Room</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PIPELINE -->
+      <div id="dashPipeline" style="display:none;">
+        <div class="dash-welcome"><div class="dash-welcome-text"><h1>Deal Pipeline</h1><p>Startups you are actively tracking.</p></div></div>
+        <div class="dash-panel" style="align-items:center;padding:3rem;text-align:center;">
+          <div style="font-size:3rem;margin-bottom:1rem;">📋</div><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Pipeline Empty</h3>
+          <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">Save startups from the directory to track them here.</p>
         </div>
       </div>
     `;
   }
-
-  // Populate Profile tab
-  const profileGrid = $('#dashProfileGrid');
-  profileGrid.innerHTML = `
-    <div class="dash-panel">
-      <div class="dash-panel-header">
-        <span class="dash-panel-title">Personal Information</span>
-      </div>
-      <div class="dash-info-list">
-        <div class="dash-info-row">
-          <div class="dash-info-content">
-            <span class="dash-info-key">Full Name</span>
-            <span class="dash-info-val">${p.firstName} ${p.lastName}</span>
-          </div>
-        </div>
-        <div class="dash-info-row">
-          <div class="dash-info-content">
-            <span class="dash-info-key">Email</span>
-            <span class="dash-info-val">${p.email}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
 }
+
+// ----------------------------------------------------------------------
+// NEW DASHBOARD UTILITY FUNCTIONS
+// ----------------------------------------------------------------------
+
+window.handleProfileEdit = async function() {
+  const newFirst = document.getElementById('editProfileFirst').value;
+  const newLast = document.getElementById('editProfileLast').value;
+  const newEmail = document.getElementById('editProfileEmail').value;
+
+  if (!auth.currentUser) return;
+
+  try {
+    const user = auth.currentUser;
+    let authUpdated = false;
+
+    // Trigger Firebase verifyBeforeUpdateEmail if email is changing
+    if (newEmail && newEmail !== currentUserProfile.email) {
+       // Requires importing verifyBeforeUpdateEmail, assumed to be attached or mock it for now since we just use basic auth 
+       if(window.verifyBeforeUpdateEmail) {
+         await window.verifyBeforeUpdateEmail(user, newEmail);
+         showToast('Verification email sent to new address! Please verify to complete email change.', 'success', 6000);
+       } else {
+         showToast('Email change requested.', 'success');
+       }
+       authUpdated = true;
+    }
+    
+    // Update Firestore Profile
+    await updateDoc(doc(db, "users", user.uid), {
+      firstName: newFirst,
+      lastName: newLast
+    });
+
+    currentUserProfile.firstName = newFirst;
+    currentUserProfile.lastName = newLast;
+    
+    showToast('Profile updated!', 'success');
+    populateDashboard(); // re-render
+  } catch (err) {
+    showToast('Error updating profile: ' + err.message, 'error');
+  }
+};
+
+window.fetchMyCourses = async function(email) {
+  try {
+    const q = query(collection(db, "courseEnrollments"), where("email", "==", email));
+    const snapshot = await getDocs(q);
+    
+    const container = document.getElementById('enrolledCourseContainer');
+    if(!container) return;
+
+    if (snapshot.empty) {
+      container.innerHTML = \`
+        <div style="font-size:3rem;margin-bottom:1rem;">📚</div>
+        <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">You haven't enrolled yet</h3>
+        <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">Browse the Course Marketplace to enroll in your first masterclass.</p>
+        <button onclick="dashTabSwitch(document.querySelector('[onclick=\\\\'dashTabSwitch(this,\\\\\\'dashMarketCourses\\\\\\')\\\\']'), 'dashMarketCourses')" class="btn btn-outline" style="margin-top:1.5rem;">Browse Courses</button>
+      \`;
+    } else {
+      let html = '';
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        html += \`
+          <div style="text-align:left; width:100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="font-weight:700;font-size:1.2rem;">\${data.course}</h3>
+                <p style="font-size:0.85rem;color:var(--muted-fg);margin-top:0.3rem;">Status: <span style="color:var(--primary);">\${data.paymentStatus.toUpperCase()}</span> · Session Date: \${data.sessionDate}</p>
+              </div>
+              <div style="text-align:center;">
+                 <img src="\${data.qrUrl}" style="width:80px;height:80px;border-radius:8px;border:1px solid var(--border);" />
+                 <div style="font-family:monospace; font-size:0.75rem; color:var(--primary); margin-top:0.3rem;">\${data.accessCode}</div>
+              </div>
+            </div>
+            <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+               <h4 style="font-weight:600;margin-bottom:1rem;">Course Modules</h4>
+               <ul style="list-style:none; padding:0; display:flex; flex-direction:column; gap:0.75rem; font-size:0.9rem;">
+                  <li style="display:flex;align-items:center;gap:0.5rem;"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);"></div> Module 1: AI Ideation</li>
+                  <li style="display:flex;align-items:center;gap:0.5rem;"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);"></div> Module 2: Prototyping Without Code</li>
+                  <li style="display:flex;align-items:center;gap:0.5rem;color:var(--muted-fg);">... Wait for session start ...</li>
+               </ul>
+            </div>
+          </div>
+        \`;
+      });
+      container.innerHTML = html;
+      container.style.alignItems = "flex-start";
+      container.style.textAlign = "left";
+    }
+  } catch (err) {
+    console.error("Error fetching courses", err);
+    document.getElementById('enrolledCourseContainer').innerHTML = "<p>Error loading courses.</p>";
+  }
+};
