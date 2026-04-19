@@ -392,6 +392,11 @@ window.handleRegister = async function(e) {
     showToast(`🎉 Welcome to Investrade, ${firstName}! Your journey starts now.`, 'success', 4000);
     e.target.reset();
 
+    // Take user directly to dashboard
+    setTimeout(() => {
+      if (window.openDashboard) window.openDashboard();
+    }, 500);
+
   } catch (error) {
     console.error("Register Error:", error);
     showToast(error.message.replace('Firebase: ', ''), 'error', 5000);
