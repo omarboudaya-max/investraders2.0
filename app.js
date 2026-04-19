@@ -200,13 +200,13 @@ window.selectRole = function(role) {
 };
 
 // ---- Modal system ----
-function openModal(id) {
+window.openModal = function(id) {
   const modal = $(`#${id}`);
   if (modal) {
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
-}
+};
 
 window.closeModal = function(id) {
   const modal = $(`#${id}`);
@@ -539,6 +539,9 @@ window.selectPayMethod = function(method) {
 // Final submit
 window.handleCourseSubmit = async function() {
   try {
+    const accessCode = generateAccessCode();
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(accessCode)}`;
+
     // Save to Firestore if available
     if (db) {
       const ref = doc(db, 'courseEnrollments', `${Date.now()}_${courseApplicantData.email}`);
@@ -546,21 +549,252 @@ window.handleCourseSubmit = async function() {
         ...courseApplicantData,
         enrolledAt: new Date().toISOString(),
         course: 'How to Build Your Startup Using AI',
-        price: 50,
-        paymentStatus: 'pending'
+        price: 300,
+        paymentStatus: 'pending',
+        accessCode: accessCode,
+        sessionDate: '2026-08-15'
       });
     }
-    closeModal('courseEnrollModal');
-    showToast('🎓 Application submitted! We\'ll contact you to finalize payment.', 'success', 5000);
-    // Reset form
-    $('#courseAppForm').reset();
-    $('#enrollStep1').style.display = 'block';
+
+    // Show step 3 (Success)
     $('#enrollStep2').style.display = 'none';
-    $('#enrollStep2Ind').style.background = 'var(--border)';
-    $('#enrollStepLabel').textContent = 'Step 1 of 2';
+    $('#enrollStep3').style.display = 'block';
+    
+    // Set UI details
+    $('#enrollQrImage').src = qrUrl;
+    $('#enrollAccessCode').textContent = accessCode;
+    
+    // Update indicator
+    $('#enrollStepLabel').textContent = 'Success!';
+    
+    showToast('🎓 Enrollment Successful!', 'success', 5000);
+    
+    // Reset internal state but NOT the UI yet (user needs to see QR)
     courseApplicantData = {};
   } catch(err) {
     console.error('Enrollment error:', err);
     showToast('Something went wrong. Please try again.', 'error', 4000);
   }
 };
+
+function generateAccessCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const segment = () => {
+    let res = '';
+    for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+    return res;
+  };
+  return `INVEST-${segment()}-${segment()}`;
+}
+
+// ---- DASHBOARD LOGIC ----
+
+window.openDashboard = function() {
+  if (!currentUserProfile) {
+    openModal('loginModal');
+    return;
+  }
+  populateDashboard();
+  $('#dashboardPage').classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeDashboard = function() {
+  $('#dashboardPage').classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+window.dashTabSwitch = function(btn, tabId) {
+  // Update buttons
+  $$('.dash-nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  // Update tabs
+  ['dashOverview', 'dashProfile', 'dashNetwork', 'dashCourse', 'dashDeals'].forEach(id => {
+    const el = $(`#${id}`);
+    if (el) el.style.display = (id === tabId) ? 'block' : 'none';
+  });
+};
+
+window.handleSignOut = function() {
+  if (auth && confirm('Are you sure you want to sign out?')) {
+    signOut(auth).then(() => {
+      closeDashboard();
+      showToast('Signed out successfully.');
+    });
+  }
+};
+
+function populateDashboard() {
+  const p = currentUserProfile;
+  if (!p) return;
+
+  // Header & Profile
+  $('#dashNameTop').textContent = p.firstName;
+  $('#dashAvatarTop').textContent = p.firstName.charAt(0).toUpperCase();
+  $('#dashRoleBadge').textContent = p.role;
+  $('#dashRoleBadge').className = `dash-role-badge ${p.role}`;
+  $('#dashWelcomeTitle').textContent = `Welcome back, ${p.firstName}👋`;
+  
+  if (p.joinedAt) {
+    const date = new Date(p.joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    $('#dashJoinDate').textContent = `Member since ${date}`;
+  }
+
+  // Overview Stats & Panels
+  const statsContainer = $('#dashStatCards');
+  const infoGrid = $('#dashInfoGrid');
+  
+  if (p.role === 'founder') {
+    statsContainer.innerHTML = `
+      <div class="dash-stat-card primary-card">
+        <div class="dash-stat-label">Startup Value</div>
+        <div class="dash-stat-value">$250K</div>
+        <div class="dash-stat-sub">Pre-seed Estimation</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-label">Incubator Score</div>
+        <div class="dash-stat-value">78%</div>
+        <div class="dash-stat-sub">Readiness Benchmark</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-label">Active Intros</div>
+        <div class="dash-stat-value">3</div>
+        <div class="dash-stat-sub">Investor Pipeline</div>
+      </div>
+    `;
+
+    infoGrid.innerHTML = `
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-title">Your Startup Profile</span>
+          <span class="dash-panel-badge">Active</span>
+        </div>
+        <div class="dash-info-list">
+          <div class="dash-info-row">
+            <div class="dash-info-icon">🏢</div>
+            <div class="dash-info-content">
+              <span class="dash-info-key">Name</span>
+              <span class="dash-info-val">${p.startupName}</span>
+            </div>
+          </div>
+          <div class="dash-info-row">
+            <div class="dash-info-icon">🌐</div>
+            <div class="dash-info-content">
+              <span class="dash-info-key">Field</span>
+              <span class="dash-info-val">${p.startupField}</span>
+            </div>
+          </div>
+          <div class="dash-info-row">
+            <div class="dash-info-icon">📉</div>
+            <div class="dash-info-content">
+              <span class="dash-info-key">Stage</span>
+              <span class="dash-info-val">${p.startupStage}</span>
+            </div>
+          </div>
+          <div class="dash-info-row">
+            <div class="dash-info-icon">👥</div>
+            <div class="dash-info-content">
+              <span class="dash-info-key">Employees</span>
+              <span class="dash-info-val">${p.startupEmployees}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-title">Funding Goal</span>
+        </div>
+        <div class="dash-info-list">
+          <div class="dash-info-row">
+            <div class="dash-info-content">
+              <span class="dash-info-key">Current Round</span>
+              <span class="dash-info-val">${p.startupCapital}</span>
+            </div>
+          </div>
+          <div style="margin-top: 0.5rem;">
+            <span class="dash-info-key">Profile Completeness</span>
+            <div class="dash-progress-bar">
+              <div class="dash-progress-fill" style="width: 85%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    // Investor Role
+    statsContainer.innerHTML = `
+      <div class="dash-stat-card gold-card">
+        <div class="dash-stat-label">AUM Focus</div>
+        <div class="dash-stat-value">${p.investorTicketSize}</div>
+        <div class="dash-stat-sub">Average Ticket Size</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-label">Deals Screened</div>
+        <div class="dash-stat-value">124</div>
+        <div class="dash-stat-sub">In last 30 days</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-label">Portfolio Cos</div>
+        <div class="dash-stat-value">12</div>
+        <div class="dash-stat-sub">Across 5 Sectors</div>
+      </div>
+    `;
+
+    infoGrid.innerHTML = `
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-title">Investor Thesis</span>
+          <span class="dash-panel-badge">Verified</span>
+        </div>
+        <div class="dash-info-list">
+          <div class="dash-info-row">
+            <div class="dash-info-icon">💼</div>
+            <div class="dash-info-content">
+              <span class="dash-info-key">Fund Name</span>
+              <span class="dash-info-val">${p.investorFund || 'Individual Angel'}</span>
+            </div>
+          </div>
+          <div class="dash-info-row">
+            <div class="dash-info-icon">🎯</div>
+            <div class="dash-info-content">
+              <span class="dash-info-key">Industry Focus</span>
+              <span class="dash-info-val">${p.investorFocus}</span>
+            </div>
+          </div>
+          <div class="dash-info-row">
+            <div class="dash-info-icon">📅</div>
+            <div class="dash-info-content">
+              <span class="dash-info-key">Preferred Stage</span>
+              <span class="dash-info-val">${p.investorPreferredStage}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Populate Profile tab
+  const profileGrid = $('#dashProfileGrid');
+  profileGrid.innerHTML = `
+    <div class="dash-panel">
+      <div class="dash-panel-header">
+        <span class="dash-panel-title">Personal Information</span>
+      </div>
+      <div class="dash-info-list">
+        <div class="dash-info-row">
+          <div class="dash-info-content">
+            <span class="dash-info-key">Full Name</span>
+            <span class="dash-info-val">${p.firstName} ${p.lastName}</span>
+          </div>
+        </div>
+        <div class="dash-info-row">
+          <div class="dash-info-content">
+            <span class="dash-info-key">Email</span>
+            <span class="dash-info-val">${p.email}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
