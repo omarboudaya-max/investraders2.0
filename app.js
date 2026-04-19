@@ -521,13 +521,15 @@ window.goBackEnrollStep = function() {
 
 // Payment method switcher
 window.selectPayMethod = function(method) {
-  ['card', 'paypal', 'crypto'].forEach(m => {
+  ['card', 'paypal'].forEach(m => {
     const btn = $(`#pay${m.charAt(0).toUpperCase() + m.slice(1)}`);
     const fields = $(`#pay${m.charAt(0).toUpperCase() + m.slice(1)}Fields`);
+    if (!btn || !fields) return;
+
     if (m === method) {
       btn.style.border = '2px solid var(--primary)';
       btn.style.background = 'rgba(99,102,241,0.08)';
-      fields.style.display = m === 'card' ? 'block' : 'block';
+      fields.style.display = 'block';
     } else {
       btn.style.border = '2px solid var(--border)';
       btn.style.background = 'transparent';
