@@ -673,13 +673,15 @@ window.closeDashboard = function() {
 
 window.dashTabSwitch = function(btn, tabId) {
   // Update buttons
-  $$('.dash-nav-item').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  document.querySelectorAll('.dash-nav-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
   
-  // Update tabs
-  ['dashOverview', 'dashProfile', 'dashNetwork', 'dashCourse', 'dashDeals'].forEach(id => {
-    const el = $(`#${id}`);
-    if (el) el.style.display = (id === tabId) ? 'block' : 'none';
+  // Update tabs dynamically by selecting children of dashMain
+  const mainTabs = document.getElementById('dashMain').children;
+  Array.from(mainTabs).forEach(tab => {
+    if (tab.id) {
+      tab.style.display = (tab.id === tabId) ? 'block' : 'none';
+    }
   });
 };
 
@@ -772,6 +774,17 @@ window.populateDashboard = function() {
               <div class="dash-info-row"><div class="dash-info-icon">🌐</div><div class="dash-info-content"><span class="dash-info-key">Field</span><span class="dash-info-val">${p.startupField}</span></div></div>
               <div class="dash-info-row"><div class="dash-info-icon">📉</div><div class="dash-info-content"><span class="dash-info-key">Stage</span><span class="dash-info-val">${p.startupStage}</span></div></div>
               <div class="dash-info-row"><div class="dash-info-icon">👥</div><div class="dash-info-content"><span class="dash-info-key">Employees</span><span class="dash-info-val">${p.startupEmployees}</span></div></div>
+            </div>
+          </div>
+          
+          <div class="dash-panel">
+            <div class="dash-panel-header">
+              <span class="dash-panel-title">Funding & Details</span>
+            </div>
+            <div class="dash-info-list">
+              <div class="dash-info-row"><div class="dash-info-icon">💰</div><div class="dash-info-content"><span class="dash-info-key">Capital Needs</span><span class="dash-info-val">${p.startupCapital || '-'}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">🔗</div><div class="dash-info-content"><span class="dash-info-key">Website</span><span class="dash-info-val">${p.startupWebsite || '-'}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">📝</div><div class="dash-info-content"><span class="dash-info-key">Pitch / Description</span><span class="dash-info-val" style="white-space: normal; line-height: 1.4;">${p.startupDescription || '-'}</span></div></div>
             </div>
           </div>
         </div>
