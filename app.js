@@ -584,6 +584,66 @@ window.handleCourseSubmit = async function() {
   }
 };
 
+// ---- PayPal SDK Integration ----
+if (window.paypal) {
+  paypal.Buttons({
+    createOrder: async function(data, actions) {
+      if(!courseApplicantData.email) return;
+      try {
+        // Pointing to your deployed cloud function (or emulator if running locally)
+        // You'll need to update this URL to your real Firebase project URL later:
+        const API_BASE = "http://127.0.0.1:5001/YOUR_PROJECT_ID/us-central1"; 
+        
+        const res = await fetch(`${API_BASE}/createPayPalOrder`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'}
+        });
+        const orderData = await res.json();
+        return orderData.id;
+      } catch (err) {
+        console.error("Order creation failed", err);
+        showToast("Error creating PayPal order", "error");
+      }
+    },
+    onApprove: async function(data, actions) {
+      try {
+        const API_BASE = "http://127.0.0.1:5001/YOUR_PROJECT_ID/us-central1"; 
+        
+        const res = await fetch(`${API_BASE}/capturePayPalOrder`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            orderID: data.orderID,
+            userEmail: courseApplicantData.email,
+            courseApplicantData: courseApplicantData
+          })
+        });
+        
+        const captureData = await res.json();
+        
+        if (captureData.success) {
+            // Show step 3 (Success)
+            $('#enrollStep2').style.display = 'none';
+            $('#enrollStep3').style.display = 'block';
+            
+            // Set UI details generated from backend
+            $('#enrollQrImage').src = captureData.qrUrl;
+            $('#enrollAccessCode').textContent = captureData.accessCode;
+            $('#enrollStepLabel').textContent = 'Success!';
+            
+            showToast('🎓 PayPal Payment Successful!', 'success', 5000);
+            courseApplicantData = {};
+        } else {
+            showToast('Payment verification failed.', 'error', 4000);
+        }
+      } catch (err) {
+        console.error("Capture failed", err);
+        showToast("Error verifying PayPal capture", "error");
+      }
+    }
+  }).render('#paypal-button-container');
+}
+
 function generateAccessCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   const segment = () => {

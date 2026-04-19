@@ -13,6 +13,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  
+  <!-- PayPal JS SDK (Sandbox Placeholder) -->
+  <script src="https://www.paypal.com/sdk/js?client-id=PLACEHOLDER_CLIENT_ID&currency=USD"></script>
 </head>
 <body>
 
@@ -947,9 +950,9 @@
           </div>
         </div>
 
-        <!-- PayPal placeholder -->
-        <div id="payPaypalFields" style="display: none; text-align: center; padding: 2rem; color: var(--muted-fg); border: 1px dashed var(--border); border-radius: 10px; margin-bottom: 1rem;">
-          <p style="font-size: 1rem;">🅿 You will be redirected to PayPal to complete your payment.</p>
+        <!-- PayPal SDK UI Container -->
+        <div id="payPaypalFields" style="display: none; padding: 1rem 0; margin-bottom: 1rem;">
+          <div id="paypal-button-container"></div>
         </div>
 
         <p style="font-size: 0.78rem; color: var(--muted-fg); margin: 1rem 0; display: flex; align-items: center; gap: 0.4rem;">
