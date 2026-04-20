@@ -565,7 +565,6 @@
         </a>
         <a href="#" class="btn btn-ghost-white btn-lg">Talk to Sales</a>
       </div>
-      <p class="cta-note">No credit card required · Cancel anytime · GDPR compliant</p>
     </div>
   </section>
 
@@ -689,7 +688,7 @@
   </div>
 
   <div class="modal-overlay" id="registerModal">
-    <div class="modal">
+    <div class="modal" style="max-width: 500px;">
       <button class="modal-close" onclick="closeModal('registerModal')">&times;</button>
       <div class="modal-logo">
         <div class="logo-icon">
@@ -697,130 +696,182 @@
         </div>
         <span>Investrade</span>
       </div>
-      <h2 class="modal-title">Create your account</h2>
-      <p class="modal-subtitle">Start your journey</p>
+      <h2 class="modal-title" id="regModalTitle">Create your account</h2>
+      <p class="modal-subtitle" id="regModalSubtitle">Step 1 of 4: Account Setup</p>
 
-      <div class="role-selector">
-        <button class="role-btn active" id="founderRole" onclick="selectRole('founder')">
-          <span>🚀</span> I'm a Founder
-        </button>
-        <button class="role-btn" id="investorRole" onclick="selectRole('investor')">
-          <span>💼</span> I'm an Investor
-        </button>
+      <!-- Registration Progress Bar -->
+      <div class="reg-progress-container" style="margin-bottom: 2rem;">
+        <div class="reg-progress-bar" id="regProgressBar" style="width: 25%;"></div>
       </div>
 
-      <form class="auth-form" onsubmit="handleRegister(event)">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="firstName">First name</label>
-            <input type="text" id="firstName" placeholder="Alex" required />
-          </div>
-          <div class="form-group">
-            <label for="lastName">Last name</label>
-            <input type="text" id="lastName" placeholder="Johnson" required />
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="regEmail">Email address</label>
-          <input type="email" id="regEmail" placeholder="you@example.com" required />
-        </div>
-        <div class="form-group">
-          <label for="regPassword">Password</label>
-          <input type="password" id="regPassword" placeholder="Min. 8 characters" required minlength="8" />
-        </div>
-        <div id="founderFields">
-          <div class="form-group">
-            <label for="startupName">Startup Name <span style="color: var(--destructive);">*</span></label>
-            <input type="text" id="startupName" placeholder="Your startup name" />
-          </div>
-          <div class="form-group">
-            <label for="startupField">Field / Category <span style="color: var(--destructive);">*</span></label>
-            <input type="text" id="startupField" placeholder="E.g. AI, FinTech, HealthTech" />
-          </div>
-          <div class="form-group">
-            <label for="startupStage">Stage <span style="color: var(--destructive);">*</span></label>
-            <select id="startupStage" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--foreground); font-family: inherit;">
-              <option value="" disabled selected>Select Stage</option>
-              <option value="Idea">Idea</option>
-              <option value="MVP">MVP</option>
-              <option value="Working Product">Working Product</option>
-              <option value="Scaling">Scaling</option>
-            </select>
-          </div>
+      <form class="auth-form" id="registrationForm" onsubmit="handleRegister(event)">
+        <!-- STEP 1: Basic Stats -->
+        <div class="reg-step" id="regStep1">
           <div class="form-row">
             <div class="form-group">
-              <label for="startupEmployees">Employees <span style="color: var(--destructive);">*</span></label>
-              <select id="startupEmployees" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--foreground); font-family: inherit;">
-                <option value="" disabled selected>Select Range</option>
-                <option value="1-10">1-10</option>
-                <option value="11-50">11-50</option>
-                <option value="51-200">51-200</option>
-                <option value="200+">200+</option>
-              </select>
+              <label for="firstName">First name</label>
+              <input type="text" id="firstName" placeholder="Alex" required />
             </div>
             <div class="form-group">
-              <label for="startupCapital">Capital Range <span style="color: var(--destructive);">*</span></label>
-              <select id="startupCapital" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--foreground); font-family: inherit;">
-                <option value="" disabled selected>Select Capital Range</option>
-                <option value="Pre-Seed">Pre-Seed</option>
-                <option value="Seed">Seed</option>
-                <option value="Series A">Series A</option>
-                <option value="Series B+">Series B+</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="startupYear">Incorporation Year <span style="color: var(--destructive);">*</span></label>
-              <input type="number" id="startupYear" placeholder="E.g. 2024" />
-            </div>
-            <div class="form-group">
-              <label for="startupWebsite">Website Link <span style="color: var(--destructive);">*</span></label>
-              <input type="url" id="startupWebsite" placeholder="https://" />
+              <label for="lastName">Last name</label>
+              <input type="text" id="lastName" placeholder="Johnson" required />
             </div>
           </div>
           <div class="form-group">
-            <label for="startupDescription">Description of the startup <span style="color: var(--destructive);">*</span></label>
-            <textarea id="startupDescription" placeholder="Briefly describe what you are building..." rows="3" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--foreground); font-family: inherit; resize: vertical;"></textarea>
+            <label for="regEmail">Email address</label>
+            <input type="email" id="regEmail" placeholder="you@example.com" required />
+          </div>
+          <div class="form-group" style="position: relative;">
+            <label for="regPassword">Password</label>
+            <input type="password" id="regPassword" placeholder="Min. 8 characters" required minlength="8" oninput="updatePasswordStrength(this.value)" />
+            <div class="password-strength-meter">
+              <div class="strength-bar" id="strengthBar"></div>
+            </div>
+            <span id="strengthLabel" style="font-size: 0.7rem; color: var(--muted-fg);">Strength: <span id="strengthText">None</span></span>
+          </div>
+          <button type="button" class="btn btn-primary w-full" style="margin-top: 1rem;" onclick="nextRegStep(2)">Continue &rarr;</button>
+        </div>
+
+        <!-- STEP 2: Role Selection (Interactive Cards) -->
+        <div class="reg-step" id="regStep2" style="display: none;">
+          <label style="display: block; margin-bottom: 1rem; font-weight: 600; font-size: 0.9rem;">How will you use Investrade?</label>
+          <div class="role-cards-grid">
+            <div class="role-card active" id="cardFounder" onclick="selectRoleStep('founder')">
+              <div class="role-card-icon">🚀</div>
+              <div class="role-card-content">
+                <div class="role-card-title">Founder</div>
+                <div class="role-card-desc">I'm building a startup and looking for growth & funding.</div>
+              </div>
+              <div class="role-card-check">✓</div>
+            </div>
+            <div class="role-card" id="cardInvestor" onclick="selectRoleStep('investor')">
+              <div class="role-card-icon">💼</div>
+              <div class="role-card-content">
+                <div class="role-card-title">Investor</div>
+                <div class="role-card-desc">I'm looking for high-potential startups to invest in.</div>
+              </div>
+              <div class="role-card-check">✓</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.75rem; margin-top: 2rem;">
+            <button type="button" class="btn btn-outline" style="flex: 1;" onclick="prevRegStep(1)">&larr; Back</button>
+            <button type="button" class="btn btn-primary" style="flex: 2;" onclick="nextRegStep(3)">Next: Profile Details</button>
           </div>
         </div>
 
-        <div id="investorFields" style="display: none;">
-          <div class="form-group">
-            <label for="investorFund">Fund / Syndicate Name</label>
-            <input type="text" id="investorFund" placeholder="Name of your fund (optional)" />
+        <!-- STEP 3: Role-Specific Details -->
+        <div class="reg-step" id="regStep3" style="display: none;">
+          <!-- Founder Specific -->
+          <div id="founderFields">
+            <div class="form-group">
+              <label for="startupName">Startup Name <span style="color: var(--destructive);">*</span></label>
+              <input type="text" id="startupName" placeholder="Your startup name" />
+            </div>
+            <div class="form-group">
+              <label for="startupField">Field / Category <span style="color: var(--destructive);">*</span></label>
+              <input type="text" id="startupField" placeholder="E.g. AI, FinTech, HealthTech" />
+            </div>
+            <div class="form-group">
+              <label for="startupStage">Stage <span style="color: var(--destructive);">*</span></label>
+              <select id="startupStage" class="form-select">
+                <option value="" disabled selected>Select Stage</option>
+                <option value="Idea">Idea</option>
+                <option value="MVP">MVP</option>
+                <option value="Working Product">Working Product</option>
+                <option value="Scaling">Scaling</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="startupEmployees">Employees <span style="color: var(--destructive);">*</span></label>
+                <select id="startupEmployees" class="form-select">
+                  <option value="" disabled selected>Select Range</option>
+                  <option value="1-10">1-10</option>
+                  <option value="11-50">11-50</option>
+                  <option value="51-200">51-200</option>
+                  <option value="200+">200+</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="startupCapital">Capital Range <span style="color: var(--destructive);">*</span></label>
+                <select id="startupCapital" class="form-select">
+                  <option value="" disabled selected>Select Capital Range</option>
+                  <option value="Pre-Seed">Pre-Seed</option>
+                  <option value="Seed">Seed</option>
+                  <option value="Series A">Series A</option>
+                  <option value="Series B+">Series B+</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="startupYear">Incorporation Year <span style="color: var(--destructive);">*</span></label>
+                <input type="number" id="startupYear" placeholder="E.g. 2024" />
+              </div>
+              <div class="form-group">
+                <label for="startupWebsite">Website Link <span style="color: var(--destructive);">*</span></label>
+                <input type="url" id="startupWebsite" placeholder="https://" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="startupDescription">Description of the startup <span style="color: var(--destructive);">*</span></label>
+              <textarea id="startupDescription" placeholder="Briefly describe what you are building..." rows="3" class="form-textarea"></textarea>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="investorFocus">Investment Focus (Sectors) <span style="color: var(--destructive);">*</span></label>
-            <input type="text" id="investorFocus" placeholder="E.g. SaaS, DeepTech" />
+
+          <!-- Investor Specific -->
+          <div id="investorFields" style="display: none;">
+            <div class="form-group">
+              <label for="investorFund">Fund / Syndicate Name</label>
+              <input type="text" id="investorFund" placeholder="Name of your fund (optional)" />
+            </div>
+            <div class="form-group">
+              <label for="investorFocus">Investment Focus (Sectors) <span style="color: var(--destructive);">*</span></label>
+              <input type="text" id="investorFocus" placeholder="E.g. SaaS, DeepTech" />
+            </div>
+            <div class="form-group">
+              <label for="investorTicketSize">Typical Ticket Size <span style="color: var(--destructive);">*</span></label>
+              <select id="investorTicketSize" class="form-select">
+                <option value="" disabled selected>Select Ticket Size</option>
+                <option value="$10k - $50k">$10k - $50k</option>
+                <option value="$50k - $250k">$50k - $250k</option>
+                <option value="$250k - $1M">$250k - $1M</option>
+                <option value="$1M+">$1M+</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="investorPreferredStage">Preferred Stage <span style="color: var(--destructive);">*</span></label>
+              <select id="investorPreferredStage" class="form-select">
+                <option value="" disabled selected>Select Preferred Stage</option>
+                <option value="Pre-Seed / Seed">Pre-Seed / Seed</option>
+                <option value="Series A / B">Series A / B</option>
+                <option value="Growth / Later Stage">Growth / Later Stage</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="investorTicketSize">Typical Ticket Size <span style="color: var(--destructive);">*</span></label>
-            <select id="investorTicketSize" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--foreground); font-family: inherit;">
-              <option value="" disabled selected>Select Ticket Size</option>
-              <option value="$10k - $50k">$10k - $50k</option>
-              <option value="$50k - $250k">$50k - $250k</option>
-              <option value="$250k - $1M">$250k - $1M</option>
-              <option value="$1M+">$1M+</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="investorPreferredStage">Preferred Stage <span style="color: var(--destructive);">*</span></label>
-            <select id="investorPreferredStage" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--foreground); font-family: inherit;">
-              <option value="" disabled selected>Select Preferred Stage</option>
-              <option value="Pre-Seed / Seed">Pre-Seed / Seed</option>
-              <option value="Series A / B">Series A / B</option>
-              <option value="Growth / Later Stage">Growth / Later Stage</option>
-            </select>
+
+          <div style="display: flex; gap: 0.75rem; margin-top: 2rem;">
+            <button type="button" class="btn btn-outline" style="flex: 1;" onclick="prevRegStep(2)">&larr; Back</button>
+            <button type="button" class="btn btn-primary" style="flex: 2;" onclick="nextRegStep(4)">Review & Finalize</button>
           </div>
         </div>
-        <div class="form-check">
-          <input type="checkbox" id="agreeTerms" required />
-          <label for="agreeTerms">I agree to the <a href="#" class="form-link">Terms of Service</a> and <a href="#" class="form-link">Privacy Policy</a></label>
+
+        <!-- STEP 4: Review & Terms -->
+        <div class="reg-step" id="regStep4" style="display: none;">
+          <div class="review-panel" id="reviewPanel" style="padding: 1.25rem; background: var(--bg-muted); border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.85rem;">
+            <!-- Review content injected by JS -->
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="agreeTerms" required />
+            <label for="agreeTerms">I agree to the <a href="javascript:void(0)" onclick="openModal('termsModal')" class="form-link">Terms & Trust Policy</a></label>
+          </div>
+          <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+            <button type="button" class="btn btn-outline" style="flex: 1;" onclick="prevRegStep(3)">&larr; Back</button>
+            <button type="submit" class="btn btn-primary" style="flex: 2;">Create My Account</button>
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary w-full btn-lg">Create Account</button>
       </form>
-      <p class="modal-footer-text">Already have an account? <a href="#" onclick="switchModal('registerModal','loginModal')">Sign in</a></p>
+      <p class="modal-footer-text">Already have an account? <a href="javascript:void(0)" onclick="switchModal('registerModal','loginModal')">Sign in</a></p>
     </div>
   </div>
 
@@ -980,6 +1031,67 @@
 
         <button onclick="closeModal('courseEnrollModal')" class="btn btn-primary btn-lg w-full">Got it, thanks!</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== TERMS & CONDITIONS MODAL ===== -->
+  <div class="modal-overlay" id="termsModal">
+    <div class="modal" style="max-width: 800px;">
+      <button class="modal-close" onclick="closeModal('termsModal')">&times;</button>
+      <div class="modal-logo">
+        <div class="logo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+        </div>
+        <span>Investrade</span>
+      </div>
+      <h2 class="modal-title">Terms & Conditions & Trust Policy</h2>
+      <div class="terms-content" style="font-size: 0.9rem; line-height: 1.6; color: var(--muted-fg); margin-top: 1.5rem; max-height: 60vh; overflow-y: auto; padding-right: 1rem;">
+        <h3 style="color: var(--foreground); margin-bottom: 1rem;">1. INTRODUCTION</h3>
+        <p>Welcome to <strong>Investrade</strong> (“Platform”, “We”, “Us”, “Our”). Investrade is a global digital platform designed to <strong>streamline the investment process</strong>, connect stakeholders, and contribute to building a <strong>structured, transparent, and inclusive investment ecosystem worldwide</strong>.</p>
+        <p>By accessing or using the Platform, you agree to comply with and be bound by these Terms & Conditions.</p>
+
+        <h3 style="color: var(--foreground); margin-top: 1.5rem; margin-bottom: 1rem;">2. OUR MISSION & TRUST COMMITMENT</h3>
+        <p>At Investrade, we are committed to:</p>
+        <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+          <li>Promoting <strong>trust, transparency, and accountability</strong> in investment processes</li>
+          <li>Facilitating <strong>efficient connections between investors, startups, and institutions</strong></li>
+          <li>Supporting <strong>ethical, compliant, and structured investment ecosystems globally</strong></li>
+          <li>Ensuring that all financial interactions are handled with <strong>integrity and security</strong></li>
+        </ul>
+        <p>We do <strong>not operate as a speculative trading scheme</strong>, but as an <strong>ecosystem enabler and facilitator of investment opportunities</strong>.</p>
+
+        <h3 style="color: var(--foreground); margin-top: 1.5rem; margin-bottom: 1rem;">3. NATURE OF SERVICES</h3>
+        <p>The Platform may provide investment discovery and matchmaking tools; deal flow structuring and co-investment facilitation; advisory, training, and ecosystem-building services; and access to curated investment opportunities.</p>
+        <p>⚠️ <strong>Important Disclaimer:</strong> Investrade does <strong>not guarantee investment returns</strong>. All investments involve risk. Financial markets inherently carry risks, and users must make independent decisions.</p>
+
+        <h3 style="color: var(--foreground); margin-top: 1.5rem; margin-bottom: 1rem;">4. USER ELIGIBILITY</h3>
+        <p>By using the Platform, you confirm that you are legally eligible to enter into binding agreements, comply with all applicable financial and regulatory laws, and provide accurate and truthful information. We reserve the right to <strong>verify user identity (KYC)</strong> where required.</p>
+
+        <h3 style="color: var(--foreground); margin-top: 1.5rem; margin-bottom: 1rem;">5. PAYMENTS & FINANCIAL TRANSACTIONS</h3>
+        <p><strong>5.1 Transparency:</strong> All fees or service charges are clearly disclosed prior to payment. No hidden fees or unauthorized charges will be applied.</p>
+        <p><strong>5.2 Security:</strong> We implement industry-standard safeguards including secure payment gateways, encrypted transaction protocols, and access control systems.</p>
+        <p><strong>5.3 No Custody:</strong> Investrade acts as a facilitator, not always as a custodian of funds. Funds may be handled through third-party regulated partners.</p>
+        <p><strong>5.4 Refunds:</strong> Fees for services are generally non-refundable once delivered, except in cases of technical errors or duplicate payments.</p>
+
+        <h3 style="color: var(--foreground); margin-top: 1.5rem; margin-bottom: 1rem;">6. RISK DISCLOSURE</h3>
+        <p>Investments may result in <strong>partial or total loss of capital</strong>. Market conditions are volatile and unpredictable. Past performance does not guarantee future results. Users are encouraged to seek <strong>independent financial advice</strong>.</p>
+
+        <h3 style="color: var(--foreground); margin-top: 1.5rem; margin-bottom: 1rem;">7. INTELLECTUAL PROPERTY</h3>
+        <p>All content, including platform architecture, investment frameworks, and methodologies, are the exclusive property of <strong>Investrade</strong> and may not be used without authorization.</p>
+
+        <h3 style="color: var(--foreground); margin-top: 1.5rem; margin-bottom: 1rem;">8. DATA PRIVACY</h3>
+        <p>We protect user data through secure systems and comply with applicable data protection laws. User data will <strong>never be sold without consent</strong>.</p>
+
+        <h3 style="color: var(--foreground); margin-top: 1.5rem; margin-bottom: 1rem;">9. LIMITATION OF LIABILITY</h3>
+        <p>Investrade shall not be liable for investment losses, third-party actions, market fluctuations, or disruptions beyond our control.</p>
+
+        <h3 style="color: var(--foreground); margin-top: 1.5rem; margin-bottom: 1rem;">10. COMPLIANCE</h3>
+        <p>Users agree to comply with financial regulations, AML standards, and KYC requirements. We may collaborate with regulated financial entities.</p>
+
+        <h3 style="color: var(--foreground); margin-top: 1.5rem; margin-bottom: 1rem;">11. JURISDICTION</h3>
+        <p>This Agreement shall be governed by applicable international commercial principles and the laws of our operational headquarters' jurisdiction.</p>
+      </div>
+      <button onclick="closeModal('termsModal')" class="btn btn-primary w-full mt-8">Close</button>
     </div>
   </div>
 

@@ -29,9 +29,42 @@ const $$ = (sel) => document.querySelectorAll(sel);
 
 function showToast(msg, type = 'success', duration = 3000) {
   const toast = $('#toast');
+  if(!toast) return;
   toast.textContent = msg;
   toast.className = `toast ${type} show`;
   setTimeout(() => { toast.className = 'toast'; }, duration);
+}
+
+// ---- Confetti Effect ----
+function triggerConfetti() {
+  const duration = 3 * 1000;
+  const animationEnd = Date.now() + duration;
+  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 2000 };
+
+  const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+  const interval = setInterval(() => {
+    const timeLeft = animationEnd - Date.now();
+    if (timeLeft <= 0) return clearInterval(interval);
+
+    const particleCount = 50 * (timeLeft / duration);
+    // confetti is a global from a CDN I'll add or a simple DOM version
+    // For now, let's just use a high-energy toast if library isn't there
+    // Actually, I'll inject a small style for confetti particles
+  }, 250);
+}
+
+function celebrate() {
+  // Simple CSS Confetti
+  for (let i = 0; i < 50; i++) {
+    const confetti = document.createElement('div');
+    confetti.className = 'confetti-particle';
+    confetti.style.left = Math.random() * 100 + 'vw';
+    confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+    confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+    document.body.appendChild(confetti);
+    setTimeout(() => confetti.remove(), 5000);
+  }
 }
 
 // ---- Navbar scroll behavior ----
@@ -143,6 +176,7 @@ function updatePrices() {
 // ---- Auth session management (Firebase) ----
 let currentUserProfile = null;
 let selectedRole = 'founder';
+let regCurrentStep = 1;
 
 function updateNavForUser() {
   const loginBtn = $('#loginBtn');
@@ -150,10 +184,10 @@ function updateNavForUser() {
   
   if (currentUserProfile) {
     loginBtn.textContent = `Hello, ${currentUserProfile.firstName}`;
-    loginBtn.href = '#';
+    loginBtn.href = 'javascript:void(0)';
     loginBtn.style.fontWeight = '600';
     getStartedBtn.textContent = 'Dashboard';
-    getStartedBtn.href = '#';
+    getStartedBtn.href = 'javascript:void(0)';
   } else {
     loginBtn.textContent = 'Sign In';
     loginBtn.href = '#login';
@@ -183,11 +217,13 @@ if (auth) {
   });
 }
 
-window.selectRole = function(role) {
+// ---- Registration Step Logic ----
+window.selectRoleStep = function(role) {
   selectedRole = role;
-  $('#founderRole').classList.toggle('active', role === 'founder');
-  $('#investorRole').classList.toggle('active', role === 'investor');
+  $('#cardFounder').classList.toggle('active', role === 'founder');
+  $('#cardInvestor').classList.toggle('active', role === 'investor');
   
+  // Toggle visibility in Step 3
   const founderFields = $('#founderFields');
   const investorFields = $('#investorFields');
   if (role === 'founder') {
@@ -196,6 +232,127 @@ window.selectRole = function(role) {
   } else {
     founderFields.style.display = 'none';
     investorFields.style.display = 'block';
+  }
+};
+
+window.nextRegStep = function(step) {
+  // Simple Validation
+  if (regCurrentStep === 1) {
+    const fName = $('#firstName').value.trim();
+    const lName = $('#lastName').value.trim();
+    const email = $('#regEmail').value.trim();
+    const pass = $('#regPassword').value;
+    if (!fName || !lName || !email || !pass) {
+      showToast('Please fill in all account fields.', 'error');
+      return;
+    }
+    if (pass.length < 8) {
+      showToast('Password must be at least 8 characters.', 'error');
+      return;
+    }
+  }
+
+  if (regCurrentStep === 3) {
+    // Basic role validation before review
+    if (selectedRole === 'founder') {
+      const sName = $('#startupName').value.trim();
+      if (!sName) { showToast('Please enter your startup name.', 'error'); return; }
+    } else {
+      const focus = $('#investorFocus').value.trim();
+      if (!focus) { showToast('Please enter your investment focus.', 'error'); return; }
+    }
+  }
+
+  goToRegStep(step);
+};
+
+window.prevRegStep = function(step) {
+  goToRegStep(step);
+};
+
+function goToRegStep(step) {
+  regCurrentStep = step;
+  
+  // Hide all
+  $$('.reg-step').forEach(s => s.style.display = 'none');
+  
+  // Show target
+  const target = $(`#regStep${step}`);
+  if (target) target.style.display = 'block';
+  
+  // Update UI headers
+  const title = $('#regModalTitle');
+  const sub = $('#regModalSubtitle');
+  const progress = $('#regProgressBar');
+  
+  const stepTitles = [
+    '',
+    'Step 1 of 4: Account Setup',
+    'Step 2 of 4: Select Your Path',
+    'Step 3 of 4: Profile Details',
+    'Step 4 of 4: Review & Finalize'
+  ];
+  
+  sub.textContent = stepTitles[step];
+  progress.style.width = `${(step / 4) * 100}%`;
+  
+  if (step === 4) {
+    updateReviewPanel();
+  }
+}
+
+function updateReviewPanel() {
+  const panel = $('#reviewPanel');
+  const roleDisplay = selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1);
+  
+  let html = `
+    <h4 style="margin-top:0;">Account Information</h4>
+    <p><strong>Name:</strong> ${$('#firstName').value} ${$('#lastName').value}</p>
+    <p><strong>Email:</strong> ${$('#regEmail').value}</p>
+    <p><strong>Role:</strong> ${roleDisplay}</p>
+  `;
+  
+  if (selectedRole === 'founder') {
+    html += `
+      <h4>Startup Details</h4>
+      <p><strong>Startup:</strong> ${$('#startupName').value || '-'}</p>
+      <p><strong>Field:</strong> ${$('#startupField').value || '-'}</p>
+    `;
+  } else {
+    html += `
+      <h4>Investor Details</h4>
+      <p><strong>Focus:</strong> ${$('#investorFocus').value || '-'}</p>
+      <p><strong>Fund:</strong> ${$('#investorFund').value || '-'}</p>
+    `;
+  }
+  
+  panel.innerHTML = html;
+}
+
+window.updatePasswordStrength = function(pw) {
+  const bar = $('#strengthBar');
+  const text = $('#strengthText');
+  let score = 0;
+  
+  if (pw.length > 8) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  
+  bar.className = 'strength-bar';
+  if (pw.length === 0) {
+    text.textContent = 'None';
+  } else if (score === 0 || score === 1) {
+    bar.classList.add('weak');
+    text.textContent = 'Weak';
+    text.style.color = '#ef4444';
+  } else if (score === 2) {
+    bar.classList.add('medium');
+    text.textContent = 'Medium';
+    text.style.color = '#f59e0b';
+  } else {
+    bar.classList.add('strong');
+    text.textContent = 'Strong';
+    text.style.color = '#10b981';
   }
 };
 
@@ -239,26 +396,40 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---- Trigger modals from nav ----
-$('#loginBtn').addEventListener('click', (e) => {
+function checkAuthAndOpen(modalId) {
   if (currentUserProfile) {
-    e.preventDefault();
+    showToast('You are already logged in. Please log out first.', 'info');
+    return;
+  }
+  
+  // Reset registration form to Step 1
+  if (modalId === 'registerModal') {
+    goToRegStep(1);
+    if ($('#registrationForm')) $('#registrationForm').reset();
+  }
+  
+  openModal(modalId);
+}
+
+$('#loginBtn').addEventListener('click', (e) => {
+  e.preventDefault();
+  if (currentUserProfile) {
     if (auth && confirm('Do you want to sign out?')) {
       signOut(auth).then(() => {
         showToast('You have been signed out.', 'success');
       });
     }
   } else {
-    e.preventDefault();
-    openModal('loginModal');
+    checkAuthAndOpen('loginModal');
   }
 });
+
 $('#getStartedBtn').addEventListener('click', (e) => {
+  e.preventDefault();
   if (currentUserProfile) {
-    e.preventDefault();
-    openDashboard();
+    if (window.openDashboard) window.openDashboard();
   } else {
-    e.preventDefault();
-    openModal('registerModal');
+    checkAuthAndOpen('registerModal');
   }
 });
 
@@ -266,13 +437,13 @@ $('#getStartedBtn').addEventListener('click', (e) => {
 $$('a[href="#register"]').forEach(btn => {
   btn.addEventListener('click', (e) => {
     e.preventDefault();
-    openModal('registerModal');
+    checkAuthAndOpen('registerModal');
   });
 });
 $$('a[href="#login"]').forEach(btn => {
   btn.addEventListener('click', (e) => {
     e.preventDefault();
-    openModal('loginModal');
+    checkAuthAndOpen('loginModal');
   });
 });
 
@@ -389,13 +560,14 @@ window.handleRegister = async function(e) {
     });
 
     closeModal('registerModal');
-    showToast(`🎉 Welcome to Investrade, ${firstName}! Your journey starts now.`, 'success', 4000);
+    showToast(`🎉 Welcome to Investrade, ${firstName}!`, 'success', 5000);
+    celebrate();
     e.target.reset();
 
     // Take user directly to dashboard
     setTimeout(() => {
       if (window.openDashboard) window.openDashboard();
-    }, 500);
+    }, 1500);
 
   } catch (error) {
     console.error("Register Error:", error);
