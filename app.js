@@ -41,8 +41,22 @@ async function initializeDatabase() {
         isActive: true
       });
     }
+
+    // Seed some dummy startups for the directory if empty
+    const sSnap = await getDocs(query(collection(db, "startups"), limit(1)));
+    if (sSnap.empty) {
+      console.log("Seeding initial startups...");
+      const dummyStartups = [
+        { name: "AeroSync AI", field: "Aviation / AI", stage: "Pre-seed", target: 500000, description: "Autonomous drone logistics for remote areas.", investorVisits: 12, ownerUid: "system" },
+        { name: "Nova Health", field: "Healthtech", stage: "Seed", target: 1200000, description: "Predictive diagnostics for early-stage oncology.", investorVisits: 45, ownerUid: "system" },
+        { name: "EcoGrid", field: "Energy", stage: "Series A", target: 5000000, description: "Smart grid management for urban renewable integration.", investorVisits: 8, ownerUid: "system" }
+      ];
+      for (const s of dummyStartups) {
+        await addDoc(collection(db, "startups"), s);
+      }
+    }
   } catch (err) {
-    console.warn("Init DB check failed (likely permissions):", err);
+    console.warn("Init DB check failed:", err);
   }
 }
 initializeDatabase();
