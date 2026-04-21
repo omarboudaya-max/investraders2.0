@@ -968,7 +968,7 @@
 
         <!-- Payment method selector -->
         <p style="font-size: 0.85rem; color: var(--muted-fg); margin-bottom: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Select Payment Method</p>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1.5rem;">
           <button onclick="selectPayMethod('card')" id="payCard" class="pay-method-btn active" style="padding: 0.9rem; border-radius: 10px; border: 2px solid var(--primary); background: rgba(99,102,241,0.08); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; transition: all 0.2s;">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             <span style="font-size: 0.8rem; font-weight: 600;">Visa / MasterCard</span>
@@ -1006,14 +1006,14 @@
           <div id="paypal-button-container"></div>
         </div>
 
-        <p style="font-size: 0.78rem; color: var(--muted-fg); margin: 1rem 0; display: flex; align-items: center; gap: 0.4rem;">
+        <p id="paymentNote" style="font-size: 0.78rem; color: var(--muted-fg); margin: 1rem 0; display: flex; align-items: center; gap: 0.4rem;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Payment processing is coming soon. Your application will be saved and we'll contact you to finalize payment.
+          <span id="paymentNoteText">Secure card payment powered by Stripe Checkout.</span>
         </p>
 
         <div style="display: flex; gap: 0.75rem;">
           <button onclick="goBackEnrollStep()" class="btn btn-outline" style="flex: 1;">&larr; Back</button>
-          <button onclick="handleCourseSubmit()" class="btn btn-primary" style="flex: 2;">Complete Enrollment</button>
+          <button id="completeEnrollBtn" onclick="handleCourseSubmit()" class="btn btn-primary" style="flex: 2;">Pay with Card</button>
         </div>
       </div>
 

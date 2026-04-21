@@ -9,6 +9,9 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^5.2.8"
+    "vite": "^8.0.9"
+  },
+  "dependencies": {
+    "firebase-functions": "^4.9.0"
   }
 }

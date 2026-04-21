@@ -7,16 +7,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
-};
+// FIX #1 — Import config from dedicated module (not import.meta.env which only
+// works inside a Vite build pipeline, not a plain <script type="module">).
+import { firebaseConfig } from "./firebase-config.js";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -27,43 +20,11 @@ import { collection, addDoc, getDocs, query, where, limit, updateDoc, increment,
 
 // ---- Database Initialization ----
 async function initializeDatabase() {
-  try {
-    const q = query(collection(db, "courses"), limit(1));
-    const snap = await getDocs(q);
-    if (snap.empty) {
-      console.log("Initializing default course...");
-      await setDoc(doc(db, "courses", "ai-masterclass"), {
-        title: "How to Build Your Startup Using AI",
-        description: "A comprehensive masterclass on implementing AI in your startup workflow, pitching, and scaling.",
-        price: 300,
-        nextSession: "2026-08-15",
-        slug: "ai-startup-masterclass",
-        isActive: true
-      });
-    }
-
-    // Seed some dummy startups for the directory if empty
-    const sSnap = await getDocs(query(collection(db, "startups"), limit(1)));
-    if (sSnap.empty) {
-      console.log("Seeding initial startups...");
-      const dummyStartups = [
-        { name: "AeroSync AI", field: "Aviation / AI", stage: "Pre-seed", target: 500000, description: "Autonomous drone logistics for remote areas.", investorVisits: 12, ownerUid: "system" },
-        { name: "Nova Health", field: "Healthtech", stage: "Seed", target: 1200000, description: "Predictive diagnostics for early-stage oncology.", investorVisits: 45, ownerUid: "system" },
-        { name: "EcoGrid", field: "Energy", stage: "Series A", target: 5000000, description: "Smart grid management for urban renewable integration.", investorVisits: 8, ownerUid: "system" }
-      ];
-      for (const s of dummyStartups) {
-        await addDoc(collection(db, "startups"), s);
-      }
-    }
-    console.log("✅ Database initialized successfully.");
-  } catch (err) {
-    console.error("❌ Database initialization failed:", err);
-    showToast("Failed to initialize database. Check Firestore console/rules.", "error");
-  }
+  // NOTE: courses and startups are no longer seeded from the client.
+  // Security rules block client-side writes to those collections.
+  // Seed data once manually in the Firebase Console (see setup notes below).
+  console.log("%c✅ Firebase ready.", "color:#10b981;font-weight:bold;");
 }
-// Run it after a small delay to ensure Firebase is ready
-setTimeout(initializeDatabase, 1500);
-initializeDatabase();
 
 // ---- Utility ----
 const $ = (sel) => document.querySelector(sel);
@@ -245,9 +206,10 @@ if (auth) {
       try {
         const docSnap = await getDoc(doc(db, "users", user.uid));
         if (docSnap.exists()) {
-          currentUserProfile = docSnap.data();
+          // FIX: inject uid into profile so currentUserProfile.uid is always defined
+          currentUserProfile = { ...docSnap.data(), uid: user.uid };
         } else {
-          currentUserProfile = { firstName: 'User' }; // fallback
+          currentUserProfile = { firstName: 'User', uid: user.uid }; // fallback
         }
       } catch(err) {
         console.error("Error fetching user profile:", err);
@@ -256,6 +218,7 @@ if (auth) {
       currentUserProfile = null;
     }
     updateNavForUser();
+    await handleStripeReturn();
   });
 }
 
@@ -589,7 +552,11 @@ window.handleRegister = async function(e) {
     return;
   }
 
-  let startupId = null;
+  // ── Collect role-specific data (validation only, no Firestore writes yet) ──
+  // FIX #3 — Startup document is now written AFTER user creation so ownerUid
+  // is always set from the start. No more orphan documents if auth fails.
+  let startupPayload = null;
+
   if (selectedRole === 'founder') {
     const startupName = $('#startupName').value.trim();
     const startupField = $('#startupField').value.trim();
@@ -599,18 +566,13 @@ window.handleRegister = async function(e) {
     const startupYear = $('#startupYear').value.trim();
     const startupWebsite = $('#startupWebsite').value.trim();
     const startupDescription = $('#startupDescription').value.trim();
-    
+
     if (!startupName || !startupField || !startupStage || !startupEmployees || !startupCapital || !startupYear || !startupWebsite || !startupDescription) {
       showToast('Please fill in all startup fields.', 'error');
       return;
     }
-    
-    startupId = `startup_${Date.now()}`;
-    extraData = { startupId };
-    
-    // Create separate startup document
-    await setDoc(doc(db, "startups", startupId), {
-      id: startupId,
+
+    startupPayload = {
       name: startupName,
       field: startupField,
       stage: startupStage,
@@ -619,10 +581,9 @@ window.handleRegister = async function(e) {
       year: startupYear,
       website: startupWebsite,
       description: startupDescription,
-      ownerUid: null, // set after user creation
       investorVisits: 0,
       createdAt: serverTimestamp()
-    });
+    };
 
   } else if (selectedRole === 'investor') {
     const investorFund = $('#investorFund').value.trim();
@@ -634,10 +595,8 @@ window.handleRegister = async function(e) {
       showToast('Please fill in all required investor fields.', 'error');
       return;
     }
-    
-    extraData = {
-      investorFund, investorFocus, investorTicketSize, investorPreferredStage
-    };
+
+    extraData = { investorFund, investorFocus, investorTicketSize, investorPreferredStage };
   }
 
   try {
@@ -645,16 +604,23 @@ window.handleRegister = async function(e) {
     submitBtn.textContent = 'Creating account...';
     submitBtn.disabled = true;
 
-    // Create user in Firebase Auth
+    // ── Step 1: Create the authenticated user first ──
     const userCred = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCred.user;
 
-    // Link startup to owner
-    if (startupId) {
-      await updateDoc(doc(db, "startups", startupId), { ownerUid: user.uid });
+    // ── Step 2: Write startup doc WITH ownerUid already set (no orphan risk) ──
+    let startupId = null;
+    if (startupPayload) {
+      startupId = `startup_${user.uid}`; // tie ID to user so it's always findable
+      await setDoc(doc(db, "startups", startupId), {
+        id: startupId,
+        ownerUid: user.uid, // set from the beginning — no update needed
+        ...startupPayload
+      });
+      extraData = { startupId };
     }
 
-    // Save profile in Firestore
+    // ── Step 3: Write user profile ──
     await setDoc(doc(db, "users", user.uid), {
       firstName,
       lastName,
@@ -801,6 +767,15 @@ window.goBackEnrollStep = function() {
   $('#enrollStepLabel').textContent = 'Step 1 of 2';
 };
 
+// PRE-FILL ENROLLMENT FORM
+function prefillEnrollmentForm() {
+  if (currentUserProfile && $('#enrollEmail')) {
+    $('#enrollEmail').value = currentUserProfile.email || '';
+    $('#enrollFirstName').value = currentUserProfile.firstName || '';
+    $('#enrollLastName').value = currentUserProfile.lastName || '';
+  }
+}
+
 // Payment method switcher
 window.selectPayMethod = function(method) {
   ['card', 'paypal'].forEach(m => {
@@ -818,111 +793,220 @@ window.selectPayMethod = function(method) {
       fields.style.display = 'none';
     }
   });
-};
 
-// Final submit
-window.handleCourseSubmit = async function() {
-  try {
-    const accessCode = generateAccessCode();
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(accessCode)}`;
+  // UI Updates for the selected method
+  const completeBtn = $('#completeEnrollBtn');
+  const noteText = $('#paymentNoteText');
 
-    // Save to Firestore if available
-    if (db) {
-      const ref = doc(db, 'courseEnrollments', `${Date.now()}_${courseApplicantData.email}`);
-      await setDoc(ref, {
-        ...courseApplicantData,
-        enrolledAt: new Date().toISOString(),
-        course: 'How to Build Your Startup Using AI',
-        price: 300,
-        paymentStatus: 'pending',
-        accessCode: accessCode,
-        sessionDate: '2026-08-15'
-      });
-    }
-
-    // Show step 3 (Success)
-    $('#enrollStep2').style.display = 'none';
-    $('#enrollStep3').style.display = 'block';
-    
-    // Set UI details
-    $('#enrollQrImage').src = qrUrl;
-    $('#enrollAccessCode').textContent = accessCode;
-    
-    // Update indicator
-    $('#enrollStepLabel').textContent = 'Success!';
-    
-    showToast('🎓 Enrollment Successful!', 'success', 5000);
-    
-    // Reset internal state but NOT the UI yet (user needs to see QR)
-    courseApplicantData = {};
-  } catch(err) {
-    console.error('Enrollment error:', err);
-    showToast('Something went wrong. Please try again.', 'error', 4000);
+  if (method === 'paypal') {
+    if (completeBtn) completeBtn.style.display = 'none';
+    if (noteText) noteText.textContent = 'Secure payment processing via PayPal SDK.';
+  } else {
+    if (completeBtn) completeBtn.style.display = 'block';
+    if (noteText) noteText.textContent = 'Secure card payment powered by Stripe Checkout.';
   }
 };
 
+// "Complete Enrollment" button — card payment path.
+// NOTE: Card payments are not yet integrated with a real processor.
+// This button is intentionally disabled: it shows a clear message instead
+// of granting access without verified payment (security fix).
+// Real enrollment only happens after PayPal capture via the Cloud Function.
+window.handleCourseSubmit = function() {
+  launchStripeCheckout();
+};
+
+async function launchStripeCheckout() {
+  try {
+    if (!courseApplicantData.email || !window.selectedCourseId) {
+      showToast("Missing course or applicant data. Please complete Step 1 first.", "error", 5000);
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+      showToast("Please sign in before paying by card.", "error", 4000);
+      return;
+    }
+
+    const API_BASE = "https://us-central1-investraders-422ea.cloudfunctions.net";
+    const idToken = await user.getIdToken();
+
+    const res = await fetch(`${API_BASE}/createStripeCheckoutSession`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        courseId: window.selectedCourseId,
+        courseApplicantData
+      })
+    });
+
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const data = await res.json();
+    if (!data.url) throw new Error("No Stripe checkout URL returned");
+
+    window.location.href = data.url;
+  } catch (err) {
+    console.error("Stripe checkout launch error:", err);
+    showToast("Error starting Stripe checkout: " + err.message, "error", 5000);
+  }
+}
+
+async function handleStripeReturn() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const stripeState = params.get("stripe");
+    const sessionId = params.get("session_id");
+    if (stripeState !== "success" || !sessionId) return;
+
+    const user = auth.currentUser;
+    if (!user) {
+      showToast("Please sign in to finalize your Stripe enrollment.", "error", 5000);
+      return;
+    }
+
+    const API_BASE = "https://us-central1-investraders-422ea.cloudfunctions.net";
+    const idToken = await user.getIdToken();
+    const res = await fetch(`${API_BASE}/verifyStripeCheckoutSession`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({ sessionId })
+    });
+
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const verifyData = await res.json();
+    if (!verifyData.success) throw new Error("Stripe verification failed");
+
+    $('#enrollStep1').style.display = 'none';
+    $('#enrollStep2').style.display = 'none';
+    $('#enrollStep3').style.display = 'block';
+    $('#enrollQrImage').src = verifyData.qrUrl;
+    $('#enrollAccessCode').textContent = verifyData.accessCode;
+    $('#enrollStepLabel').textContent = 'Success!';
+    openModal('courseEnrollModal');
+    showToast('🎓 Stripe Payment Successful!', 'success', 5000);
+
+    params.delete("stripe");
+    params.delete("session_id");
+    const cleanQuery = params.toString();
+    const cleanUrl = `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", cleanUrl);
+  } catch (err) {
+    console.error("Stripe return handling error:", err);
+    showToast("Error finalizing Stripe payment: " + err.message, "error", 5000);
+  }
+}
+
 // ---- PayPal SDK Integration ----
-if (window.paypal) {
+// FIX #6 — PayPal buttons are now rendered on demand inside openEnrollModal,
+// NOT at page load. This ensures:
+//   a) The #paypal-button-container DOM element exists before render() is called.
+//   b) window.selectedCourseId and courseApplicantData are always up to date.
+// FIX #7 — window.selectedCourseId is guaranteed to be set by the time the
+//   PayPal buttons are rendered because renderPayPalButtons() is called from
+//   openEnrollModal, which sets the value right before calling this function.
+
+let paypalButtonsRendered = false;
+
+function renderPayPalButtons() {
+  const container = document.getElementById('paypal-button-container');
+  if (!container) return;
+
+  if (!window.paypal) {
+    container.innerHTML = '<p style="color:var(--destructive);font-size:0.875rem;">PayPal failed to load. Please refresh the page.</p>';
+    return;
+  }
+
+  // Clear previous render before re-rendering (PayPal throws if you render twice)
+  container.innerHTML = '';
+  paypalButtonsRendered = false;
+
+  const API_BASE = "https://us-central1-investraders-422ea.cloudfunctions.net";
+
   paypal.Buttons({
-    createOrder: async function(data, actions) {
-      if(!courseApplicantData.email || !window.selectedCourseId) {
-        showToast("Missing course or user data", "error");
-        return;
+    createOrder: async function() {
+      // courseApplicantData is set by handleCourseStep1 before step 2 is shown
+      if (!courseApplicantData.email || !window.selectedCourseId) {
+        showToast("Missing course or applicant data. Please go back and fill in your details.", "error", 5000);
+        return Promise.reject(new Error("Missing data"));
       }
       try {
-        const API_BASE = "https://us-central1-investraders-422ea.cloudfunctions.net"; 
-        
         const res = await fetch(`${API_BASE}/createPayPalOrder`, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ courseId: window.selectedCourseId })
         });
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const orderData = await res.json();
+        if (!orderData.id) throw new Error('No order ID returned from server');
         return orderData.id;
       } catch (err) {
-
         console.error("Order creation failed", err);
-        showToast("Error creating PayPal order", "error");
+        showToast("Error creating PayPal order: " + err.message, "error", 5000);
+        return Promise.reject(err);
       }
     },
-    onApprove: async function(data, actions) {
+
+    onApprove: async function(data) {
       try {
-        const API_BASE = "https://us-central1-investraders-422ea.cloudfunctions.net"; 
-        
+        const user = auth.currentUser;
+        if (!user) {
+          showToast("Please sign in before completing payment.", "error", 4000);
+          return;
+        }
+        const idToken = await user.getIdToken();
+
         const res = await fetch(`${API_BASE}/capturePayPalOrder`, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
           body: JSON.stringify({
             orderID: data.orderID,
-            userEmail: courseApplicantData.email,
             courseApplicantData: courseApplicantData,
             courseId: window.selectedCourseId
           })
         });
-        
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const captureData = await res.json();
-        
+
         if (captureData.success) {
-            // Show step 3 (Success)
-            $('#enrollStep2').style.display = 'none';
-            $('#enrollStep3').style.display = 'block';
-            
-            // Set UI details generated from backend
-            $('#enrollQrImage').src = captureData.qrUrl;
-            $('#enrollAccessCode').textContent = captureData.accessCode;
-            $('#enrollStepLabel').textContent = 'Success!';
-            
-            showToast('🎓 PayPal Payment Successful!', 'success', 5000);
-            courseApplicantData = {};
+          $('#enrollStep2').style.display = 'none';
+          $('#enrollStep3').style.display = 'block';
+          $('#enrollQrImage').src = captureData.qrUrl;
+          $('#enrollAccessCode').textContent = captureData.accessCode;
+          $('#enrollStepLabel').textContent = 'Success!';
+          showToast('🎓 PayPal Payment Successful!', 'success', 5000);
+          courseApplicantData = {};
         } else {
-            showToast('Payment verification failed.', 'error', 4000);
+          showToast('Payment verification failed. Please contact support.', 'error', 5000);
         }
       } catch (err) {
         console.error("Capture failed", err);
-        showToast("Error verifying PayPal capture", "error");
+        showToast("Error verifying PayPal payment: " + err.message, "error", 5000);
       }
+    },
+
+    onError: function(err) {
+      console.error("PayPal error:", err);
+      showToast("PayPal encountered an error. Please try again.", "error", 4000);
+    },
+
+    onCancel: function() {
+      showToast("Payment cancelled.", "info", 3000);
     }
-  }).render('#paypal-button-container');
+  }).render('#paypal-button-container').then(() => {
+    paypalButtonsRendered = true;
+  }).catch(err => {
+    console.error("PayPal render error:", err);
+  });
 }
 
 function generateAccessCode() {
@@ -1135,7 +1219,7 @@ window.populateDashboard = async function() {
     `;
 
     // Fetch My Courses dynamically
-    if (window.fetchMyCourses) window.fetchMyCourses(p.email);
+    if (window.fetchMyCourses) window.fetchMyCourses(p.uid, p.email);
     
     // Fetch Market Courses dynamically
     fetchMarketCourses();
@@ -1302,10 +1386,16 @@ window.handleProfileEdit = async function() {
   }
 };
 
-window.fetchMyCourses = async function(email) {
+window.fetchMyCourses = async function(uid, email) {
   try {
-    const q = query(collection(db, "courseEnrollments"), where("email", "==", email));
-    const snapshot = await getDocs(q);
+    const qByUid = query(collection(db, "courseEnrollments"), where("userId", "==", uid));
+    let snapshot = await getDocs(qByUid);
+
+    // Backward compatibility for old enrollment docs created before userId existed.
+    if (snapshot.empty && email) {
+      const qByEmail = query(collection(db, "courseEnrollments"), where("email", "==", email));
+      snapshot = await getDocs(qByEmail);
+    }
     
     const container = document.getElementById('enrolledCourseContainer');
     if(!container) return;
@@ -1404,18 +1494,28 @@ window.openEnrollModal = function(courseId, title, price) {
     $('#enrollStep2').style.display = 'none';
     $('#enrollStep3').style.display = 'none';
     
+    prefillEnrollmentForm(); // Prefill with user data
     openModal('courseEnrollModal');
+
+    // FIX #6/#7 — Render PayPal buttons fresh after modal opens (container exists,
+    // selectedCourseId is set). Use a small delay to let the modal fully paint.
+    setTimeout(renderPayPalButtons, 150);
 };
 
 // ---- Analytics: Log Visit ----
 window.logStartupVisit = async function(startupId) {
   if (!currentUserProfile || currentUserProfile.role !== 'investor') return;
-  
+
+  // FIX: use auth.currentUser.uid (always defined for authenticated users)
+  // instead of currentUserProfile.uid which was previously never stored.
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+
   try {
-    const visitId = `visit_${Date.now()}_${currentUserProfile.uid}`;
-    // Log in subcollection
-    await setDoc(doc(db, "startups", startupId, "visits", visitId), {
-      visitorUid: currentUserProfile.uid,
+    // Use auto-generated Firestore ID (no collision risk, no unsafe chars from email)
+    const { addDoc: _addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+    await _addDoc(collection(db, "startups", startupId, "visits"), {
+      visitorUid: uid,
       visitorName: `${currentUserProfile.firstName} ${currentUserProfile.lastName}`,
       visitorFund: currentUserProfile.investorFund || 'Angel',
       timestamp: serverTimestamp()
