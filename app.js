@@ -1,29 +1,210 @@
 /* =============================================
    INVESTRADE — JavaScript
-   Powered by Firebase Auth & Firestore
+   Powered by Supabase Auth & Postgres
    ============================================= */
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { supabaseConfig } from "./supabase-config.js";
 
-// FIX #1 — Import config from dedicated module (not import.meta.env which only
-// works inside a Vite build pipeline, not a plain <script type="module">).
-import { firebaseConfig } from "./firebase-config.js";
+const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey);
+const auth = { currentUser: null };
+const db = {};
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+function mapUser(user) {
+  if (!user) return null;
+  return {
+    uid: user.id,
+    email: user.email,
+    ...user
+  };
+}
 
-import { collection, addDoc, getDocs, query, where, limit, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+async function createUserWithEmailAndPassword(_auth, email, password) {
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) throw error;
+  const user = mapUser(data.user);
+  auth.currentUser = user;
+  return { user };
+}
+
+async function signInWithEmailAndPassword(_auth, email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  const user = mapUser(data.user);
+  auth.currentUser = user;
+  return { user };
+}
+
+function onAuthStateChanged(_auth, callback) {
+  supabase.auth.getUser().then(({ data }) => {
+    const mapped = mapUser(data?.user || null);
+    auth.currentUser = mapped;
+    callback(mapped);
+  });
+  const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+    const mapped = mapUser(session?.user || null);
+    auth.currentUser = mapped;
+    callback(mapped);
+  });
+  return () => subscription.subscription.unsubscribe();
+}
+
+async function signOut() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+  auth.currentUser = null;
+}
+
+async function getAccessToken() {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  return data?.session?.access_token || null;
+}
+
+function doc(_db, ...segments) {
+  return { segments };
+}
+
+function collection(_db, ...segments) {
+  return { segments };
+}
+
+function where(field, op, value) {
+  return { type: "where", field, op, value };
+}
+
+function limit(value) {
+  return { type: "limit", value };
+}
+
+function query(collectionRef, ...constraints) {
+  return { collectionRef, constraints };
+}
+
+function increment(value) {
+  return { __increment: value };
+}
+
+function serverTimestamp() {
+  return new Date().toISOString();
+}
+
+function camelToSnakeKey(key) {
+  return key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
+}
+
+function snakeToCamelKey(key) {
+  return key.replace(/_([a-z])/g, (_m, c) => c.toUpperCase());
+}
+
+function camelToSnakeObject(input) {
+  if (Array.isArray(input)) return input.map(camelToSnakeObject);
+  if (input && typeof input === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(input)) out[camelToSnakeKey(k)] = camelToSnakeObject(v);
+    return out;
+  }
+  return input;
+}
+
+function snakeToCamelObject(input) {
+  if (Array.isArray(input)) return input.map(snakeToCamelObject);
+  if (input && typeof input === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(input)) out[snakeToCamelKey(k)] = snakeToCamelObject(v);
+    return out;
+  }
+  return input;
+}
+
+function mapTableFromSegments(segments) {
+  const tableMap = {
+    users: "users",
+    startups: "startups",
+    courses: "courses",
+    courseEnrollments: "course_enrollments",
+    stripeCheckoutSessions: "checkout_sessions"
+  };
+  const root = tableMap[segments[0]] || segments[0];
+  if (segments.length === 1) return { table: root, id: null };
+  if (segments.length === 2) return { table: root, id: segments[1] };
+  if (segments.length === 3 && segments[2] === "visits") return { table: "startup_visits", id: null, startupId: segments[1] };
+  if (segments.length === 4 && segments[2] === "visits") return { table: "startup_visits", id: segments[3], startupId: segments[1] };
+  return { table: root, id: segments[1] || null };
+}
+
+async function setDoc(docRef, payload) {
+  const { table, id, startupId } = mapTableFromSegments(docRef.segments);
+  const row = camelToSnakeObject(payload);
+  if (startupId) row.startup_id = startupId;
+  if (id) row.id = id;
+  const { error } = await supabase.from(table).upsert(row);
+  if (error) throw error;
+}
+
+async function updateDoc(docRef, payload) {
+  const { table, id } = mapTableFromSegments(docRef.segments);
+  if (!id) throw new Error("Missing row ID for update");
+  const updatePayload = {};
+  for (const [key, value] of Object.entries(payload)) {
+    const dbKey = camelToSnakeKey(key);
+    if (value && typeof value === "object" && "__increment" in value) {
+      const { data: existing, error: fetchErr } = await supabase.from(table).select(dbKey).eq("id", id).single();
+      if (fetchErr) throw fetchErr;
+      updatePayload[dbKey] = (Number(existing?.[dbKey] || 0) + value.__increment);
+    } else {
+      updatePayload[dbKey] = camelToSnakeObject(value);
+    }
+  }
+  const { error } = await supabase.from(table).update(updatePayload).eq("id", id);
+  if (error) throw error;
+}
+
+async function getDoc(docRef) {
+  const { table, id } = mapTableFromSegments(docRef.segments);
+  const { data, error } = await supabase.from(table).select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return {
+    exists: () => !!data,
+    data: () => snakeToCamelObject(data)
+  };
+}
+
+async function addDoc(collectionRef, payload) {
+  const { table, startupId } = mapTableFromSegments(collectionRef.segments);
+  const row = camelToSnakeObject(payload);
+  if (startupId) row.startup_id = startupId;
+  const { data, error } = await supabase.from(table).insert(row).select("id").single();
+  if (error) throw error;
+  return { id: data.id };
+}
+
+async function getDocs(refOrQuery) {
+  const queryRef = refOrQuery.collectionRef ? refOrQuery : { collectionRef: refOrQuery, constraints: [] };
+  const { table, startupId } = mapTableFromSegments(queryRef.collectionRef.segments);
+  let builder = supabase.from(table).select("*");
+  if (startupId) builder = builder.eq("startup_id", startupId);
+  for (const constraint of queryRef.constraints) {
+    if (constraint.type === "where") {
+      if (constraint.op === "==") builder = builder.eq(camelToSnakeKey(constraint.field), camelToSnakeObject(constraint.value));
+    }
+    if (constraint.type === "limit") builder = builder.limit(constraint.value);
+  }
+  const { data, error } = await builder;
+  if (error) throw error;
+  const rows = data || [];
+  return {
+    empty: rows.length === 0,
+    forEach: (cb) => rows.forEach((row) => {
+      const mapped = snakeToCamelObject(row);
+      cb({ id: mapped.id, data: () => mapped });
+    })
+  };
+}
 
 // ---- Database Initialization ----
 async function initializeDatabase() {
-  // NOTE: courses and startups are no longer seeded from the client.
-  // Security rules block client-side writes to those collections.
-  // Seed data once manually in the Firebase Console (see setup notes below).
-  console.log("%c✅ Firebase ready.", "color:#10b981;font-weight:bold;");
+  console.log("%c✅ Supabase ready.", "color:#10b981;font-weight:bold;");
 }
 
 // ---- Utility ----
@@ -176,7 +357,7 @@ function updatePrices() {
   });
 }
 
-// ---- Auth session management (Firebase) ----
+// ---- Auth session management (Supabase) ----
 let currentUserProfile = null;
 let selectedRole = 'founder';
 let regCurrentStep = 1;
@@ -498,7 +679,7 @@ $$('a[href="#login"]').forEach(btn => {
 window.handleLogin = async function(e) {
   e.preventDefault();
   if (!auth) {
-    showToast('Firebase is not configured. Please add your credentials in app.js.', 'error', 4000);
+    showToast('Supabase is not configured. Please update supabase-config.js.', 'error', 4000);
     return;
   }
 
@@ -521,7 +702,7 @@ window.handleLogin = async function(e) {
     e.target.reset();
   } catch (error) {
     console.error("Login Error:", error);
-    showToast(error.message.replace('Firebase: ', ''), 'error', 4000);
+    showToast(error.message, 'error', 4000);
   } finally {
     const submitBtn = e.target.querySelector('button[type="submit"]');
     submitBtn.textContent = 'Sign In';
@@ -533,7 +714,7 @@ window.handleLogin = async function(e) {
 window.handleRegister = async function(e) {
   e.preventDefault();
   if (!auth) {
-    showToast('Firebase is not configured. Please add your credentials in app.js.', 'error', 4000);
+    showToast('Supabase is not configured. Please update supabase-config.js.', 'error', 4000);
     return;
   }
 
@@ -552,7 +733,7 @@ window.handleRegister = async function(e) {
     return;
   }
 
-  // ── Collect role-specific data (validation only, no Firestore writes yet) ──
+  // ── Collect role-specific data (validation only, no database writes yet) ──
   // FIX #3 — Startup document is now written AFTER user creation so ownerUid
   // is always set from the start. No more orphan documents if auth fails.
   let startupPayload = null;
@@ -642,7 +823,7 @@ window.handleRegister = async function(e) {
 
   } catch (error) {
     console.error("Register Error:", error);
-    showToast(error.message.replace('Firebase: ', ''), 'error', 5000);
+    showToast(error.message, 'error', 5000);
   } finally {
     const submitBtn = e.target.querySelector('button[type="submit"]');
     submitBtn.textContent = 'Create Account';
@@ -727,7 +908,7 @@ const heroStats = $('.hero-stats');
 if (heroStats) heroStatsObserver.observe(heroStats);
 
 console.log('%cInvestrade Platform', 'font-size:20px;font-weight:900;color:#3730f5');
-console.log('%cBuilt with ❤️ — Firebase SDK Integration.', 'color:#6b7280');
+console.log('%cBuilt with ❤️ — Supabase Integration.', 'color:#6b7280');
 
 // ---- Course Enrollment Modal ----
 
@@ -811,7 +992,7 @@ window.selectPayMethod = function(method) {
 // NOTE: Card payments are not yet integrated with a real processor.
 // This button is intentionally disabled: it shows a clear message instead
 // of granting access without verified payment (security fix).
-// Real enrollment only happens after PayPal capture via the Cloud Function.
+// Real enrollment only happens after verified payment capture in backend.
 window.handleCourseSubmit = function() {
   launchStripeCheckout();
 };
@@ -829,13 +1010,14 @@ async function launchStripeCheckout() {
       return;
     }
 
-    const API_BASE = "https://us-central1-investraders-422ea.cloudfunctions.net";
-    const idToken = await user.getIdToken();
+    const API_BASE = supabaseConfig.functionsBaseUrl;
+    const idToken = await getAccessToken();
 
     const res = await fetch(`${API_BASE}/createStripeCheckoutSession`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "apikey": supabaseConfig.anonKey,
         "Authorization": `Bearer ${idToken}`
       },
       body: JSON.stringify({
@@ -868,12 +1050,13 @@ async function handleStripeReturn() {
       return;
     }
 
-    const API_BASE = "https://us-central1-investraders-422ea.cloudfunctions.net";
-    const idToken = await user.getIdToken();
+    const API_BASE = supabaseConfig.functionsBaseUrl;
+    const idToken = await getAccessToken();
     const res = await fetch(`${API_BASE}/verifyStripeCheckoutSession`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "apikey": supabaseConfig.anonKey,
         "Authorization": `Bearer ${idToken}`
       },
       body: JSON.stringify({ sessionId })
@@ -927,7 +1110,7 @@ function renderPayPalButtons() {
   container.innerHTML = '';
   paypalButtonsRendered = false;
 
-  const API_BASE = "https://us-central1-investraders-422ea.cloudfunctions.net";
+  const API_BASE = supabaseConfig.functionsBaseUrl;
 
   paypal.Buttons({
     createOrder: async function() {
@@ -937,9 +1120,14 @@ function renderPayPalButtons() {
         return Promise.reject(new Error("Missing data"));
       }
       try {
+        const token = await getAccessToken();
         const res = await fetch(`${API_BASE}/createPayPalOrder`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseConfig.anonKey,
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
           body: JSON.stringify({ courseId: window.selectedCourseId })
         });
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
@@ -960,12 +1148,13 @@ function renderPayPalButtons() {
           showToast("Please sign in before completing payment.", "error", 4000);
           return;
         }
-        const idToken = await user.getIdToken();
+        const idToken = await getAccessToken();
 
         const res = await fetch(`${API_BASE}/capturePayPalOrder`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'apikey': supabaseConfig.anonKey,
             'Authorization': `Bearer ${idToken}`
           },
           body: JSON.stringify({
@@ -1358,7 +1547,7 @@ window.handleProfileEdit = async function() {
     const user = auth.currentUser;
     let authUpdated = false;
 
-    // Trigger Firebase verifyBeforeUpdateEmail if email is changing
+    // Trigger email verification flow if email is changing
     if (newEmail && newEmail !== currentUserProfile.email) {
        // Requires importing verifyBeforeUpdateEmail, assumed to be attached or mock it for now since we just use basic auth 
        if(window.verifyBeforeUpdateEmail) {
@@ -1370,7 +1559,7 @@ window.handleProfileEdit = async function() {
        authUpdated = true;
     }
     
-    // Update Firestore Profile
+    // Update profile
     await updateDoc(doc(db, "users", user.uid), {
       firstName: newFirst,
       lastName: newLast
@@ -1512,9 +1701,8 @@ window.logStartupVisit = async function(startupId) {
   if (!uid) return;
 
   try {
-    // Use auto-generated Firestore ID (no collision risk, no unsafe chars from email)
-    const { addDoc: _addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
-    await _addDoc(collection(db, "startups", startupId, "visits"), {
+    // Use auto-generated DB ID
+    await addDoc(collection(db, "startups", startupId, "visits"), {
       visitorUid: uid,
       visitorName: `${currentUserProfile.firstName} ${currentUserProfile.lastName}`,
       visitorFund: currentUserProfile.investorFund || 'Angel',

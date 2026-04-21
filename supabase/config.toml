@@ -1,0 +1,25 @@
+project_id = "YOUR_PROJECT_REF"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[functions.createStripeCheckoutSession]
+verify_jwt = true
+
+[functions.verifyStripeCheckoutSession]
+verify_jwt = true
+
+[functions.createPayPalOrder]
+verify_jwt = false
+
+[functions.capturePayPalOrder]
+verify_jwt = true

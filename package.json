@@ -1,7 +1,7 @@
 {
   "name": "investraders-clone",
   "version": "1.0.0",
-  "description": "Investrade Static Clone with Firebase",
+  "description": "Investrade platform powered by Supabase",
   "main": "app.js",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,6 @@
     "vite": "^8.0.9"
   },
   "dependencies": {
-    "firebase-functions": "^4.9.0"
+    "supabase": "^2.93.0"
   }
 }
