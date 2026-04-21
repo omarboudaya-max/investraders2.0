@@ -10,6 +10,11 @@ create table if not exists public.users (
   investor_focus text,
   investor_ticket_size text,
   investor_preferred_stage text,
+  subscription_tier text,
+  subscription_status text,
+  subscription_period text,
+  stripe_customer_id text,
+  stripe_subscription_id text,
   joined_at timestamptz default now()
 );
 

@@ -369,6 +369,7 @@ let regCurrentStep = 1;
 function updateNavForUser() {
   const loginBtn = $('#loginBtn');
   const getStartedBtn = $('#getStartedBtn');
+  const manageSubBtn = $('#manageSubBtn');
   
   if (currentUserProfile) {
     loginBtn.textContent = `Hello, ${currentUserProfile.firstName}`;
@@ -376,12 +377,18 @@ function updateNavForUser() {
     loginBtn.style.fontWeight = '600';
     getStartedBtn.textContent = 'Dashboard';
     getStartedBtn.href = 'javascript:void(0)';
+
+    // Show manage subscription button if they have a stripe customer ID
+    if (manageSubBtn) {
+      manageSubBtn.style.display = currentUserProfile.stripe_customer_id ? 'inline-block' : 'none';
+    }
   } else {
     loginBtn.textContent = 'Sign In';
     loginBtn.href = '#login';
     loginBtn.style.fontWeight = '500';
     getStartedBtn.textContent = 'Get Started';
     getStartedBtn.href = '#register';
+    if (manageSubBtn) manageSubBtn.style.display = 'none';
   }
 }
 
@@ -1075,14 +1082,88 @@ async function handleStripeReturn() {
 
     params.delete("stripe");
     params.delete("session_id");
-    const cleanQuery = params.toString();
-    const cleanUrl = `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ""}${window.location.hash}`;
     window.history.replaceState({}, "", cleanUrl);
+
+    // FIX: Handle subscription success specifically
+    const checkoutState = params.get("checkout");
+    if (checkoutState === "success") {
+      showToast("🚀 Subscription activated! Welcome to your new plan.", "success", 6000);
+      params.delete("checkout");
+    }
   } catch (err) {
     console.error("Stripe return handling error:", err);
     showToast("Error finalizing Stripe payment: " + err.message, "error", 5000);
   }
 }
+
+// ---- Subscription Logic ----
+window.handlePlanSelection = async function(planId) {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      showToast("Please sign in or create an account to subscribe.", "info", 4000);
+      window.location.hash = "#register";
+      return;
+    }
+
+    const API_BASE = supabaseConfig.functionsBaseUrl;
+    const idToken = await getAccessToken();
+    
+    showToast("Opening secure checkout...", "info", 2000);
+
+    const res = await fetch(`${API_BASE}/createStripeSubscription`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": supabaseConfig.anonKey,
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({ 
+        planId, 
+        isAnnual: typeof isAnnual !== "undefined" ? isAnnual : false 
+      })
+    });
+
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const data = await res.json();
+    if (!data.url) throw new Error("No Stripe checkout URL returned");
+
+    window.location.href = data.url;
+  } catch (err) {
+    console.error("Plan selection error:", err);
+    showToast("Error starting subscription: " + err.message, "error", 5000);
+  }
+};
+
+window.openCustomerPortal = async function() {
+  try {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const API_BASE = supabaseConfig.functionsBaseUrl;
+    const idToken = await getAccessToken();
+
+    const res = await fetch(`${API_BASE}/createCustomerPortalSession`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": supabaseConfig.anonKey,
+        "Authorization": `Bearer ${idToken}`
+      }
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || "Portal error");
+    }
+    
+    const data = await res.json();
+    window.location.href = data.url;
+  } catch (err) {
+    console.error("Portal error:", err);
+    showToast("Error opening billing portal: " + err.message, "error", 5000);
+  }
+};
 
 // ---- PayPal SDK Integration ----
 // FIX #6 — PayPal buttons are now rendered on demand inside openEnrollModal,
