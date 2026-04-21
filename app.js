@@ -130,6 +130,8 @@ function mapTableFromSegments(segments) {
     stripeCheckoutSessions: "checkout_sessions"
   };
   const root = tableMap[segments[0]] || segments[0];
+  if (!segments[0]) return { table: "unknown", id: null };
+  
   if (segments.length === 1) return { table: root, id: null };
   if (segments.length === 2) return { table: root, id: segments[1] };
   if (segments.length === 3 && segments[2] === "visits") return { table: "startup_visits", id: null, startupId: segments[1] };
@@ -1045,7 +1047,7 @@ async function launchStripeCheckout() {
 async function handleStripeReturn() {
   try {
     const params = new URLSearchParams(window.location.search);
-    const stripeState = params.get("stripe");
+    const stripeState = params.get("stripe") || params.get("checkout");
     const sessionId = params.get("session_id");
     if (stripeState !== "success" || !sessionId) return;
 
@@ -1078,18 +1080,19 @@ async function handleStripeReturn() {
     $('#enrollAccessCode').textContent = verifyData.accessCode;
     $('#enrollStepLabel').textContent = 'Success!';
     openModal('courseEnrollModal');
-    showToast('🎓 Stripe Payment Successful!', 'success', 5000);
+    // Show notification
+    if (params.get("checkout") === "success") {
+      showToast("🚀 Subscription activated! Welcome to your new plan.", "success", 6000);
+    } else {
+      showToast('🎓 Enrollment Successful!', 'success', 5000);
+    }
 
     params.delete("stripe");
+    params.delete("checkout");
     params.delete("session_id");
+    const cleanQuery = params.toString();
+    const cleanUrl = `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ""}${window.location.hash}`;
     window.history.replaceState({}, "", cleanUrl);
-
-    // FIX: Handle subscription success specifically
-    const checkoutState = params.get("checkout");
-    if (checkoutState === "success") {
-      showToast("🚀 Subscription activated! Welcome to your new plan.", "success", 6000);
-      params.delete("checkout");
-    }
   } catch (err) {
     console.error("Stripe return handling error:", err);
     showToast("Error finalizing Stripe payment: " + err.message, "error", 5000);

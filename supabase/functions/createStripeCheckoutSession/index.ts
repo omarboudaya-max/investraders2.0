@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { corsPreflight, json } from "../_shared/utils.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-  apiVersion: "2025-03-31.basil"
+  apiVersion: "2025-01-27.acac"
 });
 
 Deno.serve(async (req: Request) => {
