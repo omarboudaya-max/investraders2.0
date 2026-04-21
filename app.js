@@ -23,6 +23,30 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+import { collection, addDoc, getDocs, query, where, limit, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+// ---- Database Initialization ----
+async function initializeDatabase() {
+  try {
+    const q = query(collection(db, "courses"), limit(1));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      console.log("Initializing default course...");
+      await setDoc(doc(db, "courses", "ai-masterclass"), {
+        title: "How to Build Your Startup Using AI",
+        description: "A comprehensive masterclass on implementing AI in your startup workflow, pitching, and scaling.",
+        price: 300,
+        nextSession: "2026-08-15",
+        slug: "ai-startup-masterclass",
+        isActive: true
+      });
+    }
+  } catch (err) {
+    console.warn("Init DB check failed (likely permissions):", err);
+  }
+}
+initializeDatabase();
+
 // ---- Utility ----
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -504,7 +528,7 @@ window.handleRegister = async function(e) {
     return;
   }
 
-  let extraData = {};
+  let startupId = null;
   if (selectedRole === 'founder') {
     const startupName = $('#startupName').value.trim();
     const startupField = $('#startupField').value.trim();
@@ -520,12 +544,27 @@ window.handleRegister = async function(e) {
       return;
     }
     
-    extraData = {
-      startupName, startupField, startupStage, startupEmployees, startupCapital, startupYear, startupWebsite, startupDescription
-    };
+    startupId = `startup_${Date.now()}`;
+    extraData = { startupId };
+    
+    // Create separate startup document
+    await setDoc(doc(db, "startups", startupId), {
+      id: startupId,
+      name: startupName,
+      field: startupField,
+      stage: startupStage,
+      employees: startupEmployees,
+      capital: startupCapital,
+      year: startupYear,
+      website: startupWebsite,
+      description: startupDescription,
+      ownerUid: null, // set after user creation
+      investorVisits: 0,
+      createdAt: serverTimestamp()
+    });
+
   } else if (selectedRole === 'investor') {
-    const defaultFund = $('#company') ? $('#company').value.trim() : ''; // fallback if exists
-    const investorFund = $('#investorFund').value.trim() || defaultFund;
+    const investorFund = $('#investorFund').value.trim();
     const investorFocus = $('#investorFocus').value.trim();
     const investorTicketSize = $('#investorTicketSize').value;
     const investorPreferredStage = $('#investorPreferredStage').value;
@@ -548,6 +587,11 @@ window.handleRegister = async function(e) {
     // Create user in Firebase Auth
     const userCred = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCred.user;
+
+    // Link startup to owner
+    if (startupId) {
+      await updateDoc(doc(db, "startups", startupId), { ownerUid: user.uid });
+    }
 
     // Save profile in Firestore
     await setDoc(doc(db, "users", user.uid), {
@@ -760,26 +804,29 @@ window.handleCourseSubmit = async function() {
 if (window.paypal) {
   paypal.Buttons({
     createOrder: async function(data, actions) {
-      if(!courseApplicantData.email) return;
+      if(!courseApplicantData.email || !window.selectedCourseId) {
+        showToast("Missing course or user data", "error");
+        return;
+      }
       try {
-        // Pointing to your deployed cloud function (or emulator if running locally)
-        // You'll need to update this URL to your real Firebase project URL later:
-        const API_BASE = "http://127.0.0.1:5001/YOUR_PROJECT_ID/us-central1"; 
+        const API_BASE = "https://us-central1-investraders-422ea.cloudfunctions.net"; 
         
         const res = await fetch(`${API_BASE}/createPayPalOrder`, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'}
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ courseId: window.selectedCourseId })
         });
         const orderData = await res.json();
         return orderData.id;
       } catch (err) {
+
         console.error("Order creation failed", err);
         showToast("Error creating PayPal order", "error");
       }
     },
     onApprove: async function(data, actions) {
       try {
-        const API_BASE = "http://127.0.0.1:5001/YOUR_PROJECT_ID/us-central1"; 
+        const API_BASE = "https://us-central1-investraders-422ea.cloudfunctions.net"; 
         
         const res = await fetch(`${API_BASE}/capturePayPalOrder`, {
           method: 'POST',
@@ -787,7 +834,8 @@ if (window.paypal) {
           body: JSON.stringify({
             orderID: data.orderID,
             userEmail: courseApplicantData.email,
-            courseApplicantData: courseApplicantData
+            courseApplicantData: courseApplicantData,
+            courseId: window.selectedCourseId
           })
         });
         
@@ -866,7 +914,7 @@ window.handleSignOut = function() {
   }
 };
 
-window.populateDashboard = function() {
+window.populateDashboard = async function() {
   const p = currentUserProfile;
   if (!p) return;
 
@@ -881,7 +929,16 @@ window.populateDashboard = function() {
 
   const sidebar = $('#dashSidebar');
   const main = $('#dashMain');
-  
+
+  // Fetch Startup Data if Founder
+  let s = p; // default to legacy (info in user doc)
+  if (p.role === 'founder' && p.startupId) {
+    try {
+      const sSnap = await getDoc(doc(db, "startups", p.startupId));
+      if (sSnap.exists()) s = sSnap.data();
+    } catch (err) { console.error("Error fetching startup:", err); }
+  }
+
   if (p.role === 'founder') {
     // FOUNDER SIDEBAR
     sidebar.innerHTML = `
@@ -930,7 +987,7 @@ window.populateDashboard = function() {
           </div>
           <div class="dash-stat-card">
             <div class="dash-stat-label">Investor Visits</div>
-            <div class="dash-stat-value">${p.investorVisits || 0}</div>
+            <div class="dash-stat-value">${s.investorVisits || 0}</div>
             <div class="dash-stat-sub">Total views from verified funds</div>
           </div>
         </div>
@@ -942,10 +999,10 @@ window.populateDashboard = function() {
               <span class="dash-panel-badge">Active</span>
             </div>
             <div class="dash-info-list">
-              <div class="dash-info-row"><div class="dash-info-icon">🏢</div><div class="dash-info-content"><span class="dash-info-key">Name</span><span class="dash-info-val">${p.startupName}</span></div></div>
-              <div class="dash-info-row"><div class="dash-info-icon">🌐</div><div class="dash-info-content"><span class="dash-info-key">Field</span><span class="dash-info-val">${p.startupField}</span></div></div>
-              <div class="dash-info-row"><div class="dash-info-icon">📉</div><div class="dash-info-content"><span class="dash-info-key">Stage</span><span class="dash-info-val">${p.startupStage}</span></div></div>
-              <div class="dash-info-row"><div class="dash-info-icon">👥</div><div class="dash-info-content"><span class="dash-info-key">Employees</span><span class="dash-info-val">${p.startupEmployees}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">🏢</div><div class="dash-info-content"><span class="dash-info-key">Name</span><span class="dash-info-val">${s.startupName || s.name}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">🌐</div><div class="dash-info-content"><span class="dash-info-key">Field</span><span class="dash-info-val">${s.startupField || s.field}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">📉</div><div class="dash-info-content"><span class="dash-info-key">Stage</span><span class="dash-info-val">${s.startupStage || s.stage}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">👥</div><div class="dash-info-content"><span class="dash-info-key">Employees</span><span class="dash-info-val">${s.startupEmployees || s.employees}</span></div></div>
             </div>
           </div>
           
@@ -954,9 +1011,9 @@ window.populateDashboard = function() {
               <span class="dash-panel-title">Funding & Details</span>
             </div>
             <div class="dash-info-list">
-              <div class="dash-info-row"><div class="dash-info-icon">💰</div><div class="dash-info-content"><span class="dash-info-key">Capital Needs</span><span class="dash-info-val">${p.startupCapital || '-'}</span></div></div>
-              <div class="dash-info-row"><div class="dash-info-icon">🔗</div><div class="dash-info-content"><span class="dash-info-key">Website</span><span class="dash-info-val">${p.startupWebsite || '-'}</span></div></div>
-              <div class="dash-info-row"><div class="dash-info-icon">📝</div><div class="dash-info-content"><span class="dash-info-key">Pitch / Description</span><span class="dash-info-val" style="white-space: normal; line-height: 1.4;">${p.startupDescription || '-'}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">💰</div><div class="dash-info-content"><span class="dash-info-key">Capital Needs</span><span class="dash-info-val">${s.startupCapital || s.capital || '-'}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">🔗</div><div class="dash-info-content"><span class="dash-info-key">Website</span><span class="dash-info-val">${s.startupWebsite || s.website || '-'}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-icon">📝</div><div class="dash-info-content"><span class="dash-info-key">Pitch / Description</span><span class="dash-info-val" style="white-space: normal; line-height: 1.4;">${s.startupDescription || s.description || '-'}</span></div></div>
             </div>
           </div>
         </div>
@@ -990,15 +1047,12 @@ window.populateDashboard = function() {
       <!-- COURSES MARKETPLACE -->
       <div id="dashMarketCourses" style="display:none;">
         <div class="dash-welcome"><div class="dash-welcome-text"><h1>Course Marketplace</h1><p>Discover courses to elevate your startup.</p></div></div>
-        <div class="dash-panel" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;padding:2rem;">
-          <div>
-            <h3 style="font-size:1.1rem;font-weight:700;">How to Build Your Startup Using AI</h3>
-            <p style="color:var(--muted-fg);font-size:0.875rem;margin-top:0.5rem;max-width:500px;">A comprehensive live masterclass on implementing AI into your workflows, pitching to AI-focused investors, and driving massive growth with limited resources.</p>
-            <p style="font-weight:600;margin-top:1rem;color:var(--primary);">$300 — Next Live Session: 15 Aug 2026</p>
-          </div>
-          <button onclick="window.openModal('courseEnrollModal')" class="btn btn-primary">Apply Now</button>
+        <div id="courseMarketList">
+          <!-- Dynamically populated -->
+          <div class="loader" style="margin: 2rem auto; border-color:var(--primary); border-top-color:transparent;"></div>
         </div>
       </div>
+
 
       <!-- MY COURSE -->
       <div id="dashMyCourse" style="display:none;">
@@ -1021,6 +1075,9 @@ window.populateDashboard = function() {
 
     // Fetch My Courses dynamically
     if (window.fetchMyCourses) window.fetchMyCourses(p.email);
+    
+    // Fetch Market Courses dynamically
+    fetchMarketCourses();
 
   } else {
     // INVESTOR SIDEBAR
@@ -1134,8 +1191,12 @@ window.populateDashboard = function() {
         </div>
       </div>
     `;
+
+    // Fetch Startup Directory content
+    fetchStartupDirectory();
   }
 }
+
 
 // ----------------------------------------------------------------------
 // NEW DASHBOARD UTILITY FUNCTIONS
@@ -1231,3 +1292,123 @@ window.fetchMyCourses = async function(email) {
     document.getElementById('enrolledCourseContainer').innerHTML = "<p>Error loading courses.</p>";
   }
 };
+
+// ---- Dynamic Course Marketplace ----
+async function fetchMarketCourses() {
+  const container = $('#courseMarketList');
+  if (!container) return;
+
+  try {
+    const q = query(collection(db, "courses"), where("isActive", "==", true));
+    const snap = await getDocs(q);
+    
+    if (snap.empty) {
+      container.innerHTML = '<p style="text-align:center;padding:2rem;">No courses available at the moment.</p>';
+      return;
+    }
+
+    let html = '';
+    snap.forEach(docSnap => {
+      const c = docSnap.data();
+      const courseId = docSnap.id;
+      html += `
+        <div class="dash-panel" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;padding:2rem;margin-bottom:1rem;">
+          <div>
+            <h3 style="font-size:1.1rem;font-weight:700;">${c.title}</h3>
+            <p style="color:var(--muted-fg);font-size:0.875rem;margin-top:0.5rem;max-width:500px;">${c.description}</p>
+            <p style="font-weight:600;margin-top:1rem;color:var(--primary);">$${c.price} — Next Live Session: ${c.nextSession}</p>
+          </div>
+          <button onclick="openEnrollModal('${courseId}', '${c.title}', ${c.price})" class="btn btn-primary">Apply Now</button>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  } catch (err) {
+    console.error("Error fetching market courses:", err);
+    container.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--destructive);">Error loading courses.</p>';
+  }
+}
+
+window.openEnrollModal = function(courseId, title, price) {
+    window.selectedCourseId = courseId;
+    window.selectedCourseTitle = title;
+    window.selectedCoursePrice = price;
+    
+    // Update labels in enrollment modal
+    $('#enrollStepLabel').textContent = 'Personal Info';
+    $('#courseEnrollModal .modal-title').textContent = title;
+    
+    // Reset steps
+    $('#enrollStep1').style.display = 'block';
+    $('#enrollStep2').style.display = 'none';
+    $('#enrollStep3').style.display = 'none';
+    
+    openModal('courseEnrollModal');
+};
+
+// ---- Analytics: Log Visit ----
+window.logStartupVisit = async function(startupId) {
+  if (!currentUserProfile || currentUserProfile.role !== 'investor') return;
+  
+  try {
+    const visitId = `visit_${Date.now()}_${currentUserProfile.uid}`;
+    // Log in subcollection
+    await setDoc(doc(db, "startups", startupId, "visits", visitId), {
+      visitorUid: currentUserProfile.uid,
+      visitorName: `${currentUserProfile.firstName} ${currentUserProfile.lastName}`,
+      visitorFund: currentUserProfile.investorFund || 'Angel',
+      timestamp: serverTimestamp()
+    });
+    // Increment total visit count
+    await updateDoc(doc(db, "startups", startupId), {
+      investorVisits: increment(1)
+    });
+  } catch (err) {
+    console.warn("Analytics error:", err);
+  }
+};
+
+// ---- Investor: Startup Directory ----
+async function fetchStartupDirectory() {
+  const container = $('#dashDirectory'); // We need to make sure this div exists or create it
+  if (!container) return;
+
+  try {
+    const q = query(collection(db, "startups"), limit(20));
+    const snap = await getDocs(q);
+    
+    let html = `
+      <div class="dash-welcome"><div class="dash-welcome-text"><h1>Startup Directory</h1><p>Explore verified startups looking for funding.</p></div></div>
+      <div class="directory-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+    `;
+
+    if (snap.empty) {
+      html += '<p style="grid-column: 1/-1; text-align:center; padding:3rem;">No startups found yet.</p>';
+    } else {
+      snap.forEach(docSnap => {
+        const s = docSnap.data();
+        html += `
+          <div class="dash-panel" style="display:flex; flex-direction:column; gap:1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="dash-panel-badge">${s.stage}</span>
+              <span style="font-size:0.75rem; color:var(--muted-fg);">Visits: ${s.investorVisits || 0}</span>
+            </div>
+            <h3 style="font-weight:700;">${s.name}</h3>
+            <p style="font-size:0.85rem; color:var(--muted-fg); line-height:1.4; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${s.description}</p>
+            <div style="margin-top:auto; padding-top:1rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.8rem; font-weight:600; color:var(--primary);">${s.field}</span>
+              <button onclick="logStartupVisit('${docSnap.id}'); showToast('Viewing ${s.name}...')" class="btn btn-outline btn-sm">View Profile</button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+  } catch (err) {
+    console.error("Error fetching startups:", err);
+  }
+}
+
+

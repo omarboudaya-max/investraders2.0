@@ -9,8 +9,8 @@ const db = admin.firestore();
 // -------------------------------------------------------------
 // IMPORTANT: Replace with real credentials before production
 // -------------------------------------------------------------
-const clientId = "PLACEHOLDER_CLIENT_ID";
-const clientSecret = "PLACEHOLDER_SECRET";
+const clientId = "AcAt1OXiTscIzvWi4FvjHW895ThsSSOysjWVxcGPddqrMoWNZ-s1mwHMwvVQX78qevu4fl748ZIYfgY8";
+const clientSecret = "EJqThG8b88agDLkQVh_kphSB9dx2xkZ4xXjK-lSPD1vX1o3u30p_GyVKnFosZ7X_nzLHHf0z99Earwf9";
 
 const environment = new checkoutNodeJssdk.core.SandboxEnvironment(clientId, clientSecret);
 const client = new checkoutNodeJssdk.core.PayPalHttpClient(environment);
@@ -27,6 +27,13 @@ exports.createPayPalOrder = functions.https.onRequest((req, res) => {
         }
 
         try {
+            const { courseId } = req.body;
+            if (!courseId) throw new Error("Missing courseId");
+
+            const courseSnap = await db.collection("courses").doc(courseId).get();
+            if (!courseSnap.exists) throw new Error("Course not found");
+            const courseData = courseSnap.data();
+
             const request = new checkoutNodeJssdk.orders.OrdersCreateRequest();
             request.prefer("return=representation");
             request.requestBody({
@@ -35,9 +42,9 @@ exports.createPayPalOrder = functions.https.onRequest((req, res) => {
                     {
                         amount: {
                             currency_code: "USD",
-                            value: "300.00",
+                            value: courseData.price.toFixed(2),
                         },
-                        description: "AI Startup Masterclass"
+                        description: courseData.title
                     },
                 ],
             });
@@ -63,8 +70,13 @@ exports.capturePayPalOrder = functions.https.onRequest((req, res) => {
         }
 
         try {
-            const { orderID, userEmail, courseApplicantData } = req.body;
-            
+            const { orderID, userEmail, courseApplicantData, courseId } = req.body;
+            if (!courseId) throw new Error("Missing courseId");
+
+            const courseSnap = await db.collection("courses").doc(courseId).get();
+            if (!courseSnap.exists) throw new Error("Course not found");
+            const courseData = courseSnap.data();
+
             const request = new checkoutNodeJssdk.orders.OrdersCaptureRequest(orderID);
             request.requestBody({});
             
@@ -92,14 +104,15 @@ exports.capturePayPalOrder = functions.https.onRequest((req, res) => {
                 await db.collection("courseEnrollments").doc(docId).set({
                     ...courseApplicantData,
                     enrolledAt: new Date().toISOString(),
-                    course: 'How to Build Your Startup Using AI',
-                    price: 300,
+                    course: courseData.title,
+                    courseId: courseId,
+                    price: courseData.price,
                     paymentStatus: 'paid',
                     paymentProvider: 'paypal',
                     paypalOrderId: orderID,
                     accessCode: accessCode,
                     qrUrl: qrUrl,
-                    sessionDate: '2026-08-15'
+                    sessionDate: courseData.nextSession
                 });
 
                 return res.status(200).json({ success: true, accessCode, qrUrl });
