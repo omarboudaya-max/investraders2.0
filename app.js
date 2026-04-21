@@ -19,8 +19,12 @@ function mapUser(user) {
   };
 }
 
-async function createUserWithEmailAndPassword(_auth, email, password) {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+async function createUserWithEmailAndPassword(_auth, email, password, metadata = {}) {
+  const { data, error } = await supabase.auth.signUp({ 
+    email, 
+    password,
+    options: { data: metadata }
+  });
   if (error) throw error;
   const user = mapUser(data.user);
   auth.currentUser = user;
@@ -785,31 +789,25 @@ window.handleRegister = async function(e) {
     submitBtn.textContent = 'Creating account...';
     submitBtn.disabled = true;
 
-    // ── Step 1: Create the authenticated user first ──
-    const userCred = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCred.user;
-
-    // ── Step 2: Write startup doc WITH ownerUid already set (no orphan risk) ──
-    let startupId = null;
-    if (startupPayload) {
-      startupId = `startup_${user.uid}`; // tie ID to user so it's always findable
-      await setDoc(doc(db, "startups", startupId), {
-        id: startupId,
-        ownerUid: user.uid, // set from the beginning — no update needed
-        ...startupPayload
-      });
-      extraData = { startupId };
-    }
-
-    // ── Step 3: Write user profile ──
-    await setDoc(doc(db, "users", user.uid), {
+    // ── Step 1: Create the authenticated user (metadata fuels the DB trigger) ──
+    const registrationMetadata = {
       firstName,
       lastName,
-      email,
-      ...extraData,
       role: selectedRole,
-      joinedAt: new Date().toISOString()
-    });
+      ...extraData
+    };
+    const userCred = await createUserWithEmailAndPassword(auth, email, password, registrationMetadata);
+    const user = userCred.user;
+
+    // ── Step 2: Write startup doc (Trigger handles user profile automatically) ──
+    if (startupPayload) {
+      const startupId = `startup_${user.uid}`;
+      await setDoc(doc(db, "startups", startupId), {
+        id: startupId,
+        ownerUid: user.uid,
+        ...startupPayload
+      });
+    }
 
     closeModal('registerModal');
     showToast(`🎉 Welcome to Investrade, ${firstName}!`, 'success', 5000);

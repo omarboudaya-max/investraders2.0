@@ -6,7 +6,7 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2025-03-31.basil"
 });
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);

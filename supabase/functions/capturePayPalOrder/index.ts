@@ -20,7 +20,7 @@ async function getPayPalAccessToken() {
   return { token: data.access_token as string, base };
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);

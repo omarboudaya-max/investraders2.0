@@ -91,39 +91,47 @@ alter table public.courses enable row level security;
 alter table public.course_enrollments enable row level security;
 alter table public.checkout_sessions enable row level security;
 
-drop policy if exists "users_self" on public.users;
-create policy "users_self" on public.users
-for all using (auth.uid() = id)
-with check (auth.uid() = id);
+-- Function to automatically create a profile in public.users when a new user signs up.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.users (id, first_name, last_name, email, role, investor_fund, investor_focus, investor_ticket_size, investor_preferred_stage)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'firstName', 'New'),
+    coalesce(new.raw_user_meta_data->>'lastName', 'User'),
+    new.email,
+    coalesce(new.raw_user_meta_data->>'role', 'founder'),
+    new.raw_user_meta_data->>'investorFund',
+    new.raw_user_meta_data->>'investorFocus',
+    new.raw_user_meta_data->>'investorTicketSize',
+    new.raw_user_meta_data->>'investorPreferredStage'
+  );
+  return new;
+end;
+$$;
 
-drop policy if exists "startups_read_auth" on public.startups;
-create policy "startups_read_auth" on public.startups
-for select using (auth.uid() is not null);
+-- Trigger to call the function after a user is created in auth.users.
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- Refine Policies
+drop policy if exists "users_self" on public.users;
+create policy "users_self" on public.users for all using (auth.uid() = id);
 
 drop policy if exists "startups_create_owner" on public.startups;
-create policy "startups_create_owner" on public.startups
-for insert with check (owner_uid = auth.uid());
+create policy "startups_create_owner" on public.startups for insert with check (owner_uid = auth.uid());
 
 drop policy if exists "startups_update_owner" on public.startups;
-create policy "startups_update_owner" on public.startups
-for update using (owner_uid = auth.uid())
-with check (owner_uid = auth.uid());
+create policy "startups_update_owner" on public.startups for update using (owner_uid = auth.uid());
 
-drop policy if exists "startup_visits_insert_auth" on public.startup_visits;
-create policy "startup_visits_insert_auth" on public.startup_visits
-for insert with check (auth.uid() = visitor_uid);
-
-drop policy if exists "courses_read_public" on public.courses;
-create policy "courses_read_public" on public.courses
-for select using (true);
-
-drop policy if exists "enrollments_read_self" on public.course_enrollments;
-create policy "enrollments_read_self" on public.course_enrollments
-for select using (user_id = auth.uid());
-
-drop policy if exists "sessions_read_self" on public.checkout_sessions;
-create policy "sessions_read_self" on public.checkout_sessions
-for select using (user_id = auth.uid());
+drop policy if exists "startups_read_auth" on public.startups;
+create policy "startups_read_auth" on public.startups for select using (auth.uid() is not null);
 
 insert into public.courses (id, title, description, price, next_session, is_active)
 values
