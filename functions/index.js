@@ -30,8 +30,21 @@ exports.createPayPalOrder = functions.https.onRequest((req, res) => {
             const { courseId } = req.body;
             if (!courseId) throw new Error("Missing courseId");
 
-            const courseSnap = await db.collection("courses").doc(courseId).get();
-            if (!courseSnap.exists) throw new Error("Course not found");
+            let courseSnap = await db.collection("courses").doc(courseId).get();
+            
+            // Auto-seed if missing
+            if (!courseSnap.exists) {
+                console.log(`Course ${courseId} missing. Auto-seeding...`);
+                const defaultCourse = {
+                    title: "How to Build Your Startup Using AI",
+                    description: "Masterclass AI for Founders",
+                    price: 300,
+                    isActive: true
+                };
+                await db.collection("courses").doc(courseId).set(defaultCourse);
+                courseSnap = await db.collection("courses").doc(courseId).get();
+            }
+
             const courseData = courseSnap.data();
 
             const request = new checkoutNodeJssdk.orders.OrdersCreateRequest();
@@ -53,7 +66,7 @@ exports.createPayPalOrder = functions.https.onRequest((req, res) => {
             return res.status(200).json({ id: order.result.id });
         } catch (err) {
             console.error("Create Order Error:", err);
-            return res.status(500).send(err.message);
+            return res.status(500).json({ error: err.message });
         }
     });
 });
