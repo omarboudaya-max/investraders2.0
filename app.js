@@ -55,10 +55,14 @@ async function initializeDatabase() {
         await addDoc(collection(db, "startups"), s);
       }
     }
+    console.log("✅ Database initialized successfully.");
   } catch (err) {
-    console.warn("Init DB check failed:", err);
+    console.error("❌ Database initialization failed:", err);
+    showToast("Failed to initialize database. Check Firestore console/rules.", "error");
   }
 }
+// Run it after a small delay to ensure Firebase is ready
+setTimeout(initializeDatabase, 1500);
 initializeDatabase();
 
 // ---- Utility ----
@@ -254,6 +258,48 @@ if (auth) {
     updateNavForUser();
   });
 }
+
+// ---- Registration Step Logic ----
+window.selectRole = function(role) {
+  selectedRole = role;
+  document.querySelectorAll('.role-card').forEach(card => {
+    card.classList.remove('active');
+    if (card.dataset.role === role) card.classList.add('active');
+  });
+  
+  const founderFields = $('#founderFields');
+  const investorFields = $('#investorFields');
+  if (founderFields) founderFields.style.display = role === 'founder' ? 'block' : 'none';
+  if (investorFields) investorFields.style.display = role === 'investor' ? 'block' : 'none';
+};
+
+window.nextRegStep = function(step) {
+  if (step === 2) {
+    const f = $('#firstName').value.trim();
+    const l = $('#lastName').value.trim();
+    const e = $('#regEmail').value.trim();
+    const p = $('#regPassword').value;
+    if (!f || !l || !e || !p) {
+      showToast('Please fill in your basic account info.', 'error');
+      return;
+    }
+  }
+
+  document.querySelectorAll('.reg-step').forEach(el => el.style.display = 'none');
+  const target = document.getElementById(`regStep${step}`);
+  if (target) target.style.display = 'block';
+  
+  document.querySelectorAll('.reg-indicator-step').forEach((el, index) => {
+    if (index + 1 <= step) el.classList.add('active');
+    else el.classList.remove('active');
+  });
+  
+  regCurrentStep = step;
+};
+
+window.prevRegStep = function(step) {
+  nextRegStep(step);
+};
 
 // ---- Registration Step Logic ----
 window.selectRoleStep = function(role) {
@@ -532,6 +578,7 @@ window.handleRegister = async function(e) {
   const lastName = $('#lastName').value.trim();
   const email = $('#regEmail').value.trim();
   const password = $('#regPassword').value;
+  let extraData = {};
 
   if (!firstName || !lastName || !email || !password) {
     showToast('Please fill in all core fields.', 'error');
