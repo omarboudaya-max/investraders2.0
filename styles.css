@@ -176,9 +176,10 @@ ul { list-style: none; }
   flex-shrink: 0;
 }
 .logo-icon {
-  width: 36px; height: 36px;
-  background: var(--primary);
-  border-radius: 10px;
+  width: auto;
+  height: 36px;
+  background: none;
+  border-radius: 0;
   display: flex; align-items: center; justify-content: center;
   color: #fff;
   flex-shrink: 0;
@@ -1098,7 +1099,7 @@ ul { list-style: none; }
   margin-bottom: 3rem;
 }
 .footer-brand .nav-logo { color: #fff; margin-bottom: 1rem; }
-.footer-brand .logo-icon { background: var(--primary); }
+.footer-brand .logo-icon { background: none; }
 .footer-desc {
   font-size: 0.85rem;
   line-height: 1.7;
@@ -1213,7 +1214,7 @@ ul { list-style: none; }
   font-weight: 800;
   margin-bottom: 1.5rem;
 }
-.modal-logo .logo-icon { width: 30px; height: 30px; }
+.modal-logo .logo-icon { width: auto; height: 42px; background: none; }
 .modal-title {
   font-size: 1.5rem;
   font-weight: 800;
