@@ -1019,6 +1019,10 @@ async function launchStripeCheckout() {
 
     const API_BASE = supabaseConfig.functionsBaseUrl;
     const idToken = await getAccessToken();
+    if (!idToken) {
+      showToast("Your session is not ready yet. Confirm your email if required, or sign in again.", "error", 6000);
+      return;
+    }
 
     const res = await fetch(`${API_BASE}/createStripeCheckoutSession`, {
       method: "POST",
@@ -1033,8 +1037,11 @@ async function launchStripeCheckout() {
       })
     });
 
-    if (!res.ok) throw new Error(`Server error: ${res.status}`);
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data.error || data.message || `Server error: ${res.status}`;
+      throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+    }
     if (!data.url) throw new Error("No Stripe checkout URL returned");
 
     window.location.href = data.url;
@@ -1059,6 +1066,10 @@ async function handleStripeReturn() {
 
     const API_BASE = supabaseConfig.functionsBaseUrl;
     const idToken = await getAccessToken();
+    if (!idToken) {
+      showToast("Your session is not ready yet. Confirm your email if required, or sign in again.", "error", 6000);
+      return;
+    }
     const res = await fetch(`${API_BASE}/verifyStripeCheckoutSession`, {
       method: "POST",
       headers: {
@@ -1069,22 +1080,19 @@ async function handleStripeReturn() {
       body: JSON.stringify({ sessionId })
     });
 
-    if (!res.ok) throw new Error(`Server error: ${res.status}`);
-    const verifyData = await res.json();
-    if (!verifyData.success) throw new Error("Stripe verification failed");
+    const verifyData = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = verifyData.error || verifyData.message || `Server error: ${res.status}`;
+      throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+    }
+    if (!verifyData.success) throw new Error(verifyData.message || "Stripe verification failed");
 
-    $('#enrollStep1').style.display = 'none';
-    $('#enrollStep2').style.display = 'none';
-    $('#enrollStep3').style.display = 'block';
-    $('#enrollQrImage').src = verifyData.qrUrl;
-    $('#enrollAccessCode').textContent = verifyData.accessCode;
-    $('#enrollStepLabel').textContent = 'Success!';
-    openModal('courseEnrollModal');
-    // Show notification
-    if (params.get("checkout") === "success") {
+    if (verifyData.kind === "subscription") {
       showToast("🚀 Subscription activated! Welcome to your new plan.", "success", 6000);
+      if (window.openDashboard) window.openDashboard();
     } else {
-      showToast('🎓 Enrollment Successful!', 'success', 5000);
+      showToast('🎓 Enrollment Successful! Please check your dashboard.', 'success', 6000);
+      if (window.openDashboard) window.openDashboard();
     }
 
     params.delete("stripe");
@@ -1111,6 +1119,10 @@ window.handlePlanSelection = async function(planId) {
 
     const API_BASE = supabaseConfig.functionsBaseUrl;
     const idToken = await getAccessToken();
+    if (!idToken) {
+      showToast("Your session is not ready yet. Confirm your email if required, or sign in again.", "error", 6000);
+      return;
+    }
     
     showToast("Opening secure checkout...", "info", 2000);
 
@@ -1127,8 +1139,11 @@ window.handlePlanSelection = async function(planId) {
       })
     });
 
-    if (!res.ok) throw new Error(`Server error: ${res.status}`);
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data.error || data.message || `Server error: ${res.status}`;
+      throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+    }
     if (!data.url) throw new Error("No Stripe checkout URL returned");
 
     window.location.href = data.url;
@@ -1145,6 +1160,10 @@ window.openCustomerPortal = async function() {
 
     const API_BASE = supabaseConfig.functionsBaseUrl;
     const idToken = await getAccessToken();
+    if (!idToken) {
+      showToast("Your session is not ready yet. Sign in again to manage billing.", "error", 5000);
+      return;
+    }
 
     const res = await fetch(`${API_BASE}/createCustomerPortalSession`, {
       method: "POST",
@@ -1155,12 +1174,11 @@ window.openCustomerPortal = async function() {
       }
     });
 
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const errData = await res.json();
-      throw new Error(errData.error || "Portal error");
+      throw new Error(data.error || data.message || "Portal error");
     }
-    
-    const data = await res.json();
+    if (!data.url) throw new Error("No portal URL returned");
     window.location.href = data.url;
   } catch (err) {
     console.error("Portal error:", err);
@@ -1212,8 +1230,11 @@ function renderPayPalButtons() {
           },
           body: JSON.stringify({ courseId: window.selectedCourseId })
         });
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
-        const orderData = await res.json();
+        const orderData = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = orderData.error || orderData.message || `Server error: ${res.status}`;
+          throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+        }
         if (!orderData.id) throw new Error('No order ID returned from server');
         return orderData.id;
       } catch (err) {
@@ -1231,6 +1252,10 @@ function renderPayPalButtons() {
           return;
         }
         const idToken = await getAccessToken();
+        if (!idToken) {
+          showToast("Your session is not ready. Sign in again before completing PayPal.", "error", 5000);
+          return;
+        }
 
         const res = await fetch(`${API_BASE}/capturePayPalOrder`, {
           method: 'POST',
@@ -1245,8 +1270,11 @@ function renderPayPalButtons() {
             courseId: window.selectedCourseId
           })
         });
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
-        const captureData = await res.json();
+        const captureData = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = captureData.error || captureData.message || `Server error: ${res.status}`;
+          throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+        }
 
         if (captureData.success) {
           $('#enrollStep2').style.display = 'none';
@@ -1752,25 +1780,65 @@ async function fetchMarketCourses() {
 }
 
 window.openEnrollModal = function(courseId, title, price) {
+    if (!auth.currentUser) {
+      showToast("Please sign in or create an account to enroll.", "info", 4000);
+      window.location.hash = "#register";
+      return;
+    }
+
     window.selectedCourseId = courseId;
     window.selectedCourseTitle = title;
     window.selectedCoursePrice = price;
     
-    // Update labels in enrollment modal
-    $('#enrollStepLabel').textContent = 'Personal Info';
-    $('#courseEnrollModal .modal-title').textContent = title;
+    // Update labels in payment modal
+    $('#paymentModalItemName').innerHTML = `${title} — <strong style="color: var(--primary);" id="paymentModalItemPrice">$${price}</strong>`;
     
-    // Reset steps
-    $('#enrollStep1').style.display = 'block';
-    $('#enrollStep2').style.display = 'none';
-    $('#enrollStep3').style.display = 'none';
-    
-    prefillEnrollmentForm(); // Prefill with user data
-    openModal('courseEnrollModal');
+    openModal('paymentMethodModal');
 
-    // FIX #6/#7 — Render PayPal buttons fresh after modal opens (container exists,
-    // selectedCourseId is set). Use a small delay to let the modal fully paint.
+    // Render PayPal buttons fresh after modal opens
     setTimeout(renderPayPalButtons, 150);
+};
+
+window.handleDirectStripeCheckout = async function() {
+    try {
+        const user = auth.currentUser;
+        if (!user) {
+            showToast("Please sign in to continue.", "info", 4000);
+            return;
+        }
+
+        const API_BASE = supabaseConfig.functionsBaseUrl;
+        const idToken = await getAccessToken();
+        if (!idToken) throw new Error("Authentication error");
+
+        showToast("Opening secure checkout...", "info", 2000);
+
+        const res = await fetch(`${API_BASE}/createStripeCheckoutSession`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "apikey": supabaseConfig.anonKey,
+                "Authorization": `Bearer ${idToken}`
+            },
+            body: JSON.stringify({
+                courseId: window.selectedCourseId,
+                courseName: window.selectedCourseTitle,
+                price: window.selectedCoursePrice
+            })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            const msg = data.error || data.message || `Server error: ${res.status}`;
+            throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+        }
+        if (!data.url) throw new Error("No Stripe checkout URL returned");
+
+        window.location.href = data.url;
+    } catch (err) {
+        console.error("Direct checkout error:", err);
+        showToast("Error starting checkout: " + err.message, "error", 5000);
+    }
 };
 
 // ---- Analytics: Log Visit ----

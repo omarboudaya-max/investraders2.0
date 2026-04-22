@@ -24,7 +24,7 @@ Deno.serve(async (req: Request) => {
     const { data: authData, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !authData.user) return json({ error: "Invalid auth token" }, 401);
 
-    const { courseId, courseApplicantData } = await req.json();
+    const { courseId } = await req.json();
     if (!courseId) return json({ error: "Missing courseId" }, 400);
 
     const { data: course, error: courseErr } = await supabase
@@ -66,8 +66,7 @@ Deno.serve(async (req: Request) => {
       email: authData.user.email,
       course_id: course.id,
       provider: "stripe",
-      status: "created",
-      course_applicant_data: courseApplicantData || {}
+      status: "created"
     });
     if (saveErr) return json({ error: saveErr.message }, 500);
 

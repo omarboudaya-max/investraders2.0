@@ -34,8 +34,6 @@ Deno.serve(async (req: Request) => {
     const plan = PLANS[planId as keyof typeof PLANS];
     if (!plan) return json({ error: "Invalid plan ID" }, 400);
 
-    const unitAmount = isAnnual ? plan.annual * 100 : plan.monthly * 100;
-    const interval = isAnnual ? "year" : "month";
     const origin = req.headers.get("origin") || Deno.env.get("APP_ORIGIN") || "https://www.investraders.net";
 
     // 1. Check if user already has a stripe_customer_id
@@ -45,43 +43,46 @@ Deno.serve(async (req: Request) => {
       .eq("id", authData.user.id)
       .single();
 
-    let customerId = userData?.stripe_customer_id;
+    const customerId = userData?.stripe_customer_id;
 
-    // 2. Create Stripe Checkout Session
+    // Monthly: charge plan.monthly every month. Annual: charge plan.annual * 12 once per year (annual = per-month equivalent when billed yearly).
+    const lineItems = isAnnual
+      ? [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: `Investrade ${plan.name} (Annual)`,
+                description: `Billed once per year (${plan.annual}/mo equivalent).`
+              },
+              unit_amount: Math.round(plan.annual * 12 * 100),
+              recurring: { interval: "year" as const }
+            }
+          }
+        ]
+      : [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: `Investrade ${plan.name} (Monthly)`,
+                description: `Billed every month.`
+              },
+              unit_amount: Math.round(plan.monthly * 100),
+              recurring: { interval: "month" as const }
+            }
+          }
+        ];
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      client_reference_id: authData.user.id,
       customer: customerId || undefined,
-      customer_email: customerId ? undefined : authData.user.email,
+      customer_email: customerId ? undefined : authData.user.email || undefined,
       payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `Investrade ${plan.name} (${isAnnual ? "Annual" : "Monthly"})`,
-              description: `Subscription for ${plan.name} billed ${isAnnual ? "annually" : "monthly"}.`
-            },
-            unit_amount: unitAmount,
-            recurring: {
-              interval: "month", // Even annual plans in dynamic price_data use interval 'month' with interval_count or 'year'
-              interval_count: isAnnual ? 12 : 1 // Wait, mode subscription recurring allows 'year' too
-            }
-          },
-          quantity: 1,
-        },
-      ],
-      // Correcting recurring: 'year' is valid
-      ...(isAnnual ? { 
-        line_items: [{ 
-          price_data: { 
-            currency: "usd", 
-            product_data: { name: `Investrade ${plan.name} (Annual)` }, 
-            unit_amount: unitAmount * 12, // User said $23/mo billed annually
-            recurring: { interval: "year" } 
-          }, 
-          quantity: 1 
-        }]
-      } : {}),
+      line_items: lineItems,
       success_url: `${origin}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?checkout=cancelled`,
       metadata: {

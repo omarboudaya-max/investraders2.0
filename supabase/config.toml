@@ -1,4 +1,4 @@
-project_id = "YOUR_PROJECT_REF"
+project_id = "mugunkyfvdpwiedjqgil"
 
 [api]
 enabled = true
@@ -23,3 +23,12 @@ verify_jwt = false
 
 [functions.capturePayPalOrder]
 verify_jwt = true
+
+[functions.createStripeSubscription]
+verify_jwt = true
+
+[functions.createCustomerPortalSession]
+verify_jwt = true
+
+[functions.stripeWebhook]
+verify_jwt = false

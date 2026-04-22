@@ -27,8 +27,45 @@ Deno.serve(async (req: Request) => {
     if (!sessionId) return json({ error: "Missing sessionId" }, 400);
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    if (session.payment_status !== "paid") return json({ success: false, message: "Payment not completed" }, 400);
-    if (session.client_reference_id !== authData.user.id) return json({ success: false, message: "Session mismatch" }, 403);
+    const paid =
+      session.payment_status === "paid" ||
+      session.payment_status === "no_payment_required";
+    if (!paid) return json({ success: false, message: "Payment not completed" }, 400);
+
+    const metaUserId = session.metadata?.userId || null;
+    const refUserId = session.client_reference_id || null;
+    const sessionUserId = metaUserId || refUserId;
+    if (!sessionUserId || sessionUserId !== authData.user.id) {
+      return json({ success: false, message: "Session mismatch" }, 403);
+    }
+
+    // Subscription checkout (pricing page) — no course row in checkout_sessions.
+    if (session.mode === "subscription") {
+      const cust = session.customer;
+      const stripeCustomerId =
+        typeof cust === "string" ? cust : cust && typeof cust === "object" && "id" in cust ? String((cust as { id: string }).id) : null;
+      const sub = session.subscription;
+      const stripeSubscriptionId =
+        typeof sub === "string" ? sub : sub && typeof sub === "object" && "id" in sub ? String((sub as { id: string }).id) : null;
+
+      await supabase
+        .from("users")
+        .update({
+          stripe_customer_id: stripeCustomerId,
+          stripe_subscription_id: stripeSubscriptionId,
+          subscription_tier: session.metadata?.planId || null,
+          subscription_status: "active",
+          subscription_period: session.metadata?.isAnnual === "true" ? "annual" : "monthly"
+        })
+        .eq("id", authData.user.id);
+
+      return json({
+        success: true,
+        kind: "subscription",
+        accessCode: "",
+        qrUrl: ""
+      });
+    }
 
     const { data: checkout } = await supabase.from("checkout_sessions").select("*").eq("id", sessionId).single();
     if (!checkout) return json({ error: "Checkout session not found" }, 404);
