@@ -1058,8 +1058,12 @@ async function handleStripeReturn() {
     if (stripeState !== "success") return;
 
     // Show a general success message while the webhook provisions the course/subscription in the background
-    showToast('🎉 Payment Successful! Your account is being updated...', 'success', 6000);
-    if (window.openDashboard) window.openDashboard();
+    showToast('🎉 Payment Successful! Generating your access code...', 'success', 6000);
+    
+    // Add a slight delay to give the webhook time to insert the record before the dashboard fetches data
+    setTimeout(() => {
+      if (window.openDashboard) window.openDashboard();
+    }, 2500);
 
     // Clean up URL parameters
     params.delete("stripe");
@@ -1715,9 +1719,22 @@ async function fetchMarketCourses() {
   if (!container) return;
 
   try {
+    // 1. Fetch available courses
     const q = query(collection(db, "courses"), where("isActive", "==", true));
     const snap = await getDocs(q);
     
+    // 2. Fetch current user's enrollments to disable 'Apply Now' buttons
+    const user = auth.currentUser;
+    const enrolledCourseIds = new Set();
+    
+    if (user) {
+      const qEnrollments = query(collection(db, "courseEnrollments"), where("userId", "==", user.uid));
+      const enrollSnap = await getDocs(qEnrollments);
+      enrollSnap.forEach(doc => {
+        enrolledCourseIds.add(doc.data().courseId);
+      });
+    }
+
     if (snap.empty) {
       container.innerHTML = '<p style="text-align:center;padding:2rem;">No courses available at the moment.</p>';
       return;
@@ -1727,6 +1744,12 @@ async function fetchMarketCourses() {
     snap.forEach(docSnap => {
       const c = docSnap.data();
       const courseId = docSnap.id;
+      const isEnrolled = enrolledCourseIds.has(courseId);
+      
+      const buttonHtml = isEnrolled 
+        ? `<button class="btn" style="background: var(--muted); border-color: var(--muted-fg); color: var(--muted-fg); cursor: not-allowed;" disabled>Applied ✓</button>`
+        : `<button onclick="openEnrollModal('${courseId}', '${c.title}', ${c.price})" class="btn btn-primary">Apply Now</button>`;
+
       html += `
         <div class="dash-panel" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;padding:2rem;margin-bottom:1rem;">
           <div>
@@ -1734,7 +1757,7 @@ async function fetchMarketCourses() {
             <p style="color:var(--muted-fg);font-size:0.875rem;margin-top:0.5rem;max-width:500px;">${c.description}</p>
             <p style="font-weight:600;margin-top:1rem;color:var(--primary);">$${c.price} — Next Live Session: ${c.nextSession}</p>
           </div>
-          <button onclick="openEnrollModal('${courseId}', '${c.title}', ${c.price})" class="btn btn-primary">Apply Now</button>
+          ${buttonHtml}
         </div>
       `;
     });
