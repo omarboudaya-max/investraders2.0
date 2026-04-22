@@ -39,7 +39,7 @@ Deno.serve(async (req: Request) => {
         }
 
         if (session.mode === "subscription") {
-          const planId = session.metadata?.planId;
+          const planId = session.metadata?.planId || "starter";
           const isAnnual = session.metadata?.isAnnual === "true";
           
           await supabase

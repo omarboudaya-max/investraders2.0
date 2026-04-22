@@ -368,6 +368,27 @@ let currentUserProfile = null;
 let selectedRole = 'founder';
 let regCurrentStep = 1;
 
+function updatePricingUI() {
+  if (!currentUserProfile) return;
+  const tier = currentUserProfile.subscription_tier || currentUserProfile.subscriptionTier;
+  
+  if (tier === 'starter') {
+    const btnStarter = $('#btn-starter-plan');
+    if (btnStarter) {
+      btnStarter.textContent = "Current Plan";
+      btnStarter.style.background = "var(--muted)";
+      btnStarter.style.borderColor = "var(--muted-fg)";
+      btnStarter.style.color = "var(--muted-fg)";
+      btnStarter.style.cursor = "not-allowed";
+      btnStarter.disabled = true;
+    }
+    const btnPro = $('#btn-pro-plan');
+    if (btnPro) btnPro.textContent = "Upgrade Now";
+    const btnVenture = $('#btn-venture-plan');
+    if (btnVenture) btnVenture.textContent = "Upgrade Now";
+  }
+}
+
 function updateNavForUser() {
   const loginBtn = $('#loginBtn');
   const getStartedBtn = $('#getStartedBtn');
@@ -412,6 +433,7 @@ if (auth) {
       currentUserProfile = null;
     }
     updateNavForUser();
+    updatePricingUI();
     await handleStripeReturn();
   });
 }
@@ -1057,8 +1079,13 @@ async function handleStripeReturn() {
     const stripeState = params.get("stripe") || params.get("checkout");
     if (stripeState !== "success") return;
 
-    // Show a general success message while the webhook provisions the course/subscription in the background
-    showToast('🎉 Payment Successful! Generating your access code...', 'success', 6000);
+    const type = params.get("type");
+    
+    if (type === "subscription") {
+      showToast('🎉 Welcome to your new Subscription! Activating your account...', 'success', 6000);
+    } else {
+      showToast('🎉 Payment Successful! Generating your access code...', 'success', 6000);
+    }
     
     // Add a slight delay to give the webhook time to insert the record before the dashboard fetches data
     setTimeout(() => {
@@ -1087,39 +1114,18 @@ window.handlePlanSelection = async function(planId) {
       return;
     }
 
-    const API_BASE = supabaseConfig.functionsBaseUrl;
-    const idToken = await getAccessToken();
-    if (!idToken) {
-      showToast("Your session is not ready yet. Confirm your email if required, or sign in again.", "error", 6000);
+    if (planId === "starter") {
+      showToast("Opening secure checkout...", "info", 2000);
+      const starterPaymentLink = "https://buy.stripe.com/test_fZu7sMfruboKaN3aHK5c402";
+      window.location.href = `${starterPaymentLink}?client_reference_id=${user.uid}`;
+      return;
+    } else {
+      showToast("The " + planId + " plan is coming soon!", "info", 4000);
       return;
     }
-    
-    showToast("Opening secure checkout...", "info", 2000);
-
-    const res = await fetch(`${API_BASE}/createStripeSubscription`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": supabaseConfig.anonKey,
-        "Authorization": `Bearer ${idToken}`
-      },
-      body: JSON.stringify({ 
-        planId, 
-        isAnnual: typeof isAnnual !== "undefined" ? isAnnual : false 
-      })
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const msg = data.error || data.message || `Server error: ${res.status}`;
-      throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
-    }
-    if (!data.url) throw new Error("No Stripe checkout URL returned");
-
-    window.location.href = data.url;
   } catch (err) {
     console.error("Plan selection error:", err);
-    showToast("Error starting subscription: " + err.message, "error", 5000);
+    showToast("Error starting subscription.", "error", 5000);
   }
 };
 
@@ -1379,6 +1385,12 @@ window.populateDashboard = async function() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         <span>Deals</span>
       </button>
+      ${p.subscription_status === 'active' ? `
+      <div class="dash-nav-section">Community</div>
+      <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashCommunityForum')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+        <span>Forum</span>
+      </button>` : ''}
     `;
 
     // FOUNDER MAIN
@@ -1485,6 +1497,16 @@ window.populateDashboard = async function() {
           <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">Once you connect with investors, your deal pipeline will appear here.</p>
         </div>
       </div>
+      
+      <!-- COMMUNITY FORUM -->
+      <div id="dashCommunityForum" style="display:none;">
+        <div class="dash-welcome"><div class="dash-welcome-text"><h1>Community Forum</h1><p>Connect with other founders and investors.</p></div></div>
+        <div class="dash-panel" style="align-items:center;padding:3rem;text-align:center;">
+          <div style="font-size:3rem;margin-bottom:1rem;">💬</div><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Welcome to the Forum!</h3>
+          <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">Introduce yourself to the community. Click here to start a new thread.</p>
+          <button class="btn btn-primary" style="margin-top:1.5rem;" onclick="showToast('Forum features coming soon!')">Start Discussion</button>
+        </div>
+      </div>
     `;
 
     // Fetch My Courses dynamically
@@ -1514,6 +1536,12 @@ window.populateDashboard = async function() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         <span>Deal Pipeline</span>
       </button>
+      ${p.subscription_status === 'active' ? `
+      <div class="dash-nav-section">Community</div>
+      <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashCommunityForum')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+        <span>Forum</span>
+      </button>` : ''}
     `;
 
     // INVESTOR MAIN
@@ -1602,6 +1630,16 @@ window.populateDashboard = async function() {
         <div class="dash-panel" style="align-items:center;padding:3rem;text-align:center;">
           <div style="font-size:3rem;margin-bottom:1rem;">📋</div><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Pipeline Empty</h3>
           <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">Save startups from the directory to track them here.</p>
+        </div>
+      </div>
+      
+      <!-- COMMUNITY FORUM -->
+      <div id="dashCommunityForum" style="display:none;">
+        <div class="dash-welcome"><div class="dash-welcome-text"><h1>Community Forum</h1><p>Connect with other founders and investors.</p></div></div>
+        <div class="dash-panel" style="align-items:center;padding:3rem;text-align:center;">
+          <div style="font-size:3rem;margin-bottom:1rem;">💬</div><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Welcome to the Forum!</h3>
+          <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">Introduce yourself to the community. Click here to start a new thread.</p>
+          <button class="btn btn-primary" style="margin-top:1.5rem;" onclick="showToast('Forum features coming soon!')">Start Discussion</button>
         </div>
       </div>
     `;
