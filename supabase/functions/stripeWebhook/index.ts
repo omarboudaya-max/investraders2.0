@@ -2,15 +2,16 @@ import Stripe from "npm:stripe@18.4.0";
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { json } from "../_shared/utils.ts";
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-  apiVersion: "2025-01-27.acac"
-});
+
 
 Deno.serve(async (req: Request) => {
   const signature = req.headers.get("stripe-signature");
   if (!signature) return json({ error: "Missing signature" }, 400);
 
   try {
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-01-27.acac"
+    });
     const body = await req.text();
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     let event;
@@ -30,11 +31,17 @@ Deno.serve(async (req: Request) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.userId;
-        const planId = session.metadata?.planId;
-        const isAnnual = session.metadata?.isAnnual === "true";
+        const userId = session.metadata?.userId || session.client_reference_id;
+        
+        if (!userId) {
+          console.error("No userId or client_reference_id found in session");
+          break;
+        }
 
-        if (userId) {
+        if (session.mode === "subscription") {
+          const planId = session.metadata?.planId;
+          const isAnnual = session.metadata?.isAnnual === "true";
+          
           await supabase
             .from("users")
             .update({
@@ -45,6 +52,31 @@ Deno.serve(async (req: Request) => {
               subscription_period: isAnnual ? "annual" : "monthly"
             })
             .eq("id", userId);
+        } else if (session.mode === "payment") {
+          // It's a Course Payment Link
+          const { generateAccessCode } = await import("../_shared/utils.ts");
+          const accessCode = generateAccessCode();
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(accessCode)}`;
+          const enrollmentId = `${Date.now()}_${userId}`;
+          
+          const { error: enrollErr } = await supabase.from("course_enrollments").insert({
+            id: enrollmentId,
+            user_id: userId,
+            email: session.customer_details?.email || null,
+            course_id: "how-to-build-startup-with-ai",
+            course: "How to Build Your Startup Using AI",
+            price: (session.amount_total || 30000) / 100,
+            payment_status: "paid",
+            payment_provider: "stripe",
+            stripe_session_id: session.id,
+            access_code: accessCode,
+            qr_url: qrUrl,
+            session_date: "15 August 2026"
+          });
+          
+          if (enrollErr) {
+            console.error("Enrollment insert error:", enrollErr.message);
+          }
         }
         break;
       }

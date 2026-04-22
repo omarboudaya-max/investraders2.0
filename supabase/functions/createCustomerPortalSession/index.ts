@@ -2,9 +2,7 @@ import Stripe from "npm:stripe@18.4.0";
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { corsPreflight, json } from "../_shared/utils.ts";
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-  apiVersion: "2025-01-27.acac"
-});
+
 
 Deno.serve(async (req: Request) => {
   const preflight = corsPreflight(req);
@@ -12,6 +10,9 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-01-27.acac"
+    });
     const authHeader = req.headers.get("Authorization") || "";
     if (!authHeader.startsWith("Bearer ")) return json({ error: "Missing auth token" }, 401);
 

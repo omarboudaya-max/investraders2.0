@@ -1055,46 +1055,13 @@ async function handleStripeReturn() {
   try {
     const params = new URLSearchParams(window.location.search);
     const stripeState = params.get("stripe") || params.get("checkout");
-    const sessionId = params.get("session_id");
-    if (stripeState !== "success" || !sessionId) return;
+    if (stripeState !== "success") return;
 
-    const user = auth.currentUser;
-    if (!user) {
-      showToast("Please sign in to finalize your Stripe enrollment.", "error", 5000);
-      return;
-    }
+    // Show a general success message while the webhook provisions the course/subscription in the background
+    showToast('🎉 Payment Successful! Your account is being updated...', 'success', 6000);
+    if (window.openDashboard) window.openDashboard();
 
-    const API_BASE = supabaseConfig.functionsBaseUrl;
-    const idToken = await getAccessToken();
-    if (!idToken) {
-      showToast("Your session is not ready yet. Confirm your email if required, or sign in again.", "error", 6000);
-      return;
-    }
-    const res = await fetch(`${API_BASE}/verifyStripeCheckoutSession`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": supabaseConfig.anonKey,
-        "Authorization": `Bearer ${idToken}`
-      },
-      body: JSON.stringify({ sessionId })
-    });
-
-    const verifyData = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const msg = verifyData.error || verifyData.message || `Server error: ${res.status}`;
-      throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
-    }
-    if (!verifyData.success) throw new Error(verifyData.message || "Stripe verification failed");
-
-    if (verifyData.kind === "subscription") {
-      showToast("🚀 Subscription activated! Welcome to your new plan.", "success", 6000);
-      if (window.openDashboard) window.openDashboard();
-    } else {
-      showToast('🎓 Enrollment Successful! Please check your dashboard.', 'success', 6000);
-      if (window.openDashboard) window.openDashboard();
-    }
-
+    // Clean up URL parameters
     params.delete("stripe");
     params.delete("checkout");
     params.delete("session_id");
@@ -1103,7 +1070,6 @@ async function handleStripeReturn() {
     window.history.replaceState({}, "", cleanUrl);
   } catch (err) {
     console.error("Stripe return handling error:", err);
-    showToast("Error finalizing Stripe payment: " + err.message, "error", 5000);
   }
 }
 
@@ -1807,37 +1773,16 @@ window.handleDirectStripeCheckout = async function() {
             return;
         }
 
-        const API_BASE = supabaseConfig.functionsBaseUrl;
-        const idToken = await getAccessToken();
-        if (!idToken) throw new Error("Authentication error");
-
         showToast("Opening secure checkout...", "info", 2000);
-
-        const res = await fetch(`${API_BASE}/createStripeCheckoutSession`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "apikey": supabaseConfig.anonKey,
-                "Authorization": `Bearer ${idToken}`
-            },
-            body: JSON.stringify({
-                courseId: window.selectedCourseId,
-                courseName: window.selectedCourseTitle,
-                price: window.selectedCoursePrice
-            })
-        });
-
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-            const msg = data.error || data.message || `Server error: ${res.status}`;
-            throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
-        }
-        if (!data.url) throw new Error("No Stripe checkout URL returned");
-
-        window.location.href = data.url;
+        
+        // Static Stripe Payment Link provided by the user
+        const stripePaymentLink = "https://buy.stripe.com/test_00wcN6enq50mbR7bLO5c401";
+        
+        // Append client_reference_id so the webhook knows who paid
+        window.location.href = `${stripePaymentLink}?client_reference_id=${user.uid}`;
     } catch (err) {
         console.error("Direct checkout error:", err);
-        showToast("Error starting checkout: " + err.message, "error", 5000);
+        showToast("Error starting checkout.", "error", 5000);
     }
 };
 
