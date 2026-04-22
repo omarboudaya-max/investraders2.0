@@ -5,6 +5,10 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { supabaseConfig } from "./supabase-config.js";
+import { inject } from "@vercel/analytics";
+
+// Initialize Vercel Analytics
+inject();
 
 const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey);
 const auth = { currentUser: null };
