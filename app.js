@@ -1336,6 +1336,11 @@ window.dashTabSwitch = function(btn, tabId) {
       tab.style.display = (tab.id === tabId) ? 'block' : 'none';
     }
   });
+
+  // Load forum messages if active
+  if (tabId === 'dashCommunityForum') {
+    if (window.loadForumMessages) window.loadForumMessages();
+  }
 };
 
 window.handleSignOut = function() {
@@ -1517,11 +1522,25 @@ window.populateDashboard = async function() {
       
       <!-- COMMUNITY FORUM -->
       <div id="dashCommunityForum" style="display:none;">
-        <div class="dash-welcome"><div class="dash-welcome-text"><h1>Community Forum</h1><p>Connect with other founders and investors.</p></div></div>
-        <div class="dash-panel" style="align-items:center;padding:3rem;text-align:center;">
-          <div style="font-size:3rem;margin-bottom:1rem;">💬</div><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Welcome to the Forum!</h3>
-          <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">Introduce yourself to the community. Click here to start a new thread.</p>
-          <button class="btn btn-primary" style="margin-top:1.5rem;" onclick="showToast('Forum features coming soon!')">Start Discussion</button>
+        <div class="dash-welcome">
+          <div class="dash-welcome-text">
+            <h1>Community Forum</h1>
+            <p>Connect with other founders and investors in the Investrade ecosystem.</p>
+          </div>
+        </div>
+
+        <div class="dash-panel" style="margin-bottom:2rem; padding:1.5rem;">
+          <form onsubmit="handleForumPost(event)" style="display:flex; flex-direction:column; gap:1rem;">
+            <textarea id="forumMessageInput" placeholder="Share an update, ask a question, or introduce yourself..." 
+              style="width:100%; min-height:100px; padding:1rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-family:inherit; resize:vertical;" required></textarea>
+            <div style="display:flex; justify-content:flex-end;">
+              <button type="submit" class="btn btn-primary">Post Message</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="forumMessagesContainer">
+          <div style="padding:2rem; text-align:center; color:var(--muted-fg);">Loading discussions...</div>
         </div>
       </div>
     `;
@@ -1656,11 +1675,25 @@ window.populateDashboard = async function() {
       
       <!-- COMMUNITY FORUM -->
       <div id="dashCommunityForum" style="display:none;">
-        <div class="dash-welcome"><div class="dash-welcome-text"><h1>Community Forum</h1><p>Connect with other founders and investors.</p></div></div>
-        <div class="dash-panel" style="align-items:center;padding:3rem;text-align:center;">
-          <div style="font-size:3rem;margin-bottom:1rem;">💬</div><h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Welcome to the Forum!</h3>
-          <p style="color:var(--muted-fg);font-size:0.875rem;max-width:400px;">Introduce yourself to the community. Click here to start a new thread.</p>
-          <button class="btn btn-primary" style="margin-top:1.5rem;" onclick="showToast('Forum features coming soon!')">Start Discussion</button>
+        <div class="dash-welcome">
+          <div class="dash-welcome-text">
+            <h1>Community Forum</h1>
+            <p>Connect with other founders and investors in the Investrade ecosystem.</p>
+          </div>
+        </div>
+
+        <div class="dash-panel" style="margin-bottom:2rem; padding:1.5rem;">
+          <form onsubmit="handleForumPost(event)" style="display:flex; flex-direction:column; gap:1rem;">
+            <textarea id="forumMessageInput" placeholder="Share an update, ask a question, or introduce yourself..." 
+              style="width:100%; min-height:100px; padding:1rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-family:inherit; resize:vertical;" required></textarea>
+            <div style="display:flex; justify-content:flex-end;">
+              <button type="submit" class="btn btn-primary">Post Message</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="forumMessagesContainer">
+          <div style="padding:2rem; text-align:center; color:var(--muted-fg);">Loading discussions...</div>
         </div>
       </div>
     `;
@@ -1938,3 +1971,90 @@ async function fetchStartupDirectory() {
 }
 
 
+
+// ----------------------------------------------------------------------
+// COMMUNITY FORUM LOGIC
+// ----------------------------------------------------------------------
+
+window.loadForumMessages = async function() {
+  const container = document.getElementById('forumMessagesContainer');
+  if (!container) return;
+  
+  try {
+    const { data, error } = await supabase
+      .from('forum_messages')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+      
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
+      container.innerHTML = '<div class="dash-panel" style="padding:4rem; text-align:center; color:var(--muted-fg);">No discussions yet. Be the first to post!</div>';
+      return;
+    }
+    
+    container.innerHTML = data.map(msg => `
+      <div class="dash-panel" style="margin-bottom:1rem; padding:1.5rem; animation: fadeIn 0.3s ease;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <div style="width:36px; height:36px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:0.9rem;">
+              ${(msg.user_name || '?').charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div style="font-weight:600; font-size:0.9rem; color:var(--foreground);">${msg.user_name}</div>
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span class="dash-role-badge ${msg.user_role}" style="font-size:0.65rem; padding:0.1rem 0.4rem;">${msg.user_role}</span>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:0.75rem; color:var(--muted-fg);">
+            ${new Date(msg.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+          </div>
+        </div>
+        <div style="font-size:0.95rem; line-height:1.6; color:var(--foreground); white-space:pre-wrap; background:rgba(255,255,255,0.03); padding:1rem; border-radius:0.5rem; border:1px solid rgba(255,255,255,0.05);">${msg.message}</div>
+      </div>
+    `).join('');
+    
+  } catch (err) {
+    console.error("Error loading forum:", err);
+    container.innerHTML = '<div class="dash-panel" style="padding:2rem; text-align:center; color:var(--error);">Failed to load messages. Check console.</div>';
+  }
+};
+
+window.handleForumPost = async function(event) {
+  event.preventDefault();
+  const input = document.getElementById('forumMessageInput');
+  const btn = event.target.querySelector('button');
+  const msg = input.value.trim();
+  
+  if (!msg) return;
+  if (!currentUserProfile) {
+    showToast('Please sign in to post.', 'error');
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.textContent = 'Posting...';
+  
+  try {
+    const { error } = await supabase.from('forum_messages').insert({
+      user_id: currentUserProfile.uid,
+      user_name: `${currentUserProfile.firstName} ${currentUserProfile.lastName}`,
+      user_role: currentUserProfile.role,
+      message: msg
+    });
+    
+    if (error) throw error;
+    
+    input.value = '';
+    showToast('Message posted successfully!', 'success');
+    await loadForumMessages();
+  } catch (err) {
+    console.error("Error posting to forum:", err);
+    showToast('Error posting: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Post Message';
+  }
+};
