@@ -1088,9 +1088,18 @@ async function handleStripeReturn() {
     }
     
     // Add a slight delay to give the webhook time to insert the record before the dashboard fetches data
-    setTimeout(() => {
+    setTimeout(async () => {
+      if (auth.currentUser) {
+        try {
+          const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+          if (docSnap.exists()) {
+            currentUserProfile = { ...docSnap.data(), uid: auth.currentUser.uid };
+            updatePricingUI();
+          }
+        } catch(e) { console.error(e); }
+      }
       if (window.openDashboard) window.openDashboard();
-    }, 2500);
+    }, 3500);
 
     // Clean up URL parameters
     params.delete("stripe");
@@ -1402,7 +1411,10 @@ window.populateDashboard = async function() {
             <h1>${welcomeStr}</h1>
             <p>Here's a snapshot of your Investrade journey.</p>
           </div>
-          <span style="font-size:0.78rem;color:var(--muted-fg);">Member since ${joinDate}</span>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
+            <span style="font-size:0.78rem;color:var(--muted-fg);">Member since ${joinDate}</span>
+            ${p.subscription_tier ? `<span class="dash-role-badge" style="background:var(--primary); color:white;">${p.subscription_tier.toUpperCase()} PLAN</span>` : ''}
+          </div>
         </div>
         
         <div class="dash-stats-row cols-2" style="grid-template-columns: repeat(2, 1fr);">
@@ -1453,6 +1465,7 @@ window.populateDashboard = async function() {
             <div class="dash-info-list" id="profileViewMode">
               <div class="dash-info-row"><div class="dash-info-content"><span class="dash-info-key">Full Name</span><span class="dash-info-val">${p.firstName} ${p.lastName}</span></div></div>
               <div class="dash-info-row"><div class="dash-info-content"><span class="dash-info-key">Email</span><span class="dash-info-val">${p.email}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-content"><span class="dash-info-key">Subscription</span><span class="dash-info-val" style="text-transform: capitalize; font-weight: bold; color: var(--primary);">${p.subscription_tier || 'Free'}</span></div></div>
               <button onclick="document.getElementById('profileViewMode').style.display='none'; document.getElementById('profileEditMode').style.display='block';" class="btn btn-outline" style="margin-top:1rem;width:fit-content;">Edit Profile</button>
             </div>
             <div class="auth-form" id="profileEditMode" style="display:none;margin-top:0;">
@@ -1552,7 +1565,10 @@ window.populateDashboard = async function() {
             <h1>${welcomeStr}</h1>
             <p>Your investor dashboard. Discover your next unicorn.</p>
           </div>
-          <span style="font-size:0.78rem;color:var(--muted-fg);">Fund: ${p.investorFund || 'Angel'}</span>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
+            <span style="font-size:0.78rem;color:var(--muted-fg);">Fund: ${p.investorFund || 'Angel'}</span>
+            ${p.subscription_tier ? `<span class="dash-role-badge" style="background:var(--primary); color:white;">${p.subscription_tier.toUpperCase()} PLAN</span>` : ''}
+          </div>
         </div>
         
         <div class="dash-stats-row cols-3">
@@ -1596,6 +1612,7 @@ window.populateDashboard = async function() {
             <div class="dash-info-list" id="profileViewMode">
               <div class="dash-info-row"><div class="dash-info-content"><span class="dash-info-key">Full Name</span><span class="dash-info-val">${p.firstName} ${p.lastName}</span></div></div>
               <div class="dash-info-row"><div class="dash-info-content"><span class="dash-info-key">Email</span><span class="dash-info-val">${p.email}</span></div></div>
+              <div class="dash-info-row"><div class="dash-info-content"><span class="dash-info-key">Subscription</span><span class="dash-info-val" style="text-transform: capitalize; font-weight: bold; color: var(--primary);">${p.subscription_tier || 'Free'}</span></div></div>
             </div>
           </div>
         </div>
