@@ -1990,16 +1990,74 @@ window.handleDirectStripeCheckout = async function() {
     }
 };
 
-window.handleManualPayPalCheckout = function() {
+window.handleManualPayPalCheckout = async function() {
     const paypalMeLink = window.selectedPaypalMeLink || "https://paypal.me/CobraAhmed/300";
-    showToast("Redirecting to PayPal... Once paid, we will manually activate your account.", "success", 6000);
-    
-    // Open in new tab so they don't lose their place
+    const user = auth.currentUser;
+    if (!user) return;
+
+    // Show loading state
+    showToast("Initiating registration...", "info", 2000);
+
+    // If it's a course enrollment, create the "unpaid" record automatically
+    if (window.selectedCourseId && window.selectedCourseId !== 'starter-plan') {
+      try {
+        const enrollmentId = `MANUAL-${Date.now()}`;
+        const accessCode = generateAccessCode();
+        // Generate a placeholder QR URL
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${accessCode}`;
+        
+        const enrollmentData = {
+          id: enrollmentId,
+          user_id: user.uid,
+          email: courseApplicantData.email || user.email,
+          course_id: window.selectedCourseId,
+          course: window.selectedCourseTitle,
+          price: window.selectedCoursePrice,
+          payment_status: 'unpaid',
+          payment_provider: 'paypal',
+          first_name: courseApplicantData.firstName || '',
+          last_name: courseApplicantData.lastName || '',
+          age: courseApplicantData.age || '',
+          country: courseApplicantData.country || '',
+          education: courseApplicantData.education || '',
+          professional: courseApplicantData.professional || '',
+          motivation: courseApplicantData.motivation || '',
+          access_code: accessCode,
+          qr_url: qrUrl,
+          session_date: 'Pending Admin Approval'
+        };
+
+        const { error } = await supabase.from('course_enrollments').insert(enrollmentData);
+        if (error) throw error;
+
+        showToast("Registration pending! Redirecting to PayPal...", "success", 4000);
+      } catch (err) {
+        console.error("Error creating manual enrollment:", err);
+        showToast("Note: Registration will be finalized after payment review.", "warning", 5000);
+      }
+    } else if (window.selectedCourseId === 'starter-plan') {
+      // For subscriptions, update the user profile to "unpaid"
+      try {
+        await supabase.from('users').update({
+          subscription_status: 'unpaid',
+          subscription_tier: 'starter'
+        }).eq('id', user.uid);
+      } catch (err) {
+        console.error("Error updating subscription status:", err);
+      }
+    }
+
+    // Open PayPal link in new tab
     window.open(paypalMeLink, '_blank');
     
     setTimeout(() => {
-        showToast("Payment link opened. We will notify you once your subscription is active!", "info", 8000);
+        showToast("Payment link opened. Once you pay, our admin will activate your access!", "info", 8000);
         closeModal('paymentMethodModal');
+        // If enrollModal is open, close it too
+        if (typeof closeModal === 'function') {
+            const enrollModal = document.getElementById('enrollModal');
+            if (enrollModal) closeModal('enrollModal');
+        }
     }, 2000);
 };
 
