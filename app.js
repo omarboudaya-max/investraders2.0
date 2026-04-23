@@ -1197,6 +1197,22 @@ window.handlePlanSelection = async function(planId) {
         'https://paypal.me/CobraAhmed/29',
         'https://buy.stripe.com/test_fZu7sMfruboKaN3aHK5c402'
       );
+    } else if (planId === "pro") {
+      window.openEnrollModal(
+        'pro-plan', 
+        'Pro Plan Subscription', 
+        79, 
+        'https://paypal.me/CobraAhmed/79',
+        'https://buy.stripe.com/test_00wcN6enq50mbR7bLO5c401'
+      );
+    } else if (planId === "venture") {
+      window.openEnrollModal(
+        'venture-plan', 
+        'Venture Plan Subscription', 
+        249, 
+        'https://paypal.me/CobraAhmed/249',
+        'https://buy.stripe.com/test_00wcN6enq50mbR7bLO5c401'
+      );
     } else {
       showToast("The " + planId + " plan is coming soon!", "info", 4000);
       return;
@@ -1970,24 +1986,7 @@ window.openEnrollModal = function(courseId, title, price, customPaypalLink, cust
 };
 
 window.handleDirectStripeCheckout = async function() {
-    try {
-        const user = auth.currentUser;
-        if (!user) {
-            showToast("Please sign in to continue.", "info", 4000);
-            return;
-        }
-
-        showToast("Opening secure checkout...", "info", 2000);
-        
-        // Use the dynamically set link (for courses or specific plans)
-        const stripePaymentLink = window.selectedStripeLink || "https://buy.stripe.com/test_00wcN6enq50mbR7bLO5c401";
-        
-        // Append client_reference_id so the webhook knows who paid
-        window.location.href = `${stripePaymentLink}?client_reference_id=${user.uid}`;
-    } catch (err) {
-        console.error("Direct checkout error:", err);
-        showToast("Error starting checkout.", "error", 5000);
-    }
+    showToast("Card payments are coming soon! Please use the PayPal option for immediate access.", "info", 5000);
 };
 
 window.handleManualPayPalCheckout = async function() {
@@ -2035,12 +2034,13 @@ window.handleManualPayPalCheckout = async function() {
         console.error("Error creating manual enrollment:", err);
         showToast("Note: Registration will be finalized after payment review.", "warning", 5000);
       }
-    } else if (window.selectedCourseId === 'starter-plan') {
-      // For subscriptions, update the user profile to "unpaid"
+    } else if (window.selectedCourseId && window.selectedCourseId.includes('-plan')) {
+      // For subscriptions (starter-plan, pro-plan, venture-plan), update the user profile to "unpaid"
       try {
+        const tier = window.selectedCourseId.split('-')[0]; // starter, pro, or venture
         await supabase.from('users').update({
           subscription_status: 'unpaid',
-          subscription_tier: 'starter'
+          subscription_tier: tier
         }).eq('id', user.uid);
       } catch (err) {
         console.error("Error updating subscription status:", err);
