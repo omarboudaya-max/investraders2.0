@@ -1403,12 +1403,11 @@ window.populateDashboard = async function() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         <span>Deals</span>
       </button>
-      ${(p.subscription_status === 'active' || p.subscription_tier) ? `
       <div class="dash-nav-section">Community</div>
       <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashCommunityForum')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
         <span>Forum</span>
-      </button>` : ''}
+      </button>
     `;
 
     // FOUNDER MAIN
@@ -1529,19 +1528,31 @@ window.populateDashboard = async function() {
           </div>
         </div>
 
-        <div class="dash-panel" style="margin-bottom:2rem; padding:1.5rem;">
-          <form onsubmit="handleForumPost(event)" style="display:flex; flex-direction:column; gap:1rem;">
-            <textarea id="forumMessageInput" placeholder="Share an update, ask a question, or introduce yourself..." 
-              style="width:100%; min-height:100px; padding:1rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-family:inherit; resize:vertical;" required></textarea>
-            <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="btn btn-primary">Post Message</button>
-            </div>
-          </form>
-        </div>
+        ${(p.subscription_status === 'active' || p.subscription_tier) ? `
+          <div class="dash-panel" style="margin-bottom:2rem; padding:1.5rem;">
+            <form onsubmit="handleForumPost(event)" style="display:flex; flex-direction:column; gap:1rem;">
+              <textarea id="forumMessageInput" placeholder="Share an update, ask a question, or introduce yourself..." 
+                style="width:100%; min-height:100px; padding:1rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-family:inherit; resize:vertical;" required></textarea>
+              <div style="display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">Post Message</button>
+              </div>
+            </form>
+          </div>
 
-        <div id="forumMessagesContainer">
-          <div style="padding:2rem; text-align:center; color:var(--muted-fg);">Loading discussions...</div>
-        </div>
+          <div id="forumMessagesContainer">
+            <div style="padding:2rem; text-align:center; color:var(--muted-fg);">Loading discussions...</div>
+          </div>
+        ` : `
+          <div class="dash-panel" style="align-items:center; padding:4rem; text-align:center;">
+            <div style="font-size:3rem; margin-bottom:1.5rem;">🔒</div>
+            <h3 style="font-size:1.5rem; font-weight:700; margin-bottom:1rem;">Subscription Required</h3>
+            <p style="color:var(--muted-fg); font-size:1rem; max-width:450px; margin:0 auto 2rem;">
+              The Community Forum is exclusive to our Starter, Pro, and Venture members. 
+              Join the conversation to connect with top-tier founders and investors.
+            </p>
+            <a href="#pricing" onclick="closeDashboard()" class="btn btn-primary">View Plans & Subscribe</a>
+          </div>
+        `}
       </div>
     `;
 
@@ -1572,12 +1583,11 @@ window.populateDashboard = async function() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         <span>Deal Pipeline</span>
       </button>
-      ${(p.subscription_status === 'active' || p.subscription_tier) ? `
       <div class="dash-nav-section">Community</div>
       <button class="dash-nav-item" onclick="dashTabSwitch(this,'dashCommunityForum')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
         <span>Forum</span>
-      </button>` : ''}
+      </button>
     `;
 
     // INVESTOR MAIN
@@ -1682,19 +1692,31 @@ window.populateDashboard = async function() {
           </div>
         </div>
 
-        <div class="dash-panel" style="margin-bottom:2rem; padding:1.5rem;">
-          <form onsubmit="handleForumPost(event)" style="display:flex; flex-direction:column; gap:1rem;">
-            <textarea id="forumMessageInput" placeholder="Share an update, ask a question, or introduce yourself..." 
-              style="width:100%; min-height:100px; padding:1rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-family:inherit; resize:vertical;" required></textarea>
-            <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="btn btn-primary">Post Message</button>
-            </div>
-          </form>
-        </div>
+        ${(p.subscription_status === 'active' || p.subscription_tier) ? `
+          <div class="dash-panel" style="margin-bottom:2rem; padding:1.5rem;">
+            <form onsubmit="handleForumPost(event)" style="display:flex; flex-direction:column; gap:1rem;">
+              <textarea id="forumMessageInput" placeholder="Share an update, ask a question, or introduce yourself..." 
+                style="width:100%; min-height:100px; padding:1rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-family:inherit; resize:vertical;" required></textarea>
+              <div style="display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">Post Message</button>
+              </div>
+            </form>
+          </div>
 
-        <div id="forumMessagesContainer">
-          <div style="padding:2rem; text-align:center; color:var(--muted-fg);">Loading discussions...</div>
-        </div>
+          <div id="forumMessagesContainer">
+            <div style="padding:2rem; text-align:center; color:var(--muted-fg);">Loading discussions...</div>
+          </div>
+        ` : `
+          <div class="dash-panel" style="align-items:center; padding:4rem; text-align:center;">
+            <div style="font-size:3rem; margin-bottom:1.5rem;">🔒</div>
+            <h3 style="font-size:1.5rem; font-weight:700; margin-bottom:1rem;">Subscription Required</h3>
+            <p style="color:var(--muted-fg); font-size:1rem; max-width:450px; margin:0 auto 2rem;">
+              The Community Forum is exclusive to our Starter, Pro, and Venture members. 
+              Join the conversation to connect with top-tier founders and investors.
+            </p>
+            <a href="#pricing" onclick="closeDashboard()" class="btn btn-primary">View Plans & Subscribe</a>
+          </div>
+        `}
       </div>
     `;
 
