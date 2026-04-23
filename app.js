@@ -389,20 +389,26 @@ function updatePricingUI() {
       if (card) card.style.display = 'none';
     } else if (idx === currentIdx) {
       // Current tier: Show as Current Plan
-      if (card) card.style.display = 'flex';
+      if (card) card.style.display = ''; 
       btn.textContent = "Current Plan";
-      btn.style.background = "rgba(255,255,255,0.1)";
+      btn.classList.add('btn-disabled');
+      btn.disabled = true;
+      btn.style.background = "var(--muted)";
       btn.style.borderColor = "var(--border)";
       btn.style.color = "var(--muted-fg)";
       btn.style.cursor = "default";
-      btn.disabled = true;
       btn.onclick = null;
     } else {
       // Higher tier or no plan: Show as Upgrade/Subscribe
-      if (card) card.style.display = 'flex';
+      if (card) card.style.display = '';
       btn.textContent = (currentIdx !== -1) ? "Upgrade Now" : "Subscribe Now";
-      // Reset styles just in case
+      btn.classList.remove('btn-disabled');
       btn.disabled = false;
+      // Reset styles to defaults (classes will handle it)
+      btn.style.background = "";
+      btn.style.borderColor = "";
+      btn.style.color = "";
+      btn.style.cursor = "";
     }
   });
 }
