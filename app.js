@@ -1528,7 +1528,7 @@ window.populateDashboard = async function() {
           </div>
         </div>
 
-        ${(p.subscription_status === 'active' || p.subscription_tier) ? `
+        ${(p.subscriptionStatus === 'active' || p.subscriptionTier) ? `
           <div class="dash-panel" style="margin-bottom:2rem; padding:1.5rem;">
             <form onsubmit="handleForumPost(event)" style="display:flex; flex-direction:column; gap:1rem;">
               <textarea id="forumMessageInput" placeholder="Share an update, ask a question, or introduce yourself..." 
@@ -1692,7 +1692,7 @@ window.populateDashboard = async function() {
           </div>
         </div>
 
-        ${(p.subscription_status === 'active' || p.subscription_tier) ? `
+        ${(p.subscriptionStatus === 'active' || p.subscriptionTier) ? `
           <div class="dash-panel" style="margin-bottom:2rem; padding:1.5rem;">
             <form onsubmit="handleForumPost(event)" style="display:flex; flex-direction:column; gap:1rem;">
               <textarea id="forumMessageInput" placeholder="Share an update, ask a question, or introduce yourself..." 
