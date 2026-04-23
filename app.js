@@ -1190,10 +1190,13 @@ window.handlePlanSelection = async function(planId) {
     }
 
     if (planId === "starter") {
-      showToast("Opening secure checkout...", "info", 2000);
-      const starterPaymentLink = "https://buy.stripe.com/test_fZu7sMfruboKaN3aHK5c402";
-      window.location.href = `${starterPaymentLink}?client_reference_id=${user.uid}`;
-      return;
+      window.openEnrollModal(
+        'starter-plan', 
+        'Starter Plan Subscription', 
+        29, 
+        'https://paypal.me/CobraAhmed/29',
+        'https://buy.stripe.com/test_fZu7sMfruboKaN3aHK5c402'
+      );
     } else {
       showToast("The " + planId + " plan is coming soon!", "info", 4000);
       return;
@@ -1944,9 +1947,9 @@ async function fetchMarketCourses() {
   }
 }
 
-window.openEnrollModal = function(courseId, title, price) {
+window.openEnrollModal = function(courseId, title, price, customPaypalLink, customStripeLink) {
     if (!auth.currentUser) {
-      showToast("Please sign in or create an account to enroll.", "info", 4000);
+      showToast("Please sign in or create an account to proceed.", "info", 4000);
       window.location.hash = "#register";
       return;
     }
@@ -1954,6 +1957,8 @@ window.openEnrollModal = function(courseId, title, price) {
     window.selectedCourseId = courseId;
     window.selectedCourseTitle = title;
     window.selectedCoursePrice = price;
+    window.selectedPaypalMeLink = customPaypalLink || `https://paypal.me/CobraAhmed/${price}`;
+    window.selectedStripeLink = customStripeLink || "https://buy.stripe.com/test_00wcN6enq50mbR7bLO5c401";
     
     // Update labels in payment modal
     $('#paymentModalItemName').innerHTML = `${title} — <strong style="color: var(--primary);" id="paymentModalItemPrice">$${price}</strong>`;
@@ -1974,8 +1979,8 @@ window.handleDirectStripeCheckout = async function() {
 
         showToast("Opening secure checkout...", "info", 2000);
         
-        // Static Stripe Payment Link provided by the user
-        const stripePaymentLink = "https://buy.stripe.com/test_00wcN6enq50mbR7bLO5c401";
+        // Use the dynamically set link (for courses or specific plans)
+        const stripePaymentLink = window.selectedStripeLink || "https://buy.stripe.com/test_00wcN6enq50mbR7bLO5c401";
         
         // Append client_reference_id so the webhook knows who paid
         window.location.href = `${stripePaymentLink}?client_reference_id=${user.uid}`;
@@ -1986,7 +1991,7 @@ window.handleDirectStripeCheckout = async function() {
 };
 
 window.handleManualPayPalCheckout = function() {
-    const paypalMeLink = "https://paypal.me/CobraAhmed/300";
+    const paypalMeLink = window.selectedPaypalMeLink || "https://paypal.me/CobraAhmed/300";
     showToast("Redirecting to PayPal... Once paid, we will manually activate your account.", "success", 6000);
     
     // Open in new tab so they don't lose their place
