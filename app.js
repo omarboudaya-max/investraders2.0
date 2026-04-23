@@ -1502,7 +1502,7 @@ window.populateDashboard = async function() {
           </div>
           <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
             <span style="font-size:0.78rem;color:var(--muted-fg);">Member since ${joinDate}</span>
-            ${p.subscription_tier ? `<span class="dash-role-badge" style="background:var(--primary); color:white;">${p.subscription_tier.toUpperCase()} PLAN</span>` : ''}
+            ${p.subscriptionTier ? `<span class="dash-role-badge" style="background:var(--primary); color:white;">${p.subscriptionTier.toUpperCase()} PLAN</span>` : ''}
           </div>
         </div>
         
@@ -1681,7 +1681,7 @@ window.populateDashboard = async function() {
           </div>
           <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
             <span style="font-size:0.78rem;color:var(--muted-fg);">Fund: ${p.investorFund || 'Angel'}</span>
-            ${p.subscription_tier ? `<span class="dash-role-badge" style="background:var(--primary); color:white;">${p.subscription_tier.toUpperCase()} PLAN</span>` : ''}
+            ${p.subscriptionTier ? `<span class="dash-role-badge" style="background:var(--primary); color:white;">${p.subscriptionTier.toUpperCase()} PLAN</span>` : ''}
           </div>
         </div>
         
