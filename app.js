@@ -419,22 +419,55 @@ function updateNavForUser() {
   }
 }
 
+let userProfileSubscription = null;
+
+function subscribeToUserProfile(uid) {
+  if (userProfileSubscription) userProfileSubscription.unsubscribe();
+
+  userProfileSubscription = supabase
+    .channel(`user_profile_${uid}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'users',
+        filter: `id=eq.${uid}`
+      },
+      async (payload) => {
+        console.log('User profile updated via Realtime:', payload.new);
+        currentUserProfile = { ...snakeToCamelObject(payload.new), uid: uid };
+        updateNavForUser();
+        updatePricingUI();
+        if ($('#dashboardPage')?.classList.contains('open')) {
+          populateDashboard();
+        }
+      }
+    )
+    .subscribe();
+}
+
 if (auth) {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       try {
         const docSnap = await getDoc(doc(db, "users", user.uid));
         if (docSnap.exists()) {
-          // FIX: inject uid into profile so currentUserProfile.uid is always defined
           currentUserProfile = { ...docSnap.data(), uid: user.uid };
         } else {
-          currentUserProfile = { firstName: 'User', uid: user.uid }; // fallback
+          currentUserProfile = { firstName: 'User', uid: user.uid };
         }
+        // Subscribe to realtime changes for this user
+        subscribeToUserProfile(user.uid);
       } catch(err) {
         console.error("Error fetching user profile:", err);
       }
     } else {
       currentUserProfile = null;
+      if (userProfileSubscription) {
+        userProfileSubscription.unsubscribe();
+        userProfileSubscription = null;
+      }
     }
     updateNavForUser();
     updatePricingUI();
@@ -1921,6 +1954,19 @@ window.handleDirectStripeCheckout = async function() {
         console.error("Direct checkout error:", err);
         showToast("Error starting checkout.", "error", 5000);
     }
+};
+
+window.handleManualPayPalCheckout = function() {
+    const paypalMeLink = "https://paypal.me/CobraAhmed/300";
+    showToast("Redirecting to PayPal... Once paid, we will manually activate your account.", "success", 6000);
+    
+    // Open in new tab so they don't lose their place
+    window.open(paypalMeLink, '_blank');
+    
+    setTimeout(() => {
+        showToast("Payment link opened. We will notify you once your subscription is active!", "info", 8000);
+        closeModal('paymentMethodModal');
+    }, 2000);
 };
 
 // ---- Analytics: Log Visit ----
