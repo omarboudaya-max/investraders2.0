@@ -374,23 +374,37 @@ let regCurrentStep = 1;
 
 function updatePricingUI() {
   if (!currentUserProfile) return;
-  const tier = currentUserProfile.subscription_tier || currentUserProfile.subscriptionTier;
+  const tier = (currentUserProfile.subscriptionTier || currentUserProfile.subscription_tier || "").toLowerCase();
   
-  if (tier === 'starter') {
-    const btnStarter = $('#btn-starter-plan');
-    if (btnStarter) {
-      btnStarter.textContent = "Current Plan";
-      btnStarter.style.background = "var(--muted)";
-      btnStarter.style.borderColor = "var(--muted-fg)";
-      btnStarter.style.color = "var(--muted-fg)";
-      btnStarter.style.cursor = "not-allowed";
-      btnStarter.disabled = true;
+  const plans = ['starter', 'pro', 'venture'];
+  const currentIdx = plans.indexOf(tier);
+
+  plans.forEach((p, idx) => {
+    const btn = $(`#btn-${p}-plan`);
+    if (!btn) return;
+    const card = btn.closest('.pricing-card');
+
+    if (currentIdx !== -1 && idx < currentIdx) {
+      // Lower tier: Hide the entire card
+      if (card) card.style.display = 'none';
+    } else if (idx === currentIdx) {
+      // Current tier: Show as Current Plan
+      if (card) card.style.display = 'flex';
+      btn.textContent = "Current Plan";
+      btn.style.background = "rgba(255,255,255,0.1)";
+      btn.style.borderColor = "var(--border)";
+      btn.style.color = "var(--muted-fg)";
+      btn.style.cursor = "default";
+      btn.disabled = true;
+      btn.onclick = null;
+    } else {
+      // Higher tier or no plan: Show as Upgrade/Subscribe
+      if (card) card.style.display = 'flex';
+      btn.textContent = (currentIdx !== -1) ? "Upgrade Now" : "Subscribe Now";
+      // Reset styles just in case
+      btn.disabled = false;
     }
-    const btnPro = $('#btn-pro-plan');
-    if (btnPro) btnPro.textContent = "Upgrade Now";
-    const btnVenture = $('#btn-venture-plan');
-    if (btnVenture) btnVenture.textContent = "Upgrade Now";
-  }
+  });
 }
 
 function updateNavForUser() {
@@ -1506,7 +1520,7 @@ window.populateDashboard = async function() {
           </div>
         </div>
         
-        <div class="dash-stats-row cols-2" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="dash-stats-row cols-3" style="grid-template-columns: repeat(3, 1fr);">
           <div class="dash-stat-card primary-card">
             <div class="dash-stat-label">Startup Value</div>
             <div class="dash-stat-value">-</div>
@@ -1516,6 +1530,11 @@ window.populateDashboard = async function() {
             <div class="dash-stat-label">Investor Visits</div>
             <div class="dash-stat-value">${s.investorVisits || 0}</div>
             <div class="dash-stat-sub">Total views from verified funds</div>
+          </div>
+          <div class="dash-stat-card" style="background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.1) 100%); border: 1px solid rgba(99,102,241,0.2);">
+            <div class="dash-stat-label">Membership</div>
+            <div class="dash-stat-value" style="color: var(--primary); font-size: 1.5rem; letter-spacing: 1px;">${p.subscriptionTier ? p.subscriptionTier.toUpperCase() : 'FREE'}</div>
+            <div class="dash-stat-sub">${p.subscriptionStatus === 'active' ? 'Premium Access' : 'Basic Member'}</div>
           </div>
         </div>
 
@@ -1692,9 +1711,9 @@ window.populateDashboard = async function() {
             <div class="dash-stat-sub">Average Ticket Size</div>
           </div>
           <div class="dash-stat-card">
-            <div class="dash-stat-label">Deals Screened</div>
-            <div class="dash-stat-value">124</div>
-            <div class="dash-stat-sub">In last 30 days</div>
+            <div class="dash-stat-label">Membership</div>
+            <div class="dash-stat-value" style="color: var(--primary); font-size: 1.5rem;">${p.subscriptionTier ? p.subscriptionTier.toUpperCase() : 'FREE'}</div>
+            <div class="dash-stat-sub">${p.subscriptionStatus === 'active' ? 'Full Access' : 'Basic Access'}</div>
           </div>
           <div class="dash-stat-card">
             <div class="dash-stat-label">Profile Views</div>
