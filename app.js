@@ -420,6 +420,7 @@ function updateNavForUser() {
 }
 
 let userProfileSubscription = null;
+let courseEnrollmentSubscription = null;
 
 function subscribeToUserProfile(uid) {
   if (userProfileSubscription) userProfileSubscription.unsubscribe();
@@ -447,6 +448,29 @@ function subscribeToUserProfile(uid) {
     .subscribe();
 }
 
+function subscribeToCourseEnrollments(uid) {
+  if (courseEnrollmentSubscription) courseEnrollmentSubscription.unsubscribe();
+
+  courseEnrollmentSubscription = supabase
+    .channel(`course_enrollments_${uid}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'course_enrollments',
+        filter: `user_id=eq.${uid}`
+      },
+      async (payload) => {
+        console.log('Course enrollment update via Realtime:', payload);
+        if (window.fetchMyCourses) {
+          window.fetchMyCourses(uid, currentUserProfile?.email);
+        }
+      }
+    )
+    .subscribe();
+}
+
 if (auth) {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -457,8 +481,9 @@ if (auth) {
         } else {
           currentUserProfile = { firstName: 'User', uid: user.uid };
         }
-        // Subscribe to realtime changes for this user
+        // Subscribe to realtime changes
         subscribeToUserProfile(user.uid);
+        subscribeToCourseEnrollments(user.uid);
       } catch(err) {
         console.error("Error fetching user profile:", err);
       }
@@ -467,6 +492,10 @@ if (auth) {
       if (userProfileSubscription) {
         userProfileSubscription.unsubscribe();
         userProfileSubscription = null;
+      }
+      if (courseEnrollmentSubscription) {
+        courseEnrollmentSubscription.unsubscribe();
+        courseEnrollmentSubscription = null;
       }
     }
     updateNavForUser();
