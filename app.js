@@ -2243,3 +2243,102 @@ window.handleForumPost = async function(event) {
     btn.textContent = 'Post Message';
   }
 };
+
+// ---- Training Session Logic ----
+let trainingFormData = {};
+
+window.openTrainingModal = function() {
+  trainingFormData = {};
+  const step1 = $('#trainingStep1');
+  const step2 = $('#trainingStep2');
+  const success = $('#trainingSuccess');
+  if (step1) step1.style.display = 'block';
+  if (step2) step2.style.display = 'none';
+  if (success) success.style.display = 'none';
+  openModal('trainingModal');
+};
+
+window.closeBanner = function() {
+  const banner = $('#promoBanner');
+  if (banner) {
+    banner.style.display = 'none';
+    document.body.classList.remove('has-banner');
+  }
+};
+
+window.handleTrainingRegister = async function(e) {
+  e.preventDefault();
+  const btn = $('#trainSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Processing...';
+
+  try {
+    trainingFormData = {
+      training_session_id: 'a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3', 
+      first_name: $('#trainFirstName').value.trim(),
+      last_name: $('#trainLastName').value.trim(),
+      email: $('#trainEmail').value.trim().toLowerCase(),
+      occupation: $('#trainOccupation').value.trim(),
+      phone_number: $('#trainCountryCode').value + ' ' + $('#trainPhone').value.trim(),
+    };
+
+    // Check if already registered
+    const { data: existing, error: checkError } = await supabase
+      .from('training_registrations')
+      .select('id')
+      .eq('training_session_id', trainingFormData.training_session_id)
+      .eq('email', trainingFormData.email)
+      .maybeSingle();
+
+    if (existing) {
+      showToast('You are already registered for this session!', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Continue Registration';
+      return;
+    }
+
+    // Move to step 2 (referral)
+    $('#trainingStep1').style.display = 'none';
+    $('#trainingStep2').style.display = 'block';
+  } catch (err) {
+    console.error('Registration error:', err);
+    showToast('Something went wrong. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Continue Registration';
+  }
+};
+
+window.submitReferral = async function(source) {
+  try {
+    trainingFormData.referral_source = source;
+    
+    // Final submission to Supabase
+    const { error } = await supabase
+      .from('training_registrations')
+      .insert([trainingFormData]);
+
+    if (error) {
+      if (error.code === '23505') { 
+        showToast('You are already registered with this email!', 'error');
+        return;
+      }
+      throw error;
+    }
+
+    // Show success
+    $('#trainingStep2').style.display = 'none';
+    $('#trainingSuccess').style.display = 'block';
+    if (typeof celebrate === 'function') celebrate();
+    if (typeof triggerConfetti === 'function') triggerConfetti();
+    
+  } catch (err) {
+    console.error('Referral submission error:', err);
+    showToast('Registration Error: ' + (err.message || 'Check console'), 'error');
+  }
+};
+
+// Initialize banner state
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.classList.add('has-banner');
+});
