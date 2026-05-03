@@ -2064,6 +2064,43 @@ ul { list-style: none; }
 
 .meta-icon {
   font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-icon-custom {
+  width: 44px;
+  height: 48px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.cal-month {
+  background: #ef4444; /* Red for the top bar */
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 0;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.cal-day {
+  color: #1e293b;
+  font-size: 1.4rem;
+  font-weight: 900;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding-bottom: 2px;
 }
 
 .meta-label {
