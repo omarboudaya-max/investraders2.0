@@ -1552,8 +1552,11 @@ ul { list-style: none; }
   .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
   .footer-bottom { flex-direction: column; text-align: center; }
 
-  .modal { padding: 1.75rem; }
-  .form-row { grid-template-columns: 1fr; }
+  .modal { padding: 1rem; }
+  .form-row { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .modal-logo { margin-bottom: 0.5rem; }
+  .modal-title { font-size: 1.25rem; }
+  .modal-subtitle { margin-bottom: 0.75rem; font-size: 0.8rem; }
 }
 
 @media (max-width: 480px) {
