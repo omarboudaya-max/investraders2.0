@@ -1960,9 +1960,116 @@ ul { list-style: none; }
 /* =============================================
    PROMO BANNER
    ============================================= */
-/* =============================================
-   TRAINING SECTION
-   ============================================= */
+.promo-banner {
+  background: #021b1b;
+  height: 80px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  border-bottom: 2px solid var(--accent);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  overflow: hidden;
+}
+
+.banner-image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.banner-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 4rem;
+  background: linear-gradient(to right, transparent 70%, rgba(2, 27, 27, 0.1));
+}
+
+.banner-free-tag {
+  position: absolute;
+  top: 12px;
+  left: 60px;
+  color: var(--accent);
+  font-weight: 950;
+  font-size: 1.5rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-shadow: 0 0 15px rgba(245, 197, 24, 0.7);
+  transform: rotate(-5deg);
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 15px;
+  border-radius: 6px;
+  border-left: 4px solid var(--accent);
+}
+
+.banner-cta {
+  margin-right: 2rem;
+  background: var(--accent);
+  color: #000;
+  font-weight: 900;
+  border-radius: 12px;
+  padding: 0.75rem 2rem;
+  border: none;
+  box-shadow: 0 10px 25px rgba(245, 197, 24, 0.3);
+  letter-spacing: 0.05em;
+  transition: all 0.3s;
+}
+
+.banner-cta:hover {
+  background: #fff;
+  color: var(--accent-dark);
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.banner-close {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1.2rem;
+}
+
+.banner-close:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+/* Fixed navbar adjustment */
+body.has-banner .navbar {
+  top: 80px;
+}
+
+@media (max-width: 768px) {
+  .promo-banner { height: 100px; }
+  .banner-overlay { 
+    justify-content: center; 
+    padding-right: 0; 
+    background: rgba(0,0,0,0.3);
+  }
+  .banner-cta { margin-right: 0; }
+  .banner-close { position: absolute; top: 0.5rem; right: 0.5rem; }
+  .banner-free-tag { left: 20px; font-size: 1rem; top: 10px; }
+  body.has-banner .navbar { top: 100px; }
+}
 .training-section {
   position: relative;
   min-height: 80vh;

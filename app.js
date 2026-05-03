@@ -389,6 +389,16 @@ document.querySelectorAll('section, footer').forEach(section => {
 
 
 
+// ---- Banner ----
+window.closeBanner = function() {
+  const banner = $('#promoBanner');
+  if (banner) {
+    banner.style.transform = 'translateY(-100%)';
+    document.body.classList.remove('has-banner');
+    setTimeout(() => banner.remove(), 300);
+  }
+};
+
 // ---- Pricing Toggle ----
 let isAnnual = false;
 

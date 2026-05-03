@@ -17,7 +17,19 @@
   <!-- PayPal JS SDK (Sandbox Placeholder) -->
   <script src="https://www.paypal.com/sdk/js?client-id=AcAt1OXiTscIzvWi4FvjHW895ThsSSOysjWVxcGPddqrMoWNZ-s1mwHMwvVQX78qevu4fl748ZIYfgY8&currency=USD"></script>
 </head>
-<body>
+<body class="has-banner">
+
+  <!-- ===== TRAINING BANNER ===== -->
+  <div class="promo-banner" id="promoBanner">
+    <div class="banner-image-container">
+      <img src="training_banner.png" alt="Free AI Training Session" class="banner-img" onerror="this.style.display='none'">
+      <div class="banner-overlay">
+        <div class="banner-free-tag">FREE</div>
+        <button class="btn btn-gold btn-sm banner-cta" onclick="openTrainingModal()">REGISTER NOW &rsaquo;</button>
+        <button class="banner-close" onclick="closeBanner()" aria-label="Close banner">&times;</button>
+      </div>
+    </div>
+  </div>
 
 
   <!-- ===== NAVBAR ===== -->
