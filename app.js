@@ -308,33 +308,86 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// ---- Scroll-reveal animation ----
-const revealEls = $$('.reveal');
+// ---- Scroll-reveal animation & Color Grading ----
 const observer = new IntersectionObserver(
   (entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
+      } else {
+        // Only remove if we want fade out, which the user requested
+        entry.target.classList.remove('visible');
       }
     });
   },
-  { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+  { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
 );
-revealEls.forEach(el => observer.observe(el));
 
-// Auto-add reveal classes to section children
-document.querySelectorAll('.feature-card, .step-item, .testimonial-card, .pricing-card, .ecosystem-card').forEach((el, i) => {
-  el.classList.add('reveal');
-  if (i % 5 === 1) el.classList.add('reveal-delay-1');
-  if (i % 5 === 2) el.classList.add('reveal-delay-2');
-  if (i % 5 === 3) el.classList.add('reveal-delay-3');
-  if (i % 5 === 4) el.classList.add('reveal-delay-4');
+// Auto-add reveal classes to section children and observe them
+function initScrollAnimations() {
+  const animatedSelectors = '.feature-card, .step-item, .testimonial-card, .pricing-card, .ecosystem-card, [data-aos]';
+  document.querySelectorAll(animatedSelectors).forEach((el, i) => {
+    if (!el.classList.contains('reveal') && !el.hasAttribute('data-aos')) {
+      el.classList.add('reveal');
+    }
+    
+    // Add staggered delays if not already present
+    if (!el.className.includes('reveal-delay')) {
+      const delayClass = `reveal-delay-${(i % 4) + 1}`;
+      el.classList.add(delayClass);
+    }
+    
+    observer.observe(el);
+  });
+}
+
+initScrollAnimations();
+
+// Section-based Color Grading
+const sectionColors = {
+  'hero': 'rgba(55, 48, 245, 0.08)',
+  'training': 'rgba(212, 175, 55, 0.15)', // Gold
+  'features': 'rgba(55, 48, 245, 0.05)',
+  'how-it-works': 'rgba(148, 163, 184, 0.08)', // Slate
+  'ecosystem': 'rgba(55, 48, 245, 0.05)',
+  'courses': 'rgba(212, 175, 55, 0.12)', // Gold
+  'pricing': 'rgba(148, 163, 184, 0.08)', // Slate
+  'footer': 'rgba(15, 23, 42, 0.2)'
+};
+
+
+const currentRatios = {};
+const sectionObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach(entry => {
+      currentRatios[entry.target.id] = entry.intersectionRatio;
+    });
+
+    let maxRatio = 0;
+    let mostVisibleSection = null;
+
+    for (const [id, ratio] of Object.entries(currentRatios)) {
+      if (ratio > maxRatio) {
+        maxRatio = ratio;
+        mostVisibleSection = id;
+      }
+    }
+
+    if (mostVisibleSection && maxRatio > 0.1) {
+      const color = sectionColors[mostVisibleSection] || 'transparent';
+      document.documentElement.style.setProperty('--color-grade', color);
+    }
+  },
+  { threshold: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9] }
+);
+
+
+
+document.querySelectorAll('section, footer').forEach(section => {
+  sectionObserver.observe(section);
 });
 
-// Re-run observer for newly added
-revealEls.forEach(el => observer.observe(el));
-document.querySelectorAll('.reveal:not([class*="visible"])').forEach(el => observer.observe(el));
+
 
 // ---- Pricing Toggle ----
 let isAnnual = false;
@@ -2338,7 +2391,7 @@ window.submitReferral = async function(source) {
   }
 };
 
-// Initialize banner state
+// Initialize page state
 document.addEventListener('DOMContentLoaded', () => {
-  document.body.classList.add('has-banner');
+  // Any page initialization logic goes here
 });

@@ -19,17 +19,6 @@
 </head>
 <body>
 
-  <!-- ===== TRAINING BANNER ===== -->
-  <div class="promo-banner" id="promoBanner">
-    <div class="banner-image-container">
-      <img src="training_banner.png" alt="Free AI Training Session" class="banner-img" onerror="this.style.display='none'">
-      <div class="banner-overlay">
-        <div class="banner-free-tag">FREE</div>
-        <button class="btn btn-gold btn-sm banner-cta" onclick="openTrainingModal()">REGISTER NOW &rsaquo;</button>
-        <button class="banner-close" onclick="closeBanner()" aria-label="Close banner">&times;</button>
-      </div>
-    </div>
-  </div>
 
   <!-- ===== NAVBAR ===== -->
   <nav class="navbar" id="navbar">
@@ -201,6 +190,57 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- ===== TRAINING SECTION ===== -->
+  <section class="section training-section" id="training">
+    <div class="training-bg">
+      <img src="training_banner.png" alt="AI Training" class="training-bg-img">
+      <div class="training-shade"></div>
+    </div>
+    
+    <div class="container training-container">
+      <div class="training-content-wrapper">
+        <div class="training-label" data-aos="fade-right">Limited Free Training Session</div>
+        <h2 class="training-main-title" data-aos="fade-up">
+          HOW TO REACH <span class="accent-gold">FINANCIAL FREEDOM</span><br>
+          USING <span class="accent-gold">AI</span>
+        </h2>
+        <p class="training-ar-title" data-aos="fade-up" data-aos-delay="100">كيف يمكنك أن تحقق الحرية المالية باستخدام الذكاء الإصطناعي</p>
+        
+        <div class="training-meta-grid" data-aos="fade-up" data-aos-delay="200">
+          <div class="meta-card">
+            <div class="meta-icon">📅</div>
+            <div class="meta-text">
+              <span class="meta-label">Date</span>
+              <span class="meta-value">Tuesday, May 12th</span>
+            </div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-icon">🕘</div>
+            <div class="meta-text">
+              <span class="meta-label">Time</span>
+              <span class="meta-value">9:00 PM KSA</span>
+            </div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-icon">📹</div>
+            <div class="meta-text">
+              <span class="meta-label">Platform</span>
+              <span class="meta-value">Google Meet</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="training-actions" data-aos="fade-up" data-aos-delay="300">
+          <button class="btn btn-gold btn-xl btn-shimmer" onclick="openTrainingModal()">
+            Secure Your Spot Now — FREE
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+
         </div>
       </div>
     </div>
@@ -765,72 +805,75 @@
         <div class="reg-step" id="regStep3" style="display: none;">
           <!-- Founder Specific -->
           <div id="founderFields">
-            <div class="form-group">
-              <label for="startupName">Startup Name <span style="color: var(--destructive);">*</span></label>
-              <input type="text" id="startupName" placeholder="Your startup name" />
-            </div>
-            <div class="form-group">
-              <label for="startupField">Field / Category <span style="color: var(--destructive);">*</span></label>
-              <input type="text" id="startupField" placeholder="E.g. AI, FinTech, HealthTech" />
-            </div>
-            <div class="form-group">
-              <label for="startupStage">Stage <span style="color: var(--destructive);">*</span></label>
-              <select id="startupStage" class="form-select">
-                <option value="" disabled selected>Select Stage</option>
-                <option value="Idea">Idea</option>
-                <option value="MVP">MVP</option>
-                <option value="Working Product">Working Product</option>
-                <option value="Scaling">Scaling</option>
-              </select>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="startupName">Startup Name <span style="color: var(--destructive);">*</span></label>
+                <input type="text" id="startupName" placeholder="Name" />
+              </div>
+              <div class="form-group">
+                <label for="startupField">Field <span style="color: var(--destructive);">*</span></label>
+                <input type="text" id="startupField" placeholder="E.g. AI" />
+              </div>
             </div>
             <div class="form-row">
+              <div class="form-group">
+                <label for="startupStage">Stage <span style="color: var(--destructive);">*</span></label>
+                <select id="startupStage" class="form-select">
+                  <option value="" disabled selected>Select</option>
+                  <option value="Idea">Idea</option>
+                  <option value="MVP">MVP</option>
+                  <option value="Working Product">Product</option>
+                  <option value="Scaling">Scaling</option>
+                </select>
+              </div>
               <div class="form-group">
                 <label for="startupEmployees">Employees <span style="color: var(--destructive);">*</span></label>
                 <select id="startupEmployees" class="form-select">
-                  <option value="" disabled selected>Select Range</option>
+                  <option value="" disabled selected>Select</option>
                   <option value="1-10">1-10</option>
                   <option value="11-50">11-50</option>
                   <option value="51-200">51-200</option>
-                  <option value="200+">200+</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="startupCapital">Capital Range <span style="color: var(--destructive);">*</span></label>
-                <select id="startupCapital" class="form-select">
-                  <option value="" disabled selected>Select Capital Range</option>
-                  <option value="Pre-Seed">Pre-Seed</option>
-                  <option value="Seed">Seed</option>
-                  <option value="Series A">Series A</option>
-                  <option value="Series B+">Series B+</option>
                 </select>
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label for="startupYear">Incorporation Year <span style="color: var(--destructive);">*</span></label>
-                <input type="number" id="startupYear" placeholder="E.g. 2024" />
+                <label for="startupCapital">Capital <span style="color: var(--destructive);">*</span></label>
+                <select id="startupCapital" class="form-select">
+                  <option value="" disabled selected>Select</option>
+                  <option value="Pre-Seed">Pre-Seed</option>
+                  <option value="Seed">Seed</option>
+                  <option value="Series A">Series A</option>
+                </select>
               </div>
               <div class="form-group">
-                <label for="startupWebsite">Website Link <span style="color: var(--destructive);">*</span></label>
-                <input type="url" id="startupWebsite" placeholder="https://" />
+                <label for="startupYear">Year <span style="color: var(--destructive);">*</span></label>
+                <input type="number" id="startupYear" placeholder="2024" />
               </div>
             </div>
             <div class="form-group">
-              <label for="startupDescription">Description of the startup <span style="color: var(--destructive);">*</span></label>
-              <textarea id="startupDescription" placeholder="Briefly describe what you are building..." rows="3" class="form-textarea"></textarea>
+              <label for="startupWebsite">Website Link <span style="color: var(--destructive);">*</span></label>
+              <input type="url" id="startupWebsite" placeholder="https://" />
+            </div>
+            <div class="form-group">
+              <label for="startupDescription">Description <span style="color: var(--destructive);">*</span></label>
+              <textarea id="startupDescription" placeholder="Briefly describe..." rows="2" class="form-textarea"></textarea>
             </div>
           </div>
 
           <!-- Investor Specific -->
           <div id="investorFields" style="display: none;">
-            <div class="form-group">
-              <label for="investorFund">Fund / Syndicate Name</label>
-              <input type="text" id="investorFund" placeholder="Name of your fund (optional)" />
+            <div class="form-row">
+              <div class="form-group">
+                <label for="investorFund">Fund Name</label>
+                <input type="text" id="investorFund" placeholder="Name" />
+              </div>
+              <div class="form-group">
+                <label for="investorFocus">Focus <span style="color: var(--destructive);">*</span></label>
+                <input type="text" id="investorFocus" placeholder="E.g. SaaS" />
+              </div>
             </div>
-            <div class="form-group">
-              <label for="investorFocus">Investment Focus (Sectors) <span style="color: var(--destructive);">*</span></label>
-              <input type="text" id="investorFocus" placeholder="E.g. SaaS, DeepTech" />
-            </div>
+
             <div class="form-group">
               <label for="investorTicketSize">Typical Ticket Size <span style="color: var(--destructive);">*</span></label>
               <select id="investorTicketSize" class="form-select">
