@@ -1526,6 +1526,7 @@ ul { list-style: none; }
 @media (max-width: 768px) {
   .nav-links, .nav-actions { display: none; }
   .nav-hamburger { display: flex; }
+  .nav-logo img { height: 100px !important; }
 
   .hero-title { font-size: 2.5rem; }
   .hero-cta { flex-direction: column; align-items: center; }
@@ -2114,12 +2115,40 @@ ul { list-style: none; }
 }
 
 @media (max-width: 768px) {
-  .training-section { padding: 5rem 0; text-align: center; }
-  .training-container { padding: 0 2rem; }
-  .training-ar-title { direction: ltr; font-size: 1.2rem; }
-  .training-meta-grid { margin: 0 auto 3rem; }
-  .meta-card { justify-content: flex-start; text-align: left; }
-  .training-shade { background: #021b1b; opacity: 0.9; }
+  .training-section { 
+    padding: 6rem 0 4rem; 
+    text-align: center; 
+    min-height: auto;
+  }
+  .training-container { padding: 0 1.5rem; }
+  .training-content-wrapper { display: flex; flex-direction: column; align-items: center; }
+  .training-main-title { font-size: 2.2rem; line-height: 1.1; margin-bottom: 1.5rem; }
+  .training-ar-title { 
+    direction: rtl; 
+    font-size: 1.1rem; 
+    margin-bottom: 2rem; 
+    width: 100%;
+    line-height: 1.6;
+  }
+  .training-meta-grid { 
+    grid-template-columns: 1fr; 
+    gap: 1rem; 
+    margin: 0 auto 2.5rem; 
+    width: 100%;
+  }
+  .meta-card { 
+    padding: 1.25rem; 
+    justify-content: flex-start; 
+    text-align: left; 
+    width: 100%;
+  }
+  .meta-icon { font-size: 1.5rem; }
+  .meta-value { font-size: 1rem; }
+  .training-shade { 
+    background: linear-gradient(to bottom, rgba(2, 27, 27, 0.6) 0%, #021b1b 100%); 
+    opacity: 1; 
+  }
+  .btn-xl { width: 100%; padding: 1.125rem 1.5rem; font-size: 1rem; }
 }
 
 /* Reset fixed navbar adjustment since banner is gone */
