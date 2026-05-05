@@ -2695,6 +2695,7 @@ async function loadAdminTrainings() {
           <tr>
             <th>Name</th>
             <th>Email</th>
+            <th>WhatsApp</th>
             <th>Occupation</th>
             <th>Referral</th>
             <th>Date</th>
@@ -2705,6 +2706,7 @@ async function loadAdminTrainings() {
             <tr>
               <td>${r.first_name} ${r.last_name}</td>
               <td>${r.email}</td>
+              <td style="font-family: monospace;">${r.phone_number || '-'}</td>
               <td>${r.occupation || '-'}</td>
               <td><span class="admin-badge badge-pending" style="background:rgba(99,102,241,0.1); color:var(--primary); border:none;">${r.referral_source || 'Direct'}</span></td>
               <td>${new Date(r.registered_at).toLocaleDateString()}</td>
