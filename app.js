@@ -491,9 +491,11 @@ function updateNavForUser() {
       'omarboudaya1@gmail.com',
       'dr.maherkhedher@wisdomnets.com',
       'mohammedkhedher222@gmail.com'
-    ];
+    ].map(e => e.toLowerCase().trim());
     
-    if (adminEmails.includes(currentUserProfile.email)) {
+    const userEmail = (currentUserProfile.email || auth.currentUser?.email || "").toLowerCase().trim();
+    
+    if (adminEmails.includes(userEmail)) {
       getStartedBtn.textContent = 'Admin Dash';
       getStartedBtn.onclick = (e) => { e.preventDefault(); openAdminDashboard(); };
     } else {
