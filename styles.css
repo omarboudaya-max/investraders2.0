@@ -2307,8 +2307,9 @@ body.has-banner .navbar {
 }
 
 /* Reset fixed navbar adjustment since banner is gone */
-.navbar {
-  top: 0 !important;
+/* Fixed navbar adjustment */
+body.has-banner .navbar {
+  top: 80px;
 }
 
 @media (max-width: 1024px) {
@@ -2541,4 +2542,80 @@ body::before {
   opacity: 1;
   transform: translate(0) !important;
 }
+
+/* =============================================
+   ADMIN DASHBOARD
+   ============================================= */
+.admin-dashboard .dash-topbar {
+  background: hsl(222, 47%, 6%);
+  color: #fff;
+}
+.admin-dashboard .dash-topbar-logo span { color: var(--accent); font-weight: 800; }
+
+.admin-table-container {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.admin-table th {
+  background: var(--muted);
+  text-align: left;
+  padding: 1rem;
+  font-weight: 700;
+  color: var(--muted-fg);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.admin-table tr:last-child td { border-bottom: none; }
+.admin-table tr:hover { background: var(--primary-subtle); }
+
+.admin-badge {
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.badge-founder { background: hsl(234 89% 54% / 0.1); color: var(--primary); }
+.badge-investor { background: hsl(43 96% 56% / 0.15); color: var(--accent-dark); }
+.badge-active { background: hsl(160 84% 39% / 0.1); color: hsl(160 84% 39%); }
+.badge-pending { background: hsl(43 96% 56% / 0.1); color: hsl(43 70% 40%); }
+
+.admin-action-btn {
+  padding: 0.4rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.admin-action-btn:hover { background: var(--muted); border-color: var(--muted-fg); }
+
+@media (max-width: 768px) {
+  .admin-dashboard .dash-body {
+    grid-template-columns: 1fr;
+  }
+  .admin-dashboard .dash-sidebar {
+    display: none;
+  }
+}
+
 

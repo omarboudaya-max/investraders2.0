@@ -485,8 +485,21 @@ function updateNavForUser() {
     loginBtn.textContent = `Hello, ${currentUserProfile.firstName}`;
     loginBtn.href = 'javascript:void(0)';
     loginBtn.style.fontWeight = '600';
-    getStartedBtn.textContent = 'Dashboard';
-    getStartedBtn.href = 'javascript:void(0)';
+    
+    // Check if admin
+    const adminEmails = [
+      'omarboudaya1@gmail.com',
+      'dr.maherkhedher@wisdomnets.com',
+      'mohammedkhedher222@gmail.com'
+    ];
+    
+    if (adminEmails.includes(currentUserProfile.email)) {
+      getStartedBtn.textContent = 'Admin Dash';
+      getStartedBtn.onclick = (e) => { e.preventDefault(); openAdminDashboard(); };
+    } else {
+      getStartedBtn.textContent = 'Dashboard';
+      getStartedBtn.onclick = (e) => { e.preventDefault(); openDashboard(); };
+    }
 
     // Show manage subscription button if they have a stripe customer ID
     if (manageSubBtn) {
@@ -497,6 +510,7 @@ function updateNavForUser() {
     loginBtn.href = '#login';
     loginBtn.style.fontWeight = '500';
     getStartedBtn.textContent = 'Get Started';
+    getStartedBtn.onclick = null;
     getStartedBtn.href = '#register';
     if (manageSubBtn) manageSubBtn.style.display = 'none';
   }
@@ -2405,3 +2419,384 @@ window.submitReferral = async function(source) {
 document.addEventListener('DOMContentLoaded', () => {
   // Any page initialization logic goes here
 });
+
+/* =============================================
+   ADMIN DASHBOARD LOGIC
+   ============================================= */
+window.openAdminDashboard = function() {
+  const adminEmails = [
+    'omarboudaya1@gmail.com',
+    'dr.maherkhedher@wisdomnets.com',
+    'mohammedkhedher222@gmail.com'
+  ];
+  if (!currentUserProfile || !adminEmails.includes(currentUserProfile.email)) {
+    showToast('Unauthorized access.', 'error');
+    return;
+  }
+  
+  $('#adminDashboardPage').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  switchAdminTab('overview');
+};
+
+window.closeAdminDashboard = function() {
+  $('#adminDashboardPage').classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+window.switchAdminTab = function(tabId) {
+  // Update sidebar UI
+  document.querySelectorAll('#adminSidebar .db-sidebar-item').forEach(el => {
+    el.classList.remove('active');
+    if (el.dataset.tab === tabId) el.classList.add('active');
+  });
+
+  // Switch tabs
+  document.querySelectorAll('.admin-tab-content').forEach(tab => {
+    tab.style.display = (tab.id === `admin-tab-${tabId}`) ? 'block' : 'none';
+  });
+
+  // Trigger data load if needed
+  if (tabId === 'overview') populateAdminDashboard();
+  if (tabId === 'users') loadAdminUsers();
+  if (tabId === 'startups') loadAdminStartups();
+  if (tabId === 'enrollments') loadAdminEnrollments();
+  if (tabId === 'trainings') loadAdminTrainings();
+  if (tabId === 'financials') loadAdminFinancials();
+};
+
+async function populateAdminDashboard() {
+  try {
+    // Basic stats
+    const { count: userCount, error: uErr } = await supabase.from('users').select('*', { count: 'exact', head: true });
+    const { count: startupCount, error: sErr } = await supabase.from('startups').select('*', { count: 'exact', head: true });
+    const { count: enrollmentCount, error: eErr } = await supabase.from('course_enrollments').select('*', { count: 'exact', head: true });
+
+    if (uErr || sErr || eErr) {
+       console.warn("RLS or Database Error:", uErr || sErr || eErr);
+       $('#admin-recent-activity').innerHTML = `
+         <div style="padding: 2rem; text-align: center; background: #fff1f2; color: #991b1b; border-radius: 12px; border: 1px solid #fecaca;">
+           <p style="font-weight: 700; margin-bottom: 0.5rem;">Database Access Restricted</p>
+           <p style="font-size: 0.85rem; opacity: 0.8;">Please ensure Row Level Security (RLS) policies are configured in Supabase to allow admin access.</p>
+         </div>
+       `;
+       return;
+    }
+
+    if ($('#stat-total-users')) $('#stat-total-users').textContent = userCount || 0;
+    if ($('#stat-total-startups')) $('#stat-total-startups').textContent = startupCount || 0;
+    if ($('#stat-total-enrollments')) $('#stat-total-enrollments').textContent = enrollmentCount || 0;
+
+    // Load recent activity
+    const { data: recentUsers } = await supabase.from('users').select('*').order('joined_at', { ascending: false }).limit(5);
+    
+    if (recentUsers && recentUsers.length > 0) {
+      let html = `
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Joined</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${recentUsers.map(u => `
+              <tr>
+                <td>${u.first_name} ${u.last_name}</td>
+                <td>${u.email}</td>
+                <td><span class="admin-badge badge-${u.role}">${u.role}</span></td>
+                <td>${new Date(u.joined_at).toLocaleDateString()}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      $('#admin-recent-activity').innerHTML = html;
+    } else {
+      $('#admin-recent-activity').innerHTML = '<p style="padding: 1rem; color: var(--muted-fg);">No recent activity found.</p>';
+    }
+
+  } catch (err) {
+    console.error("Admin dash error:", err);
+    showToast('Error loading admin data.', 'error');
+  }
+}
+
+async function loadAdminUsers() {
+  const container = $('#admin-users-list');
+  container.innerHTML = '<p style="padding:1rem;">Loading users...</p>';
+  try {
+    const { data: users, error } = await supabase.from('users').select('*').order('joined_at', { ascending: false });
+    
+    if (error) {
+      container.innerHTML = `<p style="padding:2rem; color:var(--destructive); text-align:center;">Access Denied: ${error.message}</p>`;
+      return;
+    }
+
+    if (!users || users.length === 0) {
+      container.innerHTML = '<p style="padding:2rem; text-align:center;">No users found in database.</p>';
+      return;
+    }
+
+    let html = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Plan</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${users.map(u => `
+            <tr>
+              <td>${u.first_name} ${u.last_name}</td>
+              <td>${u.email}</td>
+              <td><span class="admin-badge badge-${u.role}">${u.role}</span></td>
+              <td>${u.subscription_tier || 'Free'}</td>
+              <td>
+                <button class="admin-action-btn" onclick="showToast('Edit feature coming soon')">✏️</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    container.innerHTML = html;
+  } catch (err) { 
+    console.error(err);
+    container.innerHTML = '<p style="padding:2rem; color:var(--destructive);">Unexpected error loading users.</p>';
+  }
+}
+
+async function loadAdminStartups() {
+  const container = $('#admin-startups-list');
+  container.innerHTML = '<p style="padding:1rem;">Loading startups...</p>';
+  try {
+    const { data: startups, error } = await supabase.from('startups').select('*').order('created_at', { ascending: false });
+    
+    if (error) {
+      container.innerHTML = `<p style="padding:2rem; color:var(--destructive); text-align:center;">Access Denied: ${error.message}</p>`;
+      return;
+    }
+
+    if (!startups || startups.length === 0) {
+      container.innerHTML = '<p style="padding:2rem; text-align:center;">No startups found in database.</p>';
+      return;
+    }
+
+    let html = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Startup Name</th>
+            <th>Field</th>
+            <th>Stage</th>
+            <th>Capital</th>
+            <th>Visits</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${startups.map(s => `
+            <tr>
+              <td><strong>${s.name}</strong></td>
+              <td>${s.field}</td>
+              <td><span class="admin-badge badge-pending">${s.stage}</span></td>
+              <td>${s.capital}</td>
+              <td>${s.investor_visits || 0}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    container.innerHTML = html;
+  } catch (err) { 
+    console.error(err);
+    container.innerHTML = '<p style="padding:2rem; color:var(--destructive);">Unexpected error loading startups.</p>';
+  }
+}
+
+async function loadAdminEnrollments() {
+  const container = $('#admin-enrollments-list');
+  const filter = $('#admin-course-filter').value;
+  container.innerHTML = '<p style="padding:1rem;">Loading enrollments...</p>';
+  try {
+    let q = supabase.from('course_enrollments').select('*').order('enrolled_at', { ascending: false });
+    if (filter !== 'all') {
+      q = q.eq('course_id', filter);
+    }
+    
+    const { data: enrolls, error } = await q;
+    
+    if (error) {
+      container.innerHTML = `<p style="padding:2rem; color:var(--destructive); text-align:center;">Access Denied: ${error.message}</p>`;
+      return;
+    }
+
+    if (!enrolls || enrolls.length === 0) {
+      container.innerHTML = '<p style="padding:2rem; text-align:center;">No enrollments found matching this filter.</p>';
+      return;
+    }
+
+    let html = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Course</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${enrolls.map(e => `
+            <tr>
+              <td>${e.email}</td>
+              <td>${e.course}</td>
+              <td>$${e.price}</td>
+              <td><span class="admin-badge badge-${e.payment_status === 'paid' ? 'active' : 'pending'}">${e.payment_status}</span></td>
+              <td>${new Date(e.enrolled_at).toLocaleDateString()}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    container.innerHTML = html;
+  } catch (err) { 
+    console.error(err);
+    container.innerHTML = '<p style="padding:2rem; color:var(--destructive);">Unexpected error loading enrollments.</p>';
+  }
+}
+
+async function loadAdminTrainings() {
+  const container = $('#admin-trainings-list');
+  container.innerHTML = '<p style="padding:1rem;">Loading training registrations...</p>';
+  try {
+    const { data: regs, error } = await supabase.from('training_registrations').select('*').order('registered_at', { ascending: false });
+    
+    if (error) {
+      container.innerHTML = `<p style="padding:2rem; color:var(--destructive); text-align:center;">Access Denied: ${error.message}</p>`;
+      return;
+    }
+
+    if (!regs || regs.length === 0) {
+      container.innerHTML = '<p style="padding:2rem; text-align:center;">No registrations found.</p>';
+      return;
+    }
+
+    let html = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Occupation</th>
+            <th>Referral</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${regs.map(r => `
+            <tr>
+              <td>${r.first_name} ${r.last_name}</td>
+              <td>${r.email}</td>
+              <td>${r.occupation || '-'}</td>
+              <td><span class="admin-badge badge-pending" style="background:rgba(99,102,241,0.1); color:var(--primary); border:none;">${r.referral_source || 'Direct'}</span></td>
+              <td>${new Date(r.registered_at).toLocaleDateString()}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    container.innerHTML = html;
+  } catch (err) { 
+    console.error(err);
+    container.innerHTML = '<p style="padding:2rem; color:var(--destructive);">Unexpected error loading trainings.</p>';
+  }
+}
+
+async function loadAdminFinancials() {
+  const container = $('#admin-financial-details');
+  container.innerHTML = '<p style="padding:1rem;">Calculating financial reports...</p>';
+  
+  try {
+    // 1. Fetch Course Revenue
+    const { data: enrollments, error: eErr } = await supabase.from('course_enrollments').select('price, payment_status, course, email, enrolled_at').eq('payment_status', 'paid');
+    
+    // 2. Fetch Subscriptions (calculated from user tiers)
+    const { data: users, error: uErr } = await supabase.from('users').select('subscription_tier, email, joined_at');
+
+    if (eErr || uErr) throw eErr || uErr;
+
+    let courseTotal = 0;
+    enrollments.forEach(e => courseTotal += parseFloat(e.price || 0));
+
+    let subTotal = 0;
+    const tierPrices = { starter: 29, pro: 79, venture: 249 };
+    const subBreakdown = [];
+    
+    users.forEach(u => {
+      if (u.subscription_tier && tierPrices[u.subscription_tier]) {
+        const price = tierPrices[u.subscription_tier];
+        subTotal += price;
+        subBreakdown.push({
+          type: 'Subscription',
+          source: `${u.subscription_tier.charAt(0).toUpperCase() + u.subscription_tier.slice(1)} Plan`,
+          amount: price,
+          user: u.email,
+          date: u.joined_at
+        });
+      }
+    });
+
+    const totalRevenue = courseTotal + subTotal;
+
+    // Update UI Stats
+    $('#stat-total-revenue').textContent = `$${totalRevenue.toLocaleString()}`;
+    $('#stat-revenue-courses').textContent = `$${courseTotal.toLocaleString()}`;
+    $('#stat-revenue-subs').textContent = `$${subTotal.toLocaleString()}`;
+
+    // Combine for details table
+    const allRevenue = [
+      ...enrollments.map(e => ({ type: 'Course', source: e.course, amount: e.price, user: e.email, date: e.enrolled_at })),
+      ...subBreakdown
+    ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    let html = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Source</th>
+            <th>User</th>
+            <th>Amount</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${allRevenue.map(item => `
+            <tr>
+              <td><span class="admin-badge" style="background:${item.type === 'Course' ? 'rgba(16,185,129,0.1)' : 'rgba(99,102,241,0.1)'}; color:${item.type === 'Course' ? '#10b981' : 'var(--primary)'}; border:none;">${item.type}</span></td>
+              <td>${item.source}</td>
+              <td>${item.user}</td>
+              <td><strong>$${item.amount}</strong></td>
+              <td>${new Date(item.date).toLocaleDateString()}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    container.innerHTML = html;
+
+  } catch (err) {
+    console.error("Financial error:", err);
+    container.innerHTML = '<p style="padding:2rem; color:var(--destructive);">Error generating financial reports.</p>';
+  }
+}
+
+
