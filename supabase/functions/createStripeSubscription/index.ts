@@ -1,5 +1,5 @@
-import Stripe from "npm:stripe@18.4.0";
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
 import { corsPreflight, json } from "../_shared/utils.ts";
 
 
@@ -17,7 +17,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-01-27.acac"
+      apiVersion: "2025-01-27.acacia"
     });
     const authHeader = req.headers.get("Authorization") || "";
     if (!authHeader.startsWith("Bearer ")) return json({ error: "Missing auth token" }, 401);

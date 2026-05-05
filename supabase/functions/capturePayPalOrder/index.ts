@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { createClient } from "@supabase/supabase-js";
 import { corsPreflight, generateAccessCode, json } from "../_shared/utils.ts";
 
 async function getPayPalAccessToken() {

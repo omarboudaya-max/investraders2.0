@@ -139,6 +139,17 @@ ul { list-style: none; }
   font-size: 1rem;
   border-radius: calc(var(--radius) + 0.125rem);
 }
+.btn-coming-soon {
+  background: #cbd5e1;
+  color: #64748b;
+  border-color: #cbd5e1;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none !important;
+}
+.btn-coming-soon:hover {
+  transform: none !important;
+}
 
 /* =============================================
    NAVBAR

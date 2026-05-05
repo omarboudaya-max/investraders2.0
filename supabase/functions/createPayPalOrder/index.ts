@@ -1,5 +1,5 @@
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
-import { corsPreflight, json } from "../_shared/utils.ts";
+import { createClient } from "@supabase/supabase-js";
+import { json, corsPreflight } from "../_shared/utils.ts";
 
 async function getPayPalAccessToken() {
   const clientId = Deno.env.get("PAYPAL_CLIENT_ID") || "";
