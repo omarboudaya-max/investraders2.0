@@ -2795,4 +2795,43 @@ async function loadAdminFinancials() {
   }
 }
 
+// ---- Mobile Onboarding Guide ----
+function initMobileGuide() {
+  if (window.innerWidth > 768) return; // Only mobile
+  if (localStorage.getItem('mobileGuideShown_v2')) return; // Only first time
+
+  const guide = $('#mobileGuide');
+  if (!guide) return;
+
+  // Wait a bit after load
+  setTimeout(() => {
+    guide.classList.add('show');
+    document.body.style.overflow = 'hidden'; // Prevent scroll while guide is up
+  }, 1500);
+}
+
+window.closeMobileGuide = function() {
+  const guide = $('#mobileGuide');
+  if (guide) {
+    guide.style.opacity = '0';
+    guide.style.transition = 'opacity 0.5s ease';
+    document.body.style.overflow = '';
+    
+    // Add pulse to the training button to draw attention
+    const trainingBtn = $('.training-actions .btn-gold');
+    if (trainingBtn) trainingBtn.classList.add('pulse-highlight');
+
+    setTimeout(() => {
+      guide.remove();
+      localStorage.setItem('mobileGuideShown_v2', 'true');
+    }, 500);
+  }
+};
+
+// Initialize everything
+document.addEventListener('DOMContentLoaded', () => {
+  initMobileGuide();
+});
+
+
 
