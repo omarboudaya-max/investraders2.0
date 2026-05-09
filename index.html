@@ -37,7 +37,7 @@
     <div class="container nav-inner">
       <a href="#" class="nav-logo">
         <div class="logo-icon">
-          <img src="./investrade_logo.png" alt="Investrade" style="height: 180px; width: auto; object-fit: contain;" />
+          <img src="./investrade_logo.png" alt="Investrade" />
         </div>
       </a>
 
@@ -63,15 +63,30 @@
 
   <!-- Mobile menu -->
   <div class="mobile-menu" id="mobileMenu">
-    <a href="#features" class="mobile-link">Features</a>
-    <a href="#how-it-works" class="mobile-link">How It Works</a>
-    <a href="#ecosystem" class="mobile-link">Ecosystem</a>
-    <a href="#courses" class="mobile-link">Courses</a>
-    <a href="#pricing" class="mobile-link">Pricing</a>
+    <a href="#features" class="mobile-link">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 12px;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      Features
+    </a>
+    <a href="#how-it-works" class="mobile-link">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 12px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      How It Works
+    </a>
+    <a href="#ecosystem" class="mobile-link">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 12px;"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+      Ecosystem
+    </a>
+    <a href="#courses" class="mobile-link">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 12px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Courses
+    </a>
+    <a href="#pricing" class="mobile-link">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 12px;"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      Pricing
+    </a>
 
     <div class="mobile-actions">
-      <a href="#login" class="btn btn-ghost w-full">Sign In</a>
-      <a href="#register" class="btn btn-primary w-full">Get Started Free</a>
+      <a href="#login" class="btn btn-ghost w-full" style="justify-content: center;">Sign In</a>
+      <a href="#register" class="btn btn-primary w-full" style="justify-content: center;">Get Started Free</a>
     </div>
   </div>
 
@@ -458,63 +473,63 @@
         <p class="section-subtitle">Learn the exact tools, workflows, and prompts to accelerate your startup from idea to Series A—taught by top ecosystem founders.</p>
       </div>
 
-      <div class="courses-container" style="max-width: 1000px; margin: 0 auto; background: var(--card); border-radius: 24px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.08); display: flex; flex-wrap: wrap;">
+      <div class="courses-container">
         
         <!-- Left Side: Course Info -->
-        <div style="flex: 1 1 400px; padding: 3rem; display: flex; flex-direction: column; justify-content: center;">
-          <div style="display: inline-block; padding: 0.4rem 1rem; background: rgba(99,102,241,0.1); color: var(--primary); border-radius: 30px; font-size: 0.875rem; font-weight: 600; width: fit-content; margin-bottom: 1.5rem;">Online masterclass</div>
-          <h3 style="font-size: 2.2rem; margin-bottom: 1rem; line-height: 1.2;">How to build your startup using AI</h3>
-          <p style="color: var(--muted-fg); margin-bottom: 1rem; line-height: 1.6; font-size: 1.1rem; font-weight: bold;">Course Modules</p>
+        <div class="course-info">
+          <div class="course-tag">Online masterclass</div>
+          <h3 class="course-title">How to build your startup using AI</h3>
+          <p class="course-modules-label">Course Modules</p>
           
-          <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; max-height: 250px; overflow-y: auto; padding-right: 10px;">
-            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-weight: bold; color: var(--foreground);"><span style="color: var(--primary);">1.</span> Introduction to AI-Powered Entrepreneurship</span>
-              <span style="font-size: 0.9rem; color: var(--muted-fg);">Understanding how AI is transforming the startup landscape</span>
+          <div class="course-modules-list">
+            <div class="module-item">
+              <span class="module-name"><span class="module-num">1.</span> Introduction to AI-Powered Entrepreneurship</span>
+              <span class="module-desc">Understanding how AI is transforming the startup landscape</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-weight: bold; color: var(--foreground);"><span style="color: var(--primary);">2.</span> Idea Validation with AI Tools</span>
-              <span style="font-size: 0.9rem; color: var(--muted-fg);">Use AI to validate your business idea before investing time and money</span>
+            <div class="module-item">
+              <span class="module-name"><span class="module-num">2.</span> Idea Validation with AI Tools</span>
+              <span class="module-desc">Use AI to validate your business idea before investing time and money</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-weight: bold; color: var(--foreground);"><span style="color: var(--primary);">3.</span> Market Research Using AI</span>
-              <span style="font-size: 0.9rem; color: var(--muted-fg);">Leverage AI for comprehensive market analysis and competitor research</span>
+            <div class="module-item">
+              <span class="module-name"><span class="module-num">3.</span> Market Research Using AI</span>
+              <span class="module-desc">Leverage AI for comprehensive market analysis and competitor research</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-weight: bold; color: var(--foreground);"><span style="color: var(--primary);">4.</span> Building Your MVP Strategy</span>
-              <span style="font-size: 0.9rem; color: var(--muted-fg);">Plan and design your Minimum Viable Product</span>
+            <div class="module-item">
+              <span class="module-name"><span class="module-num">4.</span> Building Your MVP Strategy</span>
+              <span class="module-desc">Plan and design your Minimum Viable Product</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-weight: bold; color: var(--foreground);"><span style="color: var(--primary);">5.</span> AI-Assisted Business Model Canvas</span>
-              <span style="font-size: 0.9rem; color: var(--muted-fg);">Create a robust business model using AI frameworks</span>
+            <div class="module-item">
+              <span class="module-name"><span class="module-num">5.</span> AI-Assisted Business Model Canvas</span>
+              <span class="module-desc">Create a robust business model using AI frameworks</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-weight: bold; color: var(--foreground);"><span style="color: var(--primary);">6.</span> Pitch Deck Mastery</span>
-              <span style="font-size: 0.9rem; color: var(--muted-fg);">Create compelling pitch decks that attract investors</span>
+            <div class="module-item">
+              <span class="module-name"><span class="module-num">6.</span> Pitch Deck Mastery</span>
+              <span class="module-desc">Create compelling pitch decks that attract investors</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-weight: bold; color: var(--foreground);"><span style="color: var(--primary);">7.</span> Financial Projections & Planning</span>
-              <span style="font-size: 0.9rem; color: var(--muted-fg);">Build realistic financial models for your startup</span>
+            <div class="module-item">
+              <span class="module-name"><span class="module-num">7.</span> Financial Projections & Planning</span>
+              <span class="module-desc">Build realistic financial models for your startup</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-weight: bold; color: var(--foreground);"><span style="color: var(--primary);">8.</span> Go-to-Market Strategy</span>
-              <span style="font-size: 0.9rem; color: var(--muted-fg);">Launch your product with an AI-optimized marketing strategy</span>
+            <div class="module-item">
+              <span class="module-name"><span class="module-num">8.</span> Go-to-Market Strategy</span>
+              <span class="module-desc">Launch your product with an AI-optimized marketing strategy</span>
             </div>
           </div>
           
-          <p style="color: var(--primary); font-size: 0.9rem; font-weight: 500; margin-bottom: 1.5rem; line-height: 1.4;">NB: All course attendants will have their startups featured on Investrade on the first place</p>
+          <p class="course-note">NB: All course attendants will have their startups featured on Investrade on the first place</p>
           
-          <div style="margin-top: auto;">
+          <div class="course-cta-wrapper">
              <button class="btn btn-coming-soon w-full" style="justify-content: center;">Coming Soon</button>
           </div>
         </div>
 
         <!-- Right Side: Video -->
-        <div style="flex: 1 1 340px; display: flex; justify-content: center; align-items: center; padding: 2rem; background: #0a0a0a; position: relative;">
+        <div class="course-video-wrapper">
           <!-- Subtle Glow Effect -->
-          <div style="position: absolute; width: 80%; height: 80%; background: var(--primary); filter: blur(100px); opacity: 0.15; border-radius: 50%;"></div>
+          <div class="course-glow"></div>
           
           <iframe id="courseVideo" 
-            style="width: 100%; max-width: 320px; aspect-ratio: 9/16; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); position: relative; z-index: 2;"
+            class="course-iframe"
             src="https://www.youtube.com/embed/i_kmrDifdoI?rel=0" 
             title="How to build your startup using AI" 
             frameborder="0" 
@@ -636,7 +651,7 @@
         <div class="footer-brand">
           <a href="#" class="nav-logo">
             <div class="logo-icon">
-              <img src="./investrade_logo.png" alt="Investrade" style="height: 60px; width: auto; object-fit: contain; filter: brightness(0) invert(1);" />
+              <img src="./investrade_logo.png" alt="Investrade" class="footer-logo-img" />
             </div>
           </a>
           <p class="footer-desc">Bridging the gap between ambitious innovators and strategic investors through intelligent tools, curated networks, and structured acceleration.</p>
@@ -720,7 +735,7 @@
       <button class="modal-close" onclick="closeModal('loginModal')">&times;</button>
       <div class="modal-logo">
         <div class="logo-icon">
-          <img src="./investrade_logo.png" alt="Investrade" style="height: 48px; width: auto; object-fit: contain;" />
+          <img src="./investrade_logo.png" alt="Investrade" class="modal-logo-img" />
         </div>
       </div>
       <h2 class="modal-title">Welcome back</h2>
@@ -748,7 +763,7 @@
       <button class="modal-close" onclick="closeModal('registerModal')">&times;</button>
       <div class="modal-logo">
         <div class="logo-icon">
-          <img src="./investrade_logo.png" alt="Investrade" style="height: 48px; width: auto; object-fit: contain;" />
+          <img src="./investrade_logo.png" alt="Investrade" class="modal-logo-img" />
         </div>
       </div>
       <h2 class="modal-title" id="regModalTitle">Create your account</h2>

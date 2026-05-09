@@ -279,15 +279,7 @@ let menuOpen = false;
 hamburger.addEventListener('click', () => {
   menuOpen = !menuOpen;
   mobileMenu.classList.toggle('open', menuOpen);
-  // animate hamburger
-  const spans = hamburger.querySelectorAll('span');
-  if (menuOpen) {
-    spans[0].style.cssText = 'transform: rotate(45deg) translate(5px, 5px)';
-    spans[1].style.cssText = 'opacity: 0; width: 0';
-    spans[2].style.cssText = 'transform: rotate(-45deg) translate(5px, -5px)';
-  } else {
-    spans.forEach(s => s.style.cssText = '');
-  }
+  hamburger.classList.toggle('active', menuOpen);
 });
 
 // Close mobile menu on link click
@@ -295,7 +287,7 @@ $$('.mobile-link').forEach(link => {
   link.addEventListener('click', () => {
     menuOpen = false;
     mobileMenu.classList.remove('open');
-    hamburger.querySelectorAll('span').forEach(s => s.style.cssText = '');
+    hamburger.classList.remove('active');
   });
 });
 
@@ -304,7 +296,7 @@ document.addEventListener('click', (e) => {
   if (menuOpen && !hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
     menuOpen = false;
     mobileMenu.classList.remove('open');
-    hamburger.querySelectorAll('span').forEach(s => s.style.cssText = '');
+    hamburger.classList.remove('active');
   }
 });
 
