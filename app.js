@@ -2320,13 +2320,115 @@ let trainingFormData = {};
 
 window.openTrainingModal = function() {
   trainingFormData = {};
-  const step1 = $('#trainingStep1');
-  const step2 = $('#trainingStep2');
+  const mainContent = $('#trainingMainContent');
   const success = $('#trainingSuccess');
-  if (step1) step1.style.display = 'block';
-  if (step2) step2.style.display = 'none';
+  if (mainContent) mainContent.style.display = 'block';
   if (success) success.style.display = 'none';
+  
+  // Reset fields
+  const combinedForm = $('#trainingCombinedForm');
+  if (combinedForm) {
+    combinedForm.reset();
+    $$('.ref-btn').forEach(b => b.classList.remove('selected'));
+    const refInput = $('#trainReferral');
+    if (refInput) refInput.value = '';
+  }
+
+  goToTrainingStep(1);
   openModal('trainingModal');
+};
+
+let currentTStep = 1;
+window.goToTrainingStep = function(step) {
+  currentTStep = step;
+  $$('.training-step').forEach(el => el.classList.remove('active'));
+  const target = $(`#tStep${step}`);
+  if (target) target.classList.add('active');
+  
+  const progress = $('#trainingProgress');
+  if (progress) progress.style.width = `${(step / 3) * 100}%`;
+};
+
+window.selectReferral = function(btn, value) {
+  const refInput = $('#trainReferral');
+  if (refInput) refInput.value = value;
+  $$('.ref-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+};
+
+window.handleCombinedTrainingSubmit = async function(e) {
+  e.preventDefault();
+  
+  const referral = $('#trainReferral').value;
+  if (!referral) {
+    showToast('Please select how you heard about us.', 'error');
+    if (window.innerWidth <= 768 && currentTStep !== 3) goToTrainingStep(3);
+    return;
+  }
+
+  const submitBtn = e.target.querySelector('button[type="submit"]:not(.mobile-only *)') || e.target.querySelector('.mobile-only button[type="submit"]');
+  const originalText = submitBtn ? submitBtn.textContent : 'Complete Registration';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+  }
+
+  try {
+    const isMobile = window.innerWidth <= 768;
+    const occupation = isMobile ? $('#trainOccupation_mob').value.trim() : $('#trainOccupation').value.trim();
+    const countryCode = isMobile ? $('#trainCountryCode_mob').value : $('#trainCountryCode').value;
+    const phone = isMobile ? $('#trainPhone_mob').value.trim() : $('#trainPhone').value.trim();
+
+    const payload = {
+      training_session_id: 'a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3', 
+      first_name: $('#trainFirstName').value.trim(),
+      last_name: $('#trainLastName').value.trim(),
+      email: $('#trainEmail').value.trim().toLowerCase(),
+      occupation: occupation,
+      phone_number: countryCode + ' ' + phone,
+      referral_source: referral
+    };
+
+    if (!payload.occupation || !phone) {
+      showToast('Please fill in all registration details.', 'error');
+      if (isMobile && currentTStep !== 2) goToTrainingStep(2);
+      else if (!isMobile && currentTStep !== 1) goToTrainingStep(1);
+      return;
+    }
+
+
+    // Check if already registered
+    const { data: existing, error: checkError } = await supabase
+      .from('training_registrations')
+      .select('id')
+      .eq('training_session_id', payload.training_session_id)
+      .eq('email', payload.email)
+      .maybeSingle();
+
+    if (existing) {
+      showToast('You are already registered with this email!', 'info');
+    } else {
+      const { error: insertError } = await supabase
+        .from('training_registrations')
+        .insert([payload]);
+      if (insertError) throw insertError;
+      showToast('Registration successful!', 'success');
+    }
+
+    $('#trainingMainContent').style.display = 'none';
+    $('#trainingSuccess').style.display = 'block';
+    if (typeof celebrate === 'function') celebrate();
+    if (typeof triggerConfetti === 'function') triggerConfetti();
+
+  } catch (err) {
+    console.error('Registration error:', err);
+    showToast('Something went wrong. Please try again.', 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  }
 };
 
 window.closeBanner = function() {
@@ -2337,77 +2439,6 @@ window.closeBanner = function() {
   }
 };
 
-window.handleTrainingRegister = async function(e) {
-  e.preventDefault();
-  const btn = $('#trainSubmitBtn');
-  btn.disabled = true;
-  btn.textContent = 'Processing...';
-
-  try {
-    trainingFormData = {
-      training_session_id: 'a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3', 
-      first_name: $('#trainFirstName').value.trim(),
-      last_name: $('#trainLastName').value.trim(),
-      email: $('#trainEmail').value.trim().toLowerCase(),
-      occupation: $('#trainOccupation').value.trim(),
-      phone_number: $('#trainCountryCode').value + ' ' + $('#trainPhone').value.trim(),
-    };
-
-    // Check if already registered
-    const { data: existing, error: checkError } = await supabase
-      .from('training_registrations')
-      .select('id')
-      .eq('training_session_id', trainingFormData.training_session_id)
-      .eq('email', trainingFormData.email)
-      .maybeSingle();
-
-    if (existing) {
-      showToast('You are already registered for this session!', 'error');
-      btn.disabled = false;
-      btn.textContent = 'Continue Registration';
-      return;
-    }
-
-    // Move to step 2 (referral)
-    $('#trainingStep1').style.display = 'none';
-    $('#trainingStep2').style.display = 'block';
-  } catch (err) {
-    console.error('Registration error:', err);
-    showToast('Something went wrong. Please try again.', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Continue Registration';
-  }
-};
-
-window.submitReferral = async function(source) {
-  try {
-    trainingFormData.referral_source = source;
-    
-    // Final submission to Supabase
-    const { error } = await supabase
-      .from('training_registrations')
-      .insert([trainingFormData]);
-
-    if (error) {
-      if (error.code === '23505') { 
-        showToast('You are already registered with this email!', 'error');
-        return;
-      }
-      throw error;
-    }
-
-    // Show success
-    $('#trainingStep2').style.display = 'none';
-    $('#trainingSuccess').style.display = 'block';
-    if (typeof celebrate === 'function') celebrate();
-    if (typeof triggerConfetti === 'function') triggerConfetti();
-    
-  } catch (err) {
-    console.error('Referral submission error:', err);
-    showToast('Registration Error: ' + (err.message || 'Check console'), 'error');
-  }
-};
 
 // Initialize page state
 document.addEventListener('DOMContentLoaded', () => {
@@ -2795,42 +2826,14 @@ async function loadAdminFinancials() {
   }
 }
 
-// ---- Mobile Onboarding Guide ----
-function initMobileGuide() {
-  if (window.innerWidth > 768) return; // Only mobile
-  if (localStorage.getItem('mobileGuideShown_v2')) return; // Only first time
 
-  const guide = $('#mobileGuide');
-  if (!guide) return;
-
-  // Wait a bit after load
-  setTimeout(() => {
-    guide.classList.add('show');
-    document.body.style.overflow = 'hidden'; // Prevent scroll while guide is up
-  }, 1500);
-}
-
-window.closeMobileGuide = function() {
-  const guide = $('#mobileGuide');
-  if (guide) {
-    guide.style.opacity = '0';
-    guide.style.transition = 'opacity 0.5s ease';
-    document.body.style.overflow = '';
-    
-    // Add pulse to the training button to draw attention
-    const trainingBtn = $('.training-actions .btn-gold');
-    if (trainingBtn) trainingBtn.classList.add('pulse-highlight');
-
-    setTimeout(() => {
-      guide.remove();
-      localStorage.setItem('mobileGuideShown_v2', 'true');
-    }, 500);
-  }
-};
 
 // Initialize everything
 document.addEventListener('DOMContentLoaded', () => {
-  initMobileGuide();
+  // Automatically open the training registration modal on load
+  if (typeof openTrainingModal === 'function') {
+    openTrainingModal();
+  }
 });
 
 

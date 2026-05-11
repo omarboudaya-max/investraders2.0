@@ -1280,7 +1280,7 @@ ul { list-style: none; }
   font-weight: 800;
   margin-bottom: 1rem;
 }
-.modal-logo .logo-icon { width: auto; height: 42px; background: none; }
+.modal-logo .logo-icon { width: auto; height: auto; background: none; }
 .modal-title {
   font-size: 1.5rem;
   font-weight: 800;
@@ -2828,137 +2828,58 @@ body::before {
 }
 
 /* =============================================
-   MOBILE ONBOARDING GUIDE
+   RESPONSIVE TRAINING MODAL
    ============================================= */
-.mobile-guide {
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
+.training-modal-compact {
+  padding: 1.5rem !important;
 }
 
-.mobile-guide.show {
-  display: flex;
-}
-
-.guide-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(2, 27, 27, 0.85);
-  backdrop-filter: blur(8px);
-  animation: fadeIn 0.5s ease;
-}
-
-.guide-card {
-  position: relative;
-  z-index: 1;
-  background: linear-gradient(165deg, #021b1b 0%, #042f2f 100%);
-  border: 1px solid rgba(245, 197, 24, 0.3);
-  padding: 2.5rem 2rem;
-  border-radius: 24px;
-  text-align: center;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-  animation: modalSlideUp 0.6s cubic-bezier(0.2, 1, 0.3, 1);
-  max-width: 320px;
-}
-
-.guide-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 28px;
-  height: 28px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 1.2rem;
-  cursor: pointer;
-}
-
-.guide-badge {
-  display: inline-block;
-  background: var(--accent);
-  color: #000;
-  font-weight: 800;
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  padding: 0.25rem 0.75rem;
-  border-radius: 99px;
-  margin-bottom: 1.25rem;
-  letter-spacing: 0.05em;
-}
-
-.guide-title {
-  color: #fff;
-  font-size: 1.75rem;
-  font-weight: 800;
-  margin-bottom: 0.75rem;
-  letter-spacing: -0.02em;
-}
-
-.guide-desc {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.95rem;
-  line-height: 1.6;
-  margin-bottom: 2rem;
-}
-
-.guide-scroll-hint {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.form-grid-desktop {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
-  color: var(--accent);
 }
 
-.guide-scroll-hint span {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+.desktop-span-2 {
+  grid-column: span 2;
 }
 
-.mouse {
-  width: 22px;
-  height: 38px;
-  border: 2px solid var(--accent);
-  border-radius: 12px;
-  position: relative;
+@media (min-width: 769px) {
+  .mobile-only { display: none !important; }
+  .training-step { display: none; }
+  .training-step.active { display: block; animation: fadeIn 0.3s ease; }
+  .training-progress-container { display: none; } /* Hide progress on desktop if preferred, or adjust */
 }
 
-.mouse::after {
-  content: '';
-  width: 4px;
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+  .training-step { display: none; }
+  .training-step.active { display: block; animation: slideInRight 0.4s ease; }
+  .form-grid-desktop { grid-template-columns: 1fr; }
+  .desktop-span-2 { grid-column: span 1; }
+  .training-modal-compact { padding: 1.25rem !important; }
+}
+
+.training-progress-container {
   height: 4px;
-  background: var(--accent);
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 6px;
-  border-radius: 50%;
-  animation: mouseScroll 1.5s infinite;
+  background: var(--muted);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.training-progress-bar {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes mouseScroll {
-  0% { transform: translateX(-50%) translateY(0); opacity: 1; }
-  100% { transform: translateX(-50%) translateY(15px); opacity: 0; }
+.ref-btn.selected {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border-color: var(--primary) !important;
+  transform: scale(1.02);
 }
 
-/* Pulse animation for the target button when revealed */
-.pulse-highlight {
-  animation: pulse-gold 2s infinite;
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
-
-@keyframes pulse-gold {
-  0% { box-shadow: 0 0 0 0 rgba(245, 197, 24, 0.7); }
-  70% { box-shadow: 0 0 0 15px rgba(245, 197, 24, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(245, 197, 24, 0); }
-}
-
-

@@ -1209,99 +1209,162 @@
 
   <!-- ===== TRAINING MODAL ===== -->
   <div class="modal-overlay" id="trainingModal">
-    <div class="modal" style="max-width: 500px;">
+    <div class="modal training-modal-compact" style="max-width: 520px;">
       <button class="modal-close" onclick="closeModal('trainingModal')">&times;</button>
       
-      <!-- Step 1: Registration Form -->
-      <div id="trainingStep1">
-        <div class="modal-logo" style="margin-bottom: 1.5rem;">
-          <div class="logo-icon">
-            <img src="./investrade_logo.png" alt="Investrade" style="height: 100px; width: auto; object-fit: contain;" />
+      <div id="trainingMainContent">
+        <div class="modal-logo" style="margin-bottom: 1rem; margin-top: -0.5rem; justify-content: center;">
+          <div class="logo-icon" style="height: auto;">
+            <img src="./investrade_logo.png" alt="Investrade" style="height: 80px; width: auto; object-fit: contain;" />
           </div>
         </div>
-        <h2 class="modal-title">Free Training Registration</h2>
-        <p class="modal-subtitle">Join us on May 12th at 9 PM KSA to learn how to reach financial freedom using AI.</p>
-        <form class="auth-form" onsubmit="handleTrainingRegister(event)">
-          <div class="form-row">
+        
+        <!-- Mobile Progress Bar -->
+        <div class="training-progress-container mobile-only" style="margin-bottom: 1.5rem;">
+          <div class="training-progress-bar" id="trainingProgress" style="width: 33%;"></div>
+        </div>
+
+        <form class="auth-form" id="trainingCombinedForm" onsubmit="handleCombinedTrainingSubmit(event)">
+          <!-- Step 1: Registration (Desktop Step 1 / Mobile Step 1) -->
+          <div class="training-step" id="tStep1">
+            <h2 class="modal-title" style="font-size: 1.25rem; margin-bottom: 0.15rem;">Registration</h2>
+            <p class="modal-subtitle" style="margin-bottom: 0.75rem;">Join the exclusive AI training</p>
+            
+            <div class="form-grid-desktop">
+              <div class="form-group">
+                <label for="trainFirstName">First Name</label>
+                <input type="text" id="trainFirstName" placeholder="Alex" required />
+              </div>
+              <div class="form-group">
+                <label for="trainLastName">Last Name</label>
+                <input type="text" id="trainLastName" placeholder="Johnson" required />
+              </div>
+              <div class="form-group desktop-span-2">
+                <label for="trainEmail">Email Address</label>
+                <input type="email" id="trainEmail" placeholder="you@example.com" required />
+              </div>
+              
+              <!-- These fields show on Desktop Step 1, but are hidden on Mobile Step 1 -->
+              <div class="form-group desktop-only">
+                <label for="trainOccupation">Occupation</label>
+                <input type="text" id="trainOccupation" placeholder="Entrepreneur" required />
+              </div>
+              <div class="form-group desktop-only">
+                <label for="trainPhone">WhatsApp</label>
+                <div style="display: flex; gap: 0.25rem;">
+                  <select id="trainCountryCode" class="form-select country-select" style="width: 110px; flex-shrink: 0; padding: 0.4rem;">
+                    <option value="+966">+966 (KSA)</option>
+                    <option value="+971">+971 (UAE)</option>
+                    <option value="+216">+216 (TN)</option>
+                    <option value="+20">+20 (EG)</option>
+                    <option value="+974">+974 (QA)</option>
+                    <option value="+965">+965 (KW)</option>
+                    <option value="+973">+973 (BH)</option>
+                    <option value="+968">+968 (OM)</option>
+                    <option value="+962">+962 (JO)</option>
+                    <option value="+961">+961 (LB)</option>
+                    <option value="+212">+212 (MA)</option>
+                    <option value="+213">+213 (DZ)</option>
+                    <option value="+218">+218 (LY)</option>
+                    <option value="+249">+249 (SD)</option>
+                    <option value="+964">+964 (IQ)</option>
+                    <option value="+1">+1 (US/CA)</option>
+                    <option value="+44">+44 (UK)</option>
+                    <option value="+33">+33 (FR)</option>
+                    <option value="+49">+49 (DE)</option>
+                    <option value="+34">+34 (ES)</option>
+                    <option value="+39">+39 (IT)</option>
+                    <option value="+90">+90 (TR)</option>
+                    <option value="+7">+7 (RU)</option>
+                    <option value="+86">+86 (CN)</option>
+                    <option value="+91">+91 (IN)</option>
+                  </select>
+                  <input type="tel" id="trainPhone" placeholder="501234567" required style="flex: 1;" />
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 1rem;">
+              <button type="button" class="btn btn-primary w-full" onclick="goToTrainingStep(window.innerWidth > 768 ? 3 : 2)">Next Step</button>
+            </div>
+          </div>
+
+          <!-- Step 2: Details (Mobile Step 2 Only) -->
+          <div class="training-step" id="tStep2">
+            <h2 class="modal-title" style="font-size: 1.25rem; margin-bottom: 0.15rem;">Professional Details</h2>
+            <p class="modal-subtitle" style="margin-bottom: 0.75rem;">Just a few more info</p>
+            
             <div class="form-group">
-              <label for="trainFirstName">First name</label>
-              <input type="text" id="trainFirstName" placeholder="Alex" required />
+              <label for="trainOccupation_mob">Occupation</label>
+              <input type="text" id="trainOccupation_mob" placeholder="Entrepreneur" />
             </div>
             <div class="form-group">
-              <label for="trainLastName">Last name</label>
-              <input type="text" id="trainLastName" placeholder="Johnson" required />
+              <label for="trainPhone_mob">WhatsApp Number</label>
+              <div style="display: flex; gap: 0.25rem;">
+                <select id="trainCountryCode_mob" class="form-select country-select" style="width: 100%; margin-bottom: 0.5rem;">
+                  <option value="+966">+966 (KSA)</option>
+                  <option value="+971">+971 (UAE)</option>
+                  <option value="+216">+216 (TN)</option>
+                  <option value="+20">+20 (EG)</option>
+                  <option value="+974">+974 (QA)</option>
+                  <option value="+965">+965 (KW)</option>
+                  <option value="+973">+973 (BH)</option>
+                  <option value="+968">+968 (OM)</option>
+                  <option value="+962">+962 (JO)</option>
+                  <option value="+961">+961 (LB)</option>
+                  <option value="+212">+212 (MA)</option>
+                  <option value="+213">+213 (DZ)</option>
+                  <option value="+218">+218 (LY)</option>
+                  <option value="+249">+249 (SD)</option>
+                  <option value="+964">+964 (IQ)</option>
+                  <option value="+1">+1 (US/CA)</option>
+                  <option value="+44">+44 (UK)</option>
+                  <option value="+33">+33 (FR)</option>
+                  <option value="+49">+49 (DE)</option>
+                  <option value="+34">+34 (ES)</option>
+                  <option value="+39">+39 (IT)</option>
+                  <option value="+90">+90 (TR)</option>
+                  <option value="+7">+7 (RU)</option>
+                  <option value="+86">+86 (CN)</option>
+                  <option value="+91">+91 (IN)</option>
+                </select>
+                <input type="tel" id="trainPhone_mob" placeholder="50 123 4567" style="flex: 1;" />
+              </div>
+            </div>
+            
+            <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+              <button type="button" class="btn btn-ghost" onclick="goToTrainingStep(1)">Back</button>
+              <button type="button" class="btn btn-primary flex-1" onclick="goToTrainingStep(3)">Continue</button>
             </div>
           </div>
-          <div class="form-group">
-            <label for="trainEmail">Email address</label>
-            <input type="email" id="trainEmail" placeholder="you@example.com" required />
-          </div>
-          <div class="form-group">
-            <label for="trainOccupation">Occupation</label>
-            <input type="text" id="trainOccupation" placeholder="Entrepreneur, Student, etc." required />
-          </div>
-          <div class="form-group">
-            <label for="trainPhone">WhatsApp Number</label>
-            <div style="display: flex; gap: 0.5rem;">
-              <select id="trainCountryCode" class="form-select country-select">
-                <option value="+966">+966 (KSA)</option>
-                <option value="+971">+971 (UAE)</option>
-                <option value="+216">+216 (TN)</option>
-                <option value="+20">+20 (EG)</option>
-                <option value="+974">+974 (QA)</option>
-                <option value="+965">+965 (KW)</option>
-                <option value="+973">+973 (BH)</option>
-                <option value="+968">+968 (OM)</option>
-                <option value="+962">+962 (JO)</option>
-                <option value="+961">+961 (LB)</option>
-                <option value="+212">+212 (MA)</option>
-                <option value="+213">+213 (DZ)</option>
-                <option value="+218">+218 (LY)</option>
-                <option value="+249">+249 (SD)</option>
-                <option value="+964">+964 (IQ)</option>
-                <option value="+1">+1 (US/CA)</option>
-                <option value="+44">+44 (UK)</option>
-                <option value="+33">+33 (FR)</option>
-                <option value="+49">+49 (DE)</option>
-                <option value="+34">+34 (ES)</option>
-                <option value="+39">+39 (IT)</option>
-                <option value="+90">+90 (TR)</option>
-                <option value="+7">+7 (RU)</option>
-                <option value="+86">+86 (CN)</option>
-                <option value="+91">+91 (IN)</option>
-              </select>
-              <input type="tel" id="trainPhone" placeholder="50 123 4567" required style="flex: 1;" />
+
+          <!-- Step 3: Referral (Desktop Step 2 / Mobile Step 3) -->
+          <div class="training-step" id="tStep3">
+            <h2 class="modal-title" style="font-size: 1.25rem; margin-bottom: 0.15rem;">One last thing</h2>
+            <p class="modal-subtitle" style="margin-bottom: 0.5rem;">How did you hear about us?</p>
+            <input type="hidden" id="trainReferral" value="" required />
+            <div class="referral-grid" id="referralGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.5rem;">
+              <button type="button" class="btn btn-outline btn-sm ref-btn" onclick="selectReferral(this, 'Facebook')" style="padding: 0.5rem; font-size: 0.8rem;">Facebook</button>
+              <button type="button" class="btn btn-outline btn-sm ref-btn" onclick="selectReferral(this, 'Instagram')" style="padding: 0.5rem; font-size: 0.8rem;">Instagram</button>
+              <button type="button" class="btn btn-outline btn-sm ref-btn" onclick="selectReferral(this, 'LinkedIn')" style="padding: 0.5rem; font-size: 0.8rem;">LinkedIn</button>
+              <button type="button" class="btn btn-outline btn-sm ref-btn" onclick="selectReferral(this, 'Twitter/X')" style="padding: 0.5rem; font-size: 0.8rem;">Twitter/X</button>
+              <button type="button" class="btn btn-outline btn-sm ref-btn" onclick="selectReferral(this, 'WhatsApp')" style="padding: 0.5rem; font-size: 0.8rem;">WhatsApp</button>
+              <button type="button" class="btn btn-outline btn-sm ref-btn" onclick="selectReferral(this, 'Friend')" style="padding: 0.5rem; font-size: 0.8rem;">Friend</button>
+              <button type="button" class="btn btn-outline btn-sm ref-btn" onclick="selectReferral(this, 'Other')" style="grid-column: span 2; padding: 0.5rem; font-size: 0.8rem;">Other Source</button>
+            </div>
+            <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+              <button type="button" class="btn btn-ghost" onclick="goToTrainingStep(window.innerWidth > 768 ? 1 : 2)">Back</button>
+              <button type="submit" class="btn btn-primary flex-1">Complete Registration</button>
             </div>
           </div>
-          <button type="submit" id="trainSubmitBtn" class="btn btn-primary w-full btn-lg">Continue Registration</button>
         </form>
       </div>
 
-      <!-- Step 2: Referral Survey -->
-      <div id="trainingStep2" style="display: none;">
-        <div class="modal-logo" style="margin-bottom: 1.5rem;">
-          <div class="logo-icon">
-            <img src="./investrade_logo.png" alt="Investrade" style="height: 100px; width: auto; object-fit: contain;" />
-          </div>
-        </div>
-        <h2 class="modal-title">One last thing...</h2>
-        <p class="modal-subtitle">How did you hear about us?</p>
-        <div class="referral-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1.5rem;">
-          <button class="btn btn-outline" onclick="submitReferral('Facebook')">Facebook</button>
-          <button class="btn btn-outline" onclick="submitReferral('Instagram')">Instagram</button>
-          <button class="btn btn-outline" onclick="submitReferral('LinkedIn')">LinkedIn</button>
-          <button class="btn btn-outline" onclick="submitReferral('Twitter/X')">Twitter/X</button>
-          <button class="btn btn-outline" onclick="submitReferral('WhatsApp')">WhatsApp</button>
-          <button class="btn btn-outline" onclick="submitReferral('Friend')">Friend</button>
-          <button class="btn btn-outline" onclick="submitReferral('Other')" style="grid-column: span 2;">Other Source</button>
-        </div>
-      </div>
-
-      <!-- Step 3: Success Message -->
+      <!-- Success Message -->
       <div id="trainingSuccess" style="display: none; text-align: center; padding: 1rem 0;">
         <div class="success-icon" style="font-size: 3.5rem; margin-bottom: 1rem; color: #10b981;">✓</div>
         <h2 class="modal-title">Registration Completed!</h2>
-        <p class="modal-subtitle">More infos will be shared via your mail shortly.</p>
+        <p class="modal-subtitle">Check your email for access details.</p>
         
         <div style="background: var(--primary-subtle); padding: 1.5rem; border-radius: 16px; margin: 1.5rem 0; border: 1px solid var(--primary-light);">
           <p style="font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Training Details</p>
@@ -1316,21 +1379,6 @@
       </div>
     </div>
   </div>
-  <!-- ===== MOBILE ONBOARDING GUIDE ===== -->
-  <div id="mobileGuide" class="mobile-guide">
-    <div class="guide-overlay"></div>
-    <div class="guide-card">
-      <div class="guide-close" onclick="closeMobileGuide()">&times;</div>
-      <div class="guide-badge">New Event</div>
-      <h3 class="guide-title">Free AI Training</h3>
-      <p class="guide-desc">Don't miss our exclusive session on achieving financial freedom with AI. Scroll down to register!</p>
-      <div class="guide-scroll-hint">
-        <div class="mouse"></div>
-        <span>Scroll to Discover</span>
-      </div>
-    </div>
-  </div>
-
   <!-- Scripts -->
   <script type="module" src="app.js"></script>
 </body>
