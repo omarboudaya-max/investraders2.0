@@ -2039,16 +2039,27 @@ async function fetchMarketCourses() {
       
       const buttonHtml = isEnrolled 
         ? `<button class="btn" style="background: var(--muted); border-color: var(--muted-fg); color: var(--muted-fg); cursor: not-allowed;" disabled>Applied ✓</button>`
-        : `<button onclick="openEnrollModal('${courseId}', '${c.title}', ${c.price})" class="btn btn-primary">Apply Now</button>`;
+        : `<button onclick="openEnrollModal('${courseId}', '${c.title}', ${c.price}, 'https://paypal.me/CobraAhmed/150', '')" class="btn btn-primary">Enroll Now — $150</button>`;
 
       html += `
-        <div class="dash-panel" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;padding:2rem;margin-bottom:1rem;">
-          <div>
-            <h3 style="font-size:1.1rem;font-weight:700;">${c.title}</h3>
-            <p style="color:var(--muted-fg);font-size:0.875rem;margin-top:0.5rem;max-width:500px;">${c.description}</p>
-            <p style="font-weight:600;margin-top:1rem;color:var(--primary);">$${c.price} — Next Live Session: ${c.nextSession}</p>
+        <div class="dash-panel" style="display:flex;flex-direction:column;gap:1.5rem;padding:2rem;margin-bottom:1rem;border-radius:1rem;border:1px solid var(--border);background:var(--card);">
+          <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+            <div style="flex:1;min-width:280px;">
+              <h3 style="font-size:1.2rem;font-weight:800;margin-bottom:0.5rem;color:var(--foreground);">${c.title}</h3>
+              <p style="color:var(--muted-fg);font-size:0.9rem;line-height:1.6;max-width:600px;">${c.description}</p>
+            </div>
+            <div style="background:var(--muted);padding:1rem;border-radius:0.75rem;border:1px solid var(--border);min-width:220px;">
+              <div style="margin-bottom:0.5rem;font-size:0.85rem;color:var(--muted-fg);font-weight:600;">Next Cohort:</div>
+              <div style="font-weight:700;color:var(--foreground);margin-bottom:1rem;">June 3rd, 19:00 KSA</div>
+              
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                <span style="text-decoration:line-through;color:var(--muted-fg);font-weight:700;font-size:1rem;">$300</span>
+                <span style="font-weight:900;color:var(--primary);font-size:1.5rem;display:flex;align-items:center;">$150 <span style="font-size:0.7rem;font-weight:800;background:var(--accent);color:var(--foreground);padding:0.15rem 0.4rem;border-radius:4px;margin-left:0.4rem;">50% OFF</span></span>
+              </div>
+              
+              ${buttonHtml}
+            </div>
           </div>
-          ${buttonHtml}
         </div>
       `;
     });
@@ -2315,127 +2326,54 @@ window.handleForumPost = async function(event) {
   }
 };
 
-// ---- Training Session Logic ----
-let trainingFormData = {};
-
-window.openTrainingModal = function() {
-  trainingFormData = {};
-  const mainContent = $('#trainingMainContent');
-  const success = $('#trainingSuccess');
-  if (mainContent) mainContent.style.display = 'block';
-  if (success) success.style.display = 'none';
-  
-  // Reset fields
-  const combinedForm = $('#trainingCombinedForm');
-  if (combinedForm) {
-    combinedForm.reset();
-    $$('.ref-btn').forEach(b => b.classList.remove('selected'));
-    const refInput = $('#trainReferral');
-    if (refInput) refInput.value = '';
-  }
-
-  goToTrainingStep(1);
-  openModal('trainingModal');
-};
-
-let currentTStep = 1;
-window.goToTrainingStep = function(step) {
-  currentTStep = step;
-  $$('.training-step').forEach(el => el.classList.remove('active'));
-  const target = $(`#tStep${step}`);
-  if (target) target.classList.add('active');
-  
-  const progress = $('#trainingProgress');
-  if (progress) progress.style.width = `${(step / 3) * 100}%`;
-};
-
-window.selectReferral = function(btn, value) {
-  const refInput = $('#trainReferral');
-  if (refInput) refInput.value = value;
-  $$('.ref-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-};
-
-window.handleCombinedTrainingSubmit = async function(e) {
+window.handleContactSubmit = async function(e) {
   e.preventDefault();
-  
-  const referral = $('#trainReferral').value;
-  if (!referral) {
-    showToast('Please select how you heard about us.', 'error');
-    if (window.innerWidth <= 768 && currentTStep !== 3) goToTrainingStep(3);
+  const name = $('#contactName').value.trim();
+  const email = $('#contactEmail').value.trim();
+  const message = $('#contactMessage').value.trim();
+
+  if (!name || !email || !message) {
+    showToast('Please fill in all fields.', 'error');
     return;
   }
 
-  const submitBtn = e.target.querySelector('button[type="submit"]:not(.mobile-only *)') || e.target.querySelector('.mobile-only button[type="submit"]');
-  const originalText = submitBtn ? submitBtn.textContent : 'Complete Registration';
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Processing...';
-  }
+  const submitBtn = $('#contactSubmitBtn');
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Sending...';
 
   try {
-    const isMobile = window.innerWidth <= 768;
-    const occupation = isMobile ? $('#trainOccupation_mob').value.trim() : $('#trainOccupation').value.trim();
-    const countryCode = isMobile ? $('#trainCountryCode_mob').value : $('#trainCountryCode').value;
-    const phone = isMobile ? $('#trainPhone_mob').value.trim() : $('#trainPhone').value.trim();
+    const { error } = await supabase
+      .from('contact_messages')
+      .insert([{ name, email, message }]);
 
-    const payload = {
-      training_session_id: 'a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3', 
-      first_name: $('#trainFirstName').value.trim(),
-      last_name: $('#trainLastName').value.trim(),
-      email: $('#trainEmail').value.trim().toLowerCase(),
-      occupation: occupation,
-      phone_number: countryCode + ' ' + phone,
-      referral_source: referral
-    };
+    if (error) throw error;
 
-    if (!payload.occupation || !phone) {
-      showToast('Please fill in all registration details.', 'error');
-      if (isMobile && currentTStep !== 2) goToTrainingStep(2);
-      else if (!isMobile && currentTStep !== 1) goToTrainingStep(1);
-      return;
+    // Send email via edge function
+    try {
+      const API_BASE = supabaseConfig.functionsBaseUrl;
+      if (API_BASE) {
+        await fetch(`${API_BASE}/sendContactEmail`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseConfig.anonKey
+          },
+          body: JSON.stringify({ name, email, message })
+        });
+      }
+    } catch (e) {
+      console.warn("Email function failed", e);
     }
-
-
-    // Check if already registered
-    const { data: existing, error: checkError } = await supabase
-      .from('training_registrations')
-      .select('id')
-      .eq('training_session_id', payload.training_session_id)
-      .eq('email', payload.email)
-      .maybeSingle();
-
-    if (existing) {
-      showToast('You are already registered with this email!', 'info');
-    } else {
-      const { error: insertError } = await supabase
-        .from('training_registrations')
-        .insert([payload]);
-      if (insertError) throw insertError;
-      showToast('Registration successful!', 'success');
-    }
-
-    $('#trainingMainContent').style.display = 'none';
-    $('#trainingSuccess').style.display = 'block';
-    if (typeof celebrate === 'function') celebrate();
-    if (typeof triggerConfetti === 'function') triggerConfetti();
-
+    
+    showToast('Your message has been sent successfully!', 'success');
+    e.target.reset();
   } catch (err) {
-    console.error('Registration error:', err);
-    showToast('Something went wrong. Please try again.', 'error');
+    console.error('Contact error:', err);
+    showToast('Failed to send message. Please try again.', 'error');
   } finally {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalText;
-    }
-  }
-};
-
-window.closeBanner = function() {
-  const banner = $('#promoBanner');
-  if (banner) {
-    banner.style.display = 'none';
-    document.body.classList.remove('has-banner');
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
   }
 };
 
@@ -2828,13 +2766,7 @@ async function loadAdminFinancials() {
 
 
 
-// Initialize everything
-document.addEventListener('DOMContentLoaded', () => {
-  // Automatically open the training registration modal on load
-  if (typeof openTrainingModal === 'function') {
-    openTrainingModal();
-  }
-});
+
 
 
 
