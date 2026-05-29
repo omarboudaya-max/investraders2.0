@@ -1,31 +1,44 @@
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
-import { corsPreflight, generateAccessCode, json } from "../_shared/utils.ts";
-
-
+import { handleSafe, json, checkRateLimit, validateFields, generateAccessCode, logger } from "../_shared/utils.ts";
 
 Deno.serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  return handleSafe(req, async (req, supabase) => {
+    if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  try {
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-01-27.acacia"
-    });
+    // 1. Rate Limiting (15 requests per 60 seconds)
+    const rateLimit = await checkRateLimit(req, 'verify_stripe_session', 15, 60);
+    if (!rateLimit.allowed) {
+      return json({ error: `Too many requests. Please try again in ${rateLimit.reset} seconds.` }, 429);
+    }
+
+    // 2. Auth check
     const authHeader = req.headers.get("Authorization") || "";
     if (!authHeader.startsWith("Bearer ")) return json({ error: "Missing auth token" }, 401);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SERVICE_ROLE_KEY") || ""
-    );
     const token = authHeader.replace("Bearer ", "");
     const { data: authData, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !authData.user) return json({ error: "Invalid auth token" }, 401);
 
-    const { sessionId } = await req.json();
-    if (!sessionId) return json({ error: "Missing sessionId" }, 400);
+    // 3. Input Validation
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return json({ error: "Invalid JSON body" }, 400);
+    }
+
+    const validation = validateFields(body, {
+      sessionId: { type: "string", required: true, min: 5, max: 150 }
+    });
+    if (!validation.isValid) {
+      return json({ error: "Validation failed", details: validation.errors }, 400);
+    }
+
+    const { sessionId } = body;
+
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-01-27.acacia"
+    });
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     const paid =
@@ -60,6 +73,7 @@ Deno.serve(async (req: Request) => {
         })
         .eq("id", authData.user.id);
 
+      logger.info(`Verified stripe subscription checkout for user ${authData.user.id}`);
       return json({
         success: true,
         kind: "subscription",
@@ -121,8 +135,7 @@ Deno.serve(async (req: Request) => {
       processed_at: new Date().toISOString()
     }).eq("id", sessionId);
 
+    logger.info(`Verified stripe course payment and enrolled user ${authData.user.id} in course ${course.id}`);
     return json({ success: true, accessCode, qrUrl });
-  } catch (err) {
-    return json({ error: (err as Error).message }, 500);
-  }
+  });
 });

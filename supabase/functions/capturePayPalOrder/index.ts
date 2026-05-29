@@ -1,5 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-import { corsPreflight, generateAccessCode, json } from "../_shared/utils.ts";
+import { handleSafe, json, checkRateLimit, validateFields, generateAccessCode, logger } from "../_shared/utils.ts";
 
 async function getPayPalAccessToken() {
   const clientId = Deno.env.get("PAYPAL_CLIENT_ID") || "";
@@ -7,6 +6,7 @@ async function getPayPalAccessToken() {
   const env = (Deno.env.get("PAYPAL_ENV") || "sandbox").toLowerCase();
   const base = env === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
   const auth = btoa(`${clientId}:${secret}`);
+  
   const res = await fetch(`${base}/v1/oauth2/token`, {
     method: "POST",
     headers: {
@@ -21,24 +21,56 @@ async function getPayPalAccessToken() {
 }
 
 Deno.serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  return handleSafe(req, async (req, supabase) => {
+    if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  try {
+    // 1. Rate Limiting (15 requests per 60 seconds)
+    const rateLimit = await checkRateLimit(req, 'capture_paypal_order', 15, 60);
+    if (!rateLimit.allowed) {
+      return json({ error: `Too many requests. Please try again in ${rateLimit.reset} seconds.` }, 429);
+    }
+
+    // 2. Auth check (requires valid Bearer token)
     const authHeader = req.headers.get("Authorization") || "";
     if (!authHeader.startsWith("Bearer ")) return json({ error: "Missing auth token" }, 401);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SERVICE_ROLE_KEY") || ""
-    );
     const token = authHeader.replace("Bearer ", "");
     const { data: authData, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !authData.user) return json({ error: "Invalid auth token" }, 401);
 
-    const { orderID, courseApplicantData, courseId } = await req.json();
-    if (!orderID || !courseId) return json({ error: "Missing orderID or courseId" }, 400);
+    // 3. Input Validation
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return json({ error: "Invalid JSON body" }, 400);
+    }
+
+    const validation = validateFields(body, {
+      orderID: { type: "string", required: true, min: 3, max: 100 },
+      courseId: { type: "string", required: true, min: 3, max: 100 }
+    });
+    if (!validation.isValid) {
+      return json({ error: "Validation failed", details: validation.errors }, 400);
+    }
+
+    const { orderID, courseId, courseApplicantData } = body;
+
+    // Validate optional applicant data if present
+    if (courseApplicantData) {
+      const appValidation = validateFields(courseApplicantData, {
+        firstName: { type: "string", required: true, min: 1, max: 100 },
+        lastName: { type: "string", required: true, min: 1, max: 100 },
+        email: { type: "email", required: true },
+        age: { type: "string", required: true },
+        country: { type: "string", required: true },
+        education: { type: "string", required: true },
+        professional: { type: "string", required: true }
+      });
+      if (!appValidation.isValid) {
+        return json({ error: "Applicant validation failed", details: appValidation.errors }, 400);
+      }
+    }
 
     const { data: course, error: courseErr } = await supabase.from("courses").select("*").eq("id", courseId).single();
     if (courseErr || !course) return json({ error: "Course not found" }, 404);
@@ -85,8 +117,7 @@ Deno.serve(async (req: Request) => {
     });
     if (enrollErr) return json({ error: enrollErr.message }, 500);
 
+    logger.info(`Successfully enrolled user ${authData.user.id} in course ${courseId} via PayPal`);
     return json({ success: true, accessCode, qrUrl });
-  } catch (err) {
-    return json({ error: (err as Error).message }, 500);
-  }
+  });
 });

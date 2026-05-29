@@ -8,11 +8,13 @@ CREATE TABLE IF NOT EXISTS public.contact_messages (
 
 ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can insert contact messages" ON public.contact_messages;
 CREATE POLICY "Anyone can insert contact messages"
     ON public.contact_messages
     FOR INSERT
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Only admins can view contact messages" ON public.contact_messages;
 CREATE POLICY "Only admins can view contact messages"
     ON public.contact_messages
     FOR SELECT

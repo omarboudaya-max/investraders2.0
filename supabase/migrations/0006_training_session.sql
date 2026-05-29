@@ -30,11 +30,13 @@ alter table public.training_sessions enable row level security;
 alter table public.training_registrations enable row level security;
 
 -- Policies for training_sessions (Read for all)
+drop policy if exists "Allow public read access for training sessions" on public.training_sessions;
 create policy "Allow public read access for training sessions"
   on public.training_sessions for select
   using (true);
 
 -- Policies for training_registrations (Insert for all, Read for self by email/id if needed, but usually just insert for public)
+drop policy if exists "Allow public registration" on public.training_registrations;
 create policy "Allow public registration"
   on public.training_registrations for insert
   with check (true);

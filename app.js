@@ -143,6 +143,51 @@ function mapTableFromSegments(segments) {
   return { table: root, id: segments[1] || null };
 }
 
+// ---- Smart Client-Side Cache Manager ----
+const clientCache = {
+  docs: new Map(), // key: "table:id", value: { data, timestamp }
+  queries: new Map(), // key: "table:queryJSON", value: { data, timestamp }
+  TTL: 5 * 60 * 1000, // 5 minutes TTL
+
+  setDoc(table, id, data) {
+    this.docs.set(`${table}:${id}`, { data, timestamp: Date.now() });
+    this.invalidateQueries(table);
+  },
+
+  getDoc(table, id) {
+    const entry = this.docs.get(`${table}:${id}`);
+    if (entry && (Date.now() - entry.timestamp) < this.TTL) {
+      return entry.data;
+    }
+    return null;
+  },
+
+  setQuery(table, queryKey, data) {
+    this.queries.set(`${table}:${queryKey}`, { data, timestamp: Date.now() });
+  },
+
+  getQuery(table, queryKey) {
+    const entry = this.queries.get(`${table}:${queryKey}`);
+    if (entry && (Date.now() - entry.timestamp) < this.TTL) {
+      return entry.data;
+    }
+    return null;
+  },
+
+  invalidate(table, id) {
+    this.docs.delete(`${table}:${id}`);
+    this.invalidateQueries(table);
+  },
+
+  invalidateQueries(table) {
+    for (const key of this.queries.keys()) {
+      if (key.startsWith(`${table}:`)) {
+        this.queries.delete(key);
+      }
+    }
+  }
+};
+
 async function setDoc(docRef, payload) {
   const { table, id, startupId } = mapTableFromSegments(docRef.segments);
   const row = camelToSnakeObject(payload);
@@ -150,6 +195,12 @@ async function setDoc(docRef, payload) {
   if (id) row.id = id;
   const { error } = await supabase.from(table).upsert(row);
   if (error) throw error;
+  
+  if (id) {
+    clientCache.invalidate(table, id);
+  } else {
+    clientCache.invalidateQueries(table);
+  }
 }
 
 async function updateDoc(docRef, payload) {
@@ -168,15 +219,33 @@ async function updateDoc(docRef, payload) {
   }
   const { error } = await supabase.from(table).update(updatePayload).eq("id", id);
   if (error) throw error;
+  
+  clientCache.invalidate(table, id);
 }
 
 async function getDoc(docRef) {
   const { table, id } = mapTableFromSegments(docRef.segments);
+  if (id) {
+    const cachedData = clientCache.getDoc(table, id);
+    if (cachedData) {
+      return {
+        exists: () => true,
+        data: () => cachedData
+      };
+    }
+  }
+
   const { data, error } = await supabase.from(table).select("*").eq("id", id).maybeSingle();
   if (error) throw error;
+
+  const mappedData = snakeToCamelObject(data);
+  if (id && mappedData) {
+    clientCache.setDoc(table, id, mappedData);
+  }
+
   return {
     exists: () => !!data,
-    data: () => snakeToCamelObject(data)
+    data: () => mappedData
   };
 }
 
@@ -186,12 +255,26 @@ async function addDoc(collectionRef, payload) {
   if (startupId) row.startup_id = startupId;
   const { data, error } = await supabase.from(table).insert(row).select("id").single();
   if (error) throw error;
+
+  clientCache.invalidateQueries(table);
   return { id: data.id };
 }
 
 async function getDocs(refOrQuery) {
   const queryRef = refOrQuery.collectionRef ? refOrQuery : { collectionRef: refOrQuery, constraints: [] };
   const { table, startupId } = mapTableFromSegments(queryRef.collectionRef.segments);
+
+  const queryKey = JSON.stringify({ startupId, constraints: queryRef.constraints });
+  const cachedData = clientCache.getQuery(table, queryKey);
+  if (cachedData) {
+    return {
+      empty: cachedData.length === 0,
+      forEach: (cb) => cachedData.forEach((mapped) => {
+        cb({ id: mapped.id, data: () => mapped });
+      })
+    };
+  }
+
   let builder = supabase.from(table).select("*");
   if (startupId) builder = builder.eq("startup_id", startupId);
   for (const constraint of queryRef.constraints) {
@@ -203,10 +286,13 @@ async function getDocs(refOrQuery) {
   const { data, error } = await builder;
   if (error) throw error;
   const rows = data || [];
+  const mappedRows = rows.map(row => snakeToCamelObject(row));
+
+  clientCache.setQuery(table, queryKey, mappedRows);
+
   return {
-    empty: rows.length === 0,
-    forEach: (cb) => rows.forEach((row) => {
-      const mapped = snakeToCamelObject(row);
+    empty: mappedRows.length === 0,
+    forEach: (cb) => mappedRows.forEach((mapped) => {
       cb({ id: mapped.id, data: () => mapped });
     })
   };
@@ -479,15 +565,9 @@ function updateNavForUser() {
     loginBtn.style.fontWeight = '600';
     
     // Check if admin
-    const adminEmails = [
-      'omarboudaya1@gmail.com',
-      'dr.maherkhedher@wisdomnets.com',
-      'mohammedkhedher222@gmail.com'
-    ].map(e => e.toLowerCase().trim());
+    const isAdmin = currentUserProfile.role === 'admin';
     
-    const userEmail = (currentUserProfile.email || auth.currentUser?.email || "").toLowerCase().trim();
-    
-    if (adminEmails.includes(userEmail)) {
+    if (isAdmin) {
       getStartedBtn.textContent = 'Admin Dash';
       getStartedBtn.onclick = (e) => { e.preventDefault(); openAdminDashboard(); };
     } else {
@@ -666,8 +746,10 @@ window.nextRegStep = function(step) {
       showToast('Please fill in all account fields.', 'error');
       return;
     }
-    if (pass.length < 8) {
-      showToast('Password must be at least 8 characters.', 'error');
+    const hasNum = /[0-9]/.test(pass);
+    const hasSpec = /[^A-Za-z0-9]/.test(pass);
+    if (pass.length < 8 || !hasNum || !hasSpec) {
+      showToast('Password must be at least 8 characters and contain at least 1 number and 1 special character.', 'error');
       return;
     }
   }
@@ -920,8 +1002,10 @@ window.handleRegister = async function(e) {
     showToast('Please fill in all core fields.', 'error');
     return;
   }
-  if (password.length < 8) {
-    showToast('Password must be at least 8 characters.', 'error');
+  const hasNum = /[0-9]/.test(password);
+  const hasSpec = /[^A-Za-z0-9]/.test(password);
+  if (password.length < 8 || !hasNum || !hasSpec) {
+    showToast('Password must be at least 8 characters and contain at least 1 number and 1 special character.', 'error');
     return;
   }
 
@@ -1509,9 +1593,8 @@ window.dashTabSwitch = function(btn, tabId) {
     }
   });
 
-  // Load forum messages if active
   if (tabId === 'dashCommunityForum') {
-    if (window.loadForumMessages) window.loadForumMessages();
+    if (window.loadCommunitySpaces) window.loadCommunitySpaces();
   }
 };
 
@@ -1521,6 +1604,82 @@ window.handleSignOut = function() {
       closeDashboard();
       showToast('Signed out successfully.');
     });
+  }
+};
+
+const startupProfileViewPageHTML = `
+      <!-- STARTUP PROFILE VIEW (PAGE) -->
+      <div id="dashStartupProfileView" style="display:none;">
+        <div class="dash-welcome" style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="dash-welcome-text">
+            <h1 id="spPageName">Startup Name</h1>
+            <p id="spPageField">Industry / Field</p>
+          </div>
+          <button onclick="window.goBackFromProfileView()" class="btn btn-outline" style="font-size:0.8rem; padding:0.4rem 0.875rem;">
+            &larr; Back
+          </button>
+        </div>
+        
+        <div class="dash-grid wide" style="display:grid; grid-template-columns: 250px 1fr; gap:2rem; margin-top:2rem;">
+          <!-- Left Column: Media & Quick Actions -->
+          <div class="dash-panel" style="display:flex; flex-direction:column; align-items:center; gap:1.5rem; text-align:center; padding:2rem;">
+            <div id="spPageImageContainer" style="width:140px; height:140px; border-radius:50%; background:var(--muted); overflow:hidden; display:flex; align-items:center; justify-content:center; border:3px solid var(--border); position:relative; box-shadow:var(--shadow-sm);">
+              <img id="spPageImg" src="" alt="Startup Logo" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
+              <svg id="spPagePlaceholder" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted-fg)"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            </div>
+            
+            <div id="spPagePhotoUploadSection" style="display:none; margin-top:0.5rem;">
+              <label for="spPagePhotoUpload" class="btn btn-outline btn-sm" style="cursor:pointer; font-size:0.75rem; padding:0.25rem 0.5rem;">
+                Change Photo
+              </label>
+              <input type="file" id="spPagePhotoUpload" accept="image/*" style="display:none;" onchange="handleStartupPhotoUploadPage(event)" />
+            </div>
+            
+            <a href="#" id="spPageWebsite" target="_blank" class="btn btn-outline w-full" style="justify-content:center; margin-top:1rem; font-size:0.85rem;">Visit Website</a>
+          </div>
+          
+          <!-- Right Column: Details -->
+          <div class="dash-panel" style="display:flex; flex-direction:column; gap:1.5rem; padding:2rem;">
+            <div class="dash-panel-header" style="border-bottom:1px solid var(--border); padding-bottom:1rem; margin-bottom:0.5rem;">
+              <span class="dash-panel-title" style="font-size:1.1rem; font-weight:700;">Startup Specifications</span>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+              <div>
+                <span style="font-size:0.75rem; color:var(--muted-fg); display:block; margin-bottom:0.25rem; text-transform:uppercase; letter-spacing:0.5px;">Current Stage</span>
+                <span style="font-weight:600; font-size:1rem;" id="spPageStage">-</span>
+              </div>
+              <div>
+                <span style="font-size:0.75rem; color:var(--muted-fg); display:block; margin-bottom:0.25rem; text-transform:uppercase; letter-spacing:0.5px;">Capital Raised</span>
+                <span style="font-weight:600; font-size:1rem;" id="spPageCapital">-</span>
+              </div>
+              <div>
+                <span style="font-size:0.75rem; color:var(--muted-fg); display:block; margin-bottom:0.25rem; text-transform:uppercase; letter-spacing:0.5px;">Employees</span>
+                <span style="font-weight:600; font-size:1rem;" id="spPageEmployees">-</span>
+              </div>
+              <div>
+                <span style="font-size:0.75rem; color:var(--muted-fg); display:block; margin-bottom:0.25rem; text-transform:uppercase; letter-spacing:0.5px;">Year Founded</span>
+                <span style="font-weight:600; font-size:1rem;" id="spPageYear">-</span>
+              </div>
+            </div>
+            
+            <div style="border-top:1px solid var(--border); padding-top:1.5rem; margin-top:0.5rem;">
+              <h4 style="margin-bottom:0.75rem; font-weight:700;">Pitch & Description</h4>
+              <p style="color:var(--muted-fg); line-height:1.6; font-size:0.9rem; white-space:pre-wrap;" id="spPageDescription">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+`;
+
+window.goBackFromProfileView = function() {
+  const isFounder = currentUserProfile && currentUserProfile.role === 'founder';
+  if (isFounder) {
+    const overviewBtn = document.querySelector('button[onclick*="dashOverview"]');
+    dashTabSwitch(overviewBtn, 'dashOverview');
+  } else {
+    const dirBtn = document.querySelector('button[onclick*="dashDirectory"]');
+    dashTabSwitch(dirBtn, 'dashDirectory');
   }
 };
 
@@ -1697,40 +1856,34 @@ window.populateDashboard = async function() {
       </div>
       
       <!-- COMMUNITY FORUM -->
-      <div id="dashCommunityForum" style="display:none;">
-        <div class="dash-welcome">
-          <div class="dash-welcome-text">
-            <h1>Community Forum</h1>
-            <p>Connect with other founders and investors in the Investrade ecosystem.</p>
-          </div>
-        </div>
-
+      <div id="dashCommunityForum" style="display:none; height:100%; padding-top: 1rem;">
         ${(p.subscriptionStatus === 'active' || p.subscriptionTier) ? `
-          <div class="dash-panel" style="margin-bottom:2rem; padding:1.5rem;">
-            <form onsubmit="handleForumPost(event)" style="display:flex; flex-direction:column; gap:1rem;">
-              <textarea id="forumMessageInput" placeholder="Share an update, ask a question, or introduce yourself..." 
-                style="width:100%; min-height:100px; padding:1rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-family:inherit; resize:vertical;" required></textarea>
-              <div style="display:flex; justify-content:flex-end;">
-                <button type="submit" class="btn btn-primary">Post Message</button>
+          <div class="community-layout">
+            <aside class="community-sidebar">
+              <div class="community-spaces-title">Spaces</div>
+              <div id="communitySpacesList">Loading spaces...</div>
+            </aside>
+            <main class="community-main">
+              <div class="community-header">
+                <h2 id="communityCurrentSpaceName">Loading...</h2>
+                <button class="btn btn-primary" onclick="openCreatePostModal()">New Post</button>
               </div>
-            </form>
-          </div>
-
-          <div id="forumMessagesContainer">
-            <div style="padding:2rem; text-align:center; color:var(--muted-fg);">Loading discussions...</div>
+              <div id="communityPostsFeed">Loading posts...</div>
+            </main>
           </div>
         ` : `
           <div class="dash-panel" style="align-items:center; padding:4rem; text-align:center;">
             <div style="font-size:3rem; margin-bottom:1.5rem;">🔒</div>
             <h3 style="font-size:1.5rem; font-weight:700; margin-bottom:1rem;">Subscription Required</h3>
             <p style="color:var(--muted-fg); font-size:1rem; max-width:450px; margin:0 auto 2rem;">
-              The Community Forum is exclusive to our Starter, Pro, and Venture members. 
+              The Community Platform is exclusive to our Starter, Pro, and Venture members. 
               Join the conversation to connect with top-tier founders and investors.
             </p>
             <a href="#pricing" onclick="closeDashboard()" class="btn btn-primary">View Plans & Subscribe</a>
           </div>
         `}
       </div>
+      ${startupProfileViewPageHTML}
     `;
 
     // Fetch My Courses dynamically
@@ -1861,40 +2014,34 @@ window.populateDashboard = async function() {
       </div>
       
       <!-- COMMUNITY FORUM -->
-      <div id="dashCommunityForum" style="display:none;">
-        <div class="dash-welcome">
-          <div class="dash-welcome-text">
-            <h1>Community Forum</h1>
-            <p>Connect with other founders and investors in the Investrade ecosystem.</p>
-          </div>
-        </div>
-
+      <div id="dashCommunityForum" style="display:none; height:100%; padding-top: 1rem;">
         ${(p.subscriptionStatus === 'active' || p.subscriptionTier) ? `
-          <div class="dash-panel" style="margin-bottom:2rem; padding:1.5rem;">
-            <form onsubmit="handleForumPost(event)" style="display:flex; flex-direction:column; gap:1rem;">
-              <textarea id="forumMessageInput" placeholder="Share an update, ask a question, or introduce yourself..." 
-                style="width:100%; min-height:100px; padding:1rem; border-radius:0.75rem; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-family:inherit; resize:vertical;" required></textarea>
-              <div style="display:flex; justify-content:flex-end;">
-                <button type="submit" class="btn btn-primary">Post Message</button>
+          <div class="community-layout">
+            <aside class="community-sidebar">
+              <div class="community-spaces-title">Spaces</div>
+              <div id="communitySpacesList2">Loading spaces...</div>
+            </aside>
+            <main class="community-main">
+              <div class="community-header">
+                <h2 id="communityCurrentSpaceName2">Loading...</h2>
+                <button class="btn btn-primary" onclick="openCreatePostModal()">New Post</button>
               </div>
-            </form>
-          </div>
-
-          <div id="forumMessagesContainer">
-            <div style="padding:2rem; text-align:center; color:var(--muted-fg);">Loading discussions...</div>
+              <div id="communityPostsFeed2">Loading posts...</div>
+            </main>
           </div>
         ` : `
           <div class="dash-panel" style="align-items:center; padding:4rem; text-align:center;">
             <div style="font-size:3rem; margin-bottom:1.5rem;">🔒</div>
             <h3 style="font-size:1.5rem; font-weight:700; margin-bottom:1rem;">Subscription Required</h3>
             <p style="color:var(--muted-fg); font-size:1rem; max-width:450px; margin:0 auto 2rem;">
-              The Community Forum is exclusive to our Starter, Pro, and Venture members. 
+              The Community Platform is exclusive to our Starter, Pro, and Venture members. 
               Join the conversation to connect with top-tier founders and investors.
             </p>
             <a href="#pricing" onclick="closeDashboard()" class="btn btn-primary">View Plans & Subscribe</a>
           </div>
         `}
       </div>
+      ${startupProfileViewPageHTML}
     `;
 
     // Fetch Startup Directory content
@@ -2168,12 +2315,130 @@ window.handleManualPayPalCheckout = async function() {
     }, 2000);
 };
 
+let currentViewedStartupId = null;
+
+window.viewStartupProfile = async function(startupId) {
+  try {
+    const docSnap = await getDoc(doc(db, "startups", startupId));
+    if (!docSnap.exists()) {
+      showToast('Startup not found', 'error');
+      return;
+    }
+    const s = docSnap.data();
+    currentViewedStartupId = startupId; // Keep track for photo upload
+
+    // Log the visit if the viewer is not the startup owner
+    const isOwner = auth.currentUser && auth.currentUser.uid === s.ownerUid;
+    if (!isOwner) {
+      logStartupVisit(startupId);
+      // Locally increment visits count so UI updates instantly
+      s.investorVisits = (s.investorVisits || 0) + 1;
+    }
+
+    // Populate the page
+    const qs = (sel) => document.querySelector(sel);
+    if(qs('#spPageName')) qs('#spPageName').textContent = s.name;
+    if(qs('#spPageField')) qs('#spPageField').textContent = s.field;
+    if(qs('#spPageStage')) qs('#spPageStage').textContent = s.stage;
+    if(qs('#spPageCapital')) qs('#spPageCapital').textContent = s.capital;
+    if(qs('#spPageEmployees')) qs('#spPageEmployees').textContent = s.employees;
+    if(qs('#spPageYear')) qs('#spPageYear').textContent = s.year;
+    if(qs('#spPageDescription')) qs('#spPageDescription').textContent = s.description;
+    
+    if (s.website) {
+      if(qs('#spPageWebsite')) {
+        qs('#spPageWebsite').href = s.website.startsWith('http') ? s.website : `https://${s.website}`;
+        qs('#spPageWebsite').style.display = 'flex';
+      }
+    } else {
+      if(qs('#spPageWebsite')) qs('#spPageWebsite').style.display = 'none';
+    }
+
+    // Handle photo
+    const img = qs('#spPageImg');
+    const placeholder = qs('#spPagePlaceholder');
+    if (s.photoUrl || s.photo_url) {
+      const pUrl = s.photoUrl || s.photo_url;
+      if(img) { img.src = pUrl; img.style.display = 'block'; }
+      if(placeholder) placeholder.style.display = 'none';
+    } else {
+      if(img) { img.src = ''; img.style.display = 'none'; }
+      if(placeholder) placeholder.style.display = 'block';
+    }
+
+    // Handle upload button visibility
+    if(qs('#spPagePhotoUploadSection')) qs('#spPagePhotoUploadSection').style.display = isOwner ? 'block' : 'none';
+
+    // Show the page
+    dashTabSwitch(null, 'dashStartupProfileView');
+  } catch(err) {
+    console.error("Error fetching profile:", err);
+    showToast('Failed to load profile', 'error');
+  }
+};
+
+window.handleStartupPhotoUploadPage = async function(event) {
+  const file = event.target.files[0];
+  if (!file || !currentViewedStartupId) return;
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const dataUrl = e.target.result;
+    
+    // Resize/compress the image before saving
+    const img = new Image();
+    img.onload = async function() {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 400;
+      const MAX_HEIGHT = 400;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+      try {
+        await updateDoc(doc(db, "startups", currentViewedStartupId), {
+          photo_url: compressedDataUrl
+        });
+        
+        const qs = (sel) => document.querySelector(sel);
+        if(qs('#spPageImg')) {
+          qs('#spPageImg').src = compressedDataUrl;
+          qs('#spPageImg').style.display = 'block';
+        }
+        if(qs('#spPagePlaceholder')) qs('#spPagePlaceholder').style.display = 'none';
+        
+        showToast('Photo updated successfully!', 'success');
+      } catch (err) {
+        console.error("Error updating photo:", err);
+        showToast('Failed to update photo', 'error');
+      }
+    };
+    img.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+};
+
 // ---- Analytics: Log Visit ----
 window.logStartupVisit = async function(startupId) {
-  if (!currentUserProfile || currentUserProfile.role !== 'investor') return;
+  if (!currentUserProfile) return;
 
-  // FIX: use auth.currentUser.uid (always defined for authenticated users)
-  // instead of currentUserProfile.uid which was previously never stored.
   const uid = auth.currentUser?.uid;
   if (!uid) return;
 
@@ -2182,7 +2447,7 @@ window.logStartupVisit = async function(startupId) {
     await addDoc(collection(db, "startups", startupId, "visits"), {
       visitorUid: uid,
       visitorName: `${currentUserProfile.firstName} ${currentUserProfile.lastName}`,
-      visitorFund: currentUserProfile.investorFund || 'Angel',
+      visitorFund: currentUserProfile.investorFund || currentUserProfile.role || 'Visitor',
       timestamp: serverTimestamp()
     });
     // Increment total visit count
@@ -2223,7 +2488,7 @@ async function fetchStartupDirectory() {
             <p style="font-size:0.85rem; color:var(--muted-fg); line-height:1.4; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${s.description}</p>
             <div style="margin-top:auto; padding-top:1rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:0.8rem; font-weight:600; color:var(--primary);">${s.field}</span>
-              <button onclick="logStartupVisit('${docSnap.id}'); showToast('Viewing ${s.name}...')" class="btn btn-outline btn-sm">View Profile</button>
+              <button onclick="viewStartupProfile('${docSnap.id}')" class="btn btn-outline btn-sm">View Profile</button>
             </div>
           </div>
         `;
@@ -2243,86 +2508,300 @@ async function fetchStartupDirectory() {
 // COMMUNITY FORUM LOGIC
 // ----------------------------------------------------------------------
 
-window.loadForumMessages = async function() {
-  const container = document.getElementById('forumMessagesContainer');
-  if (!container) return;
+let currentCommunitySpaceId = null;
+let currentCommunityPostId = null;
+
+window.loadCommunitySpaces = async function() {
+  const container = document.getElementById('communitySpacesList');
+  const container2 = document.getElementById('communitySpacesList2');
+  if (!container && !container2) return;
   
   try {
-    const { data, error } = await supabase
-      .from('forum_messages')
+    const { data: spaces, error } = await supabase
+      .from('community_spaces')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50);
+      .order('order_idx', { ascending: true });
       
     if (error) throw error;
     
-    if (!data || data.length === 0) {
-      container.innerHTML = '<div class="dash-panel" style="padding:4rem; text-align:center; color:var(--muted-fg);">No discussions yet. Be the first to post!</div>';
-      return;
-    }
+    if (!spaces || spaces.length === 0) return;
     
-    container.innerHTML = data.map(msg => `
-      <div class="dash-panel" style="margin-bottom:1rem; padding:1.5rem; animation: fadeIn 0.3s ease;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-          <div style="display:flex; align-items:center; gap:0.75rem;">
-            <div style="width:36px; height:36px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:0.9rem;">
-              ${(msg.user_name || '?').charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <div style="font-weight:600; font-size:0.9rem; color:var(--foreground);">${msg.user_name}</div>
-              <div style="display:flex; align-items:center; gap:0.5rem;">
-                <span class="dash-role-badge ${msg.user_role}" style="font-size:0.65rem; padding:0.1rem 0.4rem;">${msg.user_role}</span>
-              </div>
-            </div>
-          </div>
-          <div style="font-size:0.75rem; color:var(--muted-fg);">
-            ${new Date(msg.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-          </div>
-        </div>
-        <div style="font-size:0.95rem; line-height:1.6; color:var(--foreground); white-space:pre-wrap; background:rgba(255,255,255,0.03); padding:1rem; border-radius:0.5rem; border:1px solid rgba(255,255,255,0.05);">${msg.message}</div>
+    const renderSpaces = (spacesData) => spacesData.map(s => `
+      <div class="community-space-item ${s.id === currentCommunitySpaceId ? 'active' : ''}" onclick="selectCommunitySpace('${s.id}', '${s.name}')">
+        <span>${s.icon || '💬'}</span>
+        <span>${s.name}</span>
       </div>
     `).join('');
+
+    if (container) container.innerHTML = renderSpaces(spaces);
+    if (container2) container2.innerHTML = renderSpaces(spaces);
     
+    // Select first space by default if none selected
+    if (!currentCommunitySpaceId && spaces.length > 0) {
+      selectCommunitySpace(spaces[0].id, spaces[0].name);
+    }
   } catch (err) {
-    console.error("Error loading forum:", err);
-    container.innerHTML = '<div class="dash-panel" style="padding:2rem; text-align:center; color:var(--error);">Failed to load messages. Check console.</div>';
+    console.error("Error loading community spaces:", err);
   }
 };
 
-window.handleForumPost = async function(event) {
-  event.preventDefault();
-  const input = document.getElementById('forumMessageInput');
-  const btn = event.target.querySelector('button');
-  const msg = input.value.trim();
+window.selectCommunitySpace = function(spaceId, spaceName) {
+  currentCommunitySpaceId = spaceId;
+  const name1 = document.getElementById('communityCurrentSpaceName');
+  const name2 = document.getElementById('communityCurrentSpaceName2');
+  if (name1) name1.textContent = spaceName;
+  if (name2) name2.textContent = spaceName;
   
-  if (!msg) return;
+  // Re-render spaces to show active state
+  loadCommunitySpaces();
+  loadSpacePosts(spaceId);
+};
+
+window.loadSpacePosts = async function(spaceId) {
+  const container = document.getElementById('communityPostsFeed');
+  const container2 = document.getElementById('communityPostsFeed2');
+  if (container) container.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--muted-fg);">Loading posts...</div>';
+  if (container2) container2.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--muted-fg);">Loading posts...</div>';
+  
+  try {
+    const { data: posts, error } = await supabase
+      .from('community_posts')
+      .select('*, community_comments(count), community_reactions(*)')
+      .eq('space_id', spaceId)
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    
+    const renderFeed = (postsData) => {
+      if (!postsData || postsData.length === 0) {
+        return '<div class="dash-panel" style="padding:4rem; text-align:center; color:var(--muted-fg);">No posts yet. Be the first!</div>';
+      }
+      return postsData.map(post => `
+        <div class="post-card" onclick="openPostDetails('${post.id}')">
+          <div class="post-header">
+            <div class="post-avatar">${(post.user_name || '?').charAt(0).toUpperCase()}</div>
+            <div class="post-meta">
+              <div class="post-author">${post.user_name} <span class="post-author-role">${post.user_role}</span></div>
+              <div class="post-time">${new Date(post.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</div>
+            </div>
+          </div>
+          ${post.title ? `<h3 style="font-weight:700; font-size:1.1rem; margin-top:0.5rem;">${post.title}</h3>` : ''}
+          <div class="post-content" style="display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${post.content}</div>
+          ${post.media_url ? `
+            <div class="post-media" style="max-height:200px;">
+              <img src="${post.media_url}" alt="Post media">
+            </div>
+          ` : ''}
+          <div class="post-footer" onclick="event.stopPropagation()">
+            <button class="reaction-btn" onclick="toggleReaction('post', '${post.id}', '👍')">👍 ${post.community_reactions.filter(r => r.emoji === '👍').length || ''}</button>
+            <button class="reaction-btn" onclick="toggleReaction('post', '${post.id}', '❤️')">❤️ ${post.community_reactions.filter(r => r.emoji === '❤️').length || ''}</button>
+            <button class="comment-btn" onclick="openPostDetails('${post.id}')">💬 ${post.community_comments[0]?.count || 0} Comments</button>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    if (container) container.innerHTML = renderFeed(posts);
+    if (container2) container2.innerHTML = renderFeed(posts);
+  } catch (err) {
+    console.error("Error loading posts:", err);
+    const errHtml = '<div class="dash-panel" style="padding:2rem; text-align:center; color:var(--destructive);">Failed to load posts.</div>';
+    if (container) container.innerHTML = errHtml;
+    if (container2) container2.innerHTML = errHtml;
+  }
+};
+
+window.openCreatePostModal = function() {
   if (!currentUserProfile) {
     showToast('Please sign in to post.', 'error');
     return;
   }
+  document.getElementById('createPostModal').style.display = 'flex';
+};
+
+window.closeCreatePostModal = function() {
+  document.getElementById('createPostModal').style.display = 'none';
+  document.getElementById('postTitleInput').value = '';
+  document.getElementById('postContentInput').value = '';
+  document.getElementById('postMediaInput').value = '';
+};
+
+window.handleCommunityPostSubmit = async function(e) {
+  e.preventDefault();
+  if (!currentCommunitySpaceId) return showToast('Please select a space first.', 'error');
+  
+  const title = document.getElementById('postTitleInput').value.trim();
+  const content = document.getElementById('postContentInput').value.trim();
+  const fileInput = document.getElementById('postMediaInput');
+  const btn = document.getElementById('postSubmitBtn');
+  
+  if (!content) return;
   
   btn.disabled = true;
   btn.textContent = 'Posting...';
   
   try {
-    const { error } = await supabase.from('forum_messages').insert({
+    let mediaUrl = null;
+    if (fileInput.files && fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${currentUserProfile.uid}/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('community_media')
+        .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
+      
+      const { data: publicUrlData } = supabase.storage
+        .from('community_media')
+        .getPublicUrl(filePath);
+        
+      mediaUrl = publicUrlData.publicUrl;
+    }
+    
+    const { error } = await supabase.from('community_posts').insert({
+      space_id: currentCommunitySpaceId,
       user_id: currentUserProfile.uid,
       user_name: `${currentUserProfile.firstName} ${currentUserProfile.lastName}`,
       user_role: currentUserProfile.role,
-      message: msg
+      title: title || null,
+      content: content,
+      media_url: mediaUrl
+    });
+    
+    if (error) throw error;
+    
+    closeCreatePostModal();
+    showToast('Post created successfully!', 'success');
+    loadSpacePosts(currentCommunitySpaceId);
+  } catch (err) {
+    console.error("Error creating post:", err);
+    showToast('Error creating post: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Post';
+  }
+};
+
+window.openPostDetails = async function(postId) {
+  currentCommunityPostId = postId;
+  const modal = document.getElementById('postDetailModal');
+  modal.classList.add('open');
+  
+  document.getElementById('detailPostAuthor').innerHTML = 'Loading...';
+  document.getElementById('detailPostTitle').textContent = '';
+  document.getElementById('detailPostContent').innerHTML = '';
+  document.getElementById('detailPostMedia').style.display = 'none';
+  document.getElementById('detailCommentThread').innerHTML = '<div style="text-align:center; padding:2rem;">Loading comments...</div>';
+  
+  try {
+    const { data: post, error } = await supabase
+      .from('community_posts')
+      .select('*, community_comments(*)')
+      .eq('id', postId)
+      .single();
+      
+    if (error) throw error;
+    
+    document.getElementById('detailPostAuthor').innerHTML = `<div class="post-avatar">${post.user_name.charAt(0).toUpperCase()}</div> ${post.user_name} <span class="post-author-role">${post.user_role}</span>`;
+    document.getElementById('detailPostTitle').textContent = post.title || '';
+    document.getElementById('detailPostContent').textContent = post.content;
+    
+    if (post.media_url) {
+      document.getElementById('detailPostMedia').innerHTML = `<img src="${post.media_url}" alt="Media">`;
+      document.getElementById('detailPostMedia').style.display = 'block';
+    }
+    
+    const comments = post.community_comments.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    document.getElementById('detailCommentThread').innerHTML = comments.length > 0 ? comments.map(c => `
+      <div class="comment-item">
+        <div class="comment-avatar">${c.user_name.charAt(0).toUpperCase()}</div>
+        <div class="comment-body">
+          <div class="comment-author">${c.user_name} <span style="font-size:0.7rem; color:var(--muted-fg); font-weight:normal;">${new Date(c.created_at).toLocaleString()}</span></div>
+          <div class="comment-text">${c.content}</div>
+        </div>
+      </div>
+    `).join('') : '<div style="color:var(--muted-fg); font-size:0.9rem;">No comments yet.</div>';
+    
+  } catch (err) {
+    console.error("Error loading post details:", err);
+    showToast('Failed to load post.', 'error');
+    closePostDetailModal();
+  }
+};
+
+window.closePostDetailModal = function() {
+  document.getElementById('postDetailModal').classList.remove('open');
+  currentCommunityPostId = null;
+};
+
+window.handleCommunityCommentSubmit = async function() {
+  if (!currentCommunityPostId) return;
+  const input = document.getElementById('commentInput');
+  const content = input.value.trim();
+  if (!content) return;
+  
+  if (!currentUserProfile) {
+    showToast('Please sign in to comment.', 'error');
+    return;
+  }
+  
+  try {
+    const { error } = await supabase.from('community_comments').insert({
+      post_id: currentCommunityPostId,
+      user_id: currentUserProfile.uid,
+      user_name: `${currentUserProfile.firstName} ${currentUserProfile.lastName}`,
+      user_role: currentUserProfile.role,
+      content: content
     });
     
     if (error) throw error;
     
     input.value = '';
-    showToast('Message posted successfully!', 'success');
-    await loadForumMessages();
+    openPostDetails(currentCommunityPostId);
+    if (currentCommunitySpaceId) loadSpacePosts(currentCommunitySpaceId);
   } catch (err) {
-    console.error("Error posting to forum:", err);
-    showToast('Error posting: ' + err.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Post Message';
+    console.error("Error posting comment:", err);
+    showToast('Error posting comment.', 'error');
+  }
+};
+
+window.toggleReaction = async function(entityType, entityId, emoji) {
+  if (!currentUserProfile) return showToast('Please sign in to react.', 'error');
+  
+  try {
+    const query = supabase
+      .from('community_reactions')
+      .select('id')
+      .eq('user_id', currentUserProfile.uid)
+      .eq('emoji', emoji);
+      
+    if (entityType === 'post') {
+      query.eq('post_id', entityId);
+    } else {
+      query.eq('comment_id', entityId);
+    }
+    
+    const { data: existing } = await query.single();
+      
+    if (existing) {
+      await supabase.from('community_reactions').delete().eq('id', existing.id);
+    } else {
+      const insertData = {
+        user_id: currentUserProfile.uid,
+        emoji: emoji
+      };
+      if (entityType === 'post') insertData.post_id = entityId;
+      else insertData.comment_id = entityId;
+      
+      await supabase.from('community_reactions').insert(insertData);
+    }
+    
+    if (currentCommunitySpaceId) loadSpacePosts(currentCommunitySpaceId);
+  } catch (err) {
+    console.error("Error toggling reaction:", err);
   }
 };
 
@@ -2340,7 +2819,7 @@ window.handleContactSubmit = async function(e) {
   const submitBtn = $('#contactSubmitBtn');
   const originalText = submitBtn.textContent;
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Sending...';
+  submitBtn.textContent = 'Submitting...';
 
   try {
     const { error } = await supabase
@@ -2348,23 +2827,6 @@ window.handleContactSubmit = async function(e) {
       .insert([{ name, email, message }]);
 
     if (error) throw error;
-
-    // Send email via edge function
-    try {
-      const API_BASE = supabaseConfig.functionsBaseUrl;
-      if (API_BASE) {
-        await fetch(`${API_BASE}/sendContactEmail`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseConfig.anonKey
-          },
-          body: JSON.stringify({ name, email, message })
-        });
-      }
-    } catch (e) {
-      console.warn("Email function failed", e);
-    }
     
     showToast('Your message has been sent successfully!', 'success');
     e.target.reset();
@@ -2387,12 +2849,7 @@ document.addEventListener('DOMContentLoaded', () => {
    ADMIN DASHBOARD LOGIC
    ============================================= */
 window.openAdminDashboard = function() {
-  const adminEmails = [
-    'omarboudaya1@gmail.com',
-    'dr.maherkhedher@wisdomnets.com',
-    'mohammedkhedher222@gmail.com'
-  ];
-  if (!currentUserProfile || !adminEmails.includes(currentUserProfile.email)) {
+  if (!currentUserProfile || currentUserProfile.role !== 'admin') {
     showToast('Unauthorized access.', 'error');
     return;
   }
@@ -2426,6 +2883,7 @@ window.switchAdminTab = function(tabId) {
   if (tabId === 'enrollments') loadAdminEnrollments();
   if (tabId === 'trainings') loadAdminTrainings();
   if (tabId === 'financials') loadAdminFinancials();
+  if (tabId === 'messages') loadAdminMessages();
 };
 
 async function populateAdminDashboard() {
@@ -2761,6 +3219,54 @@ async function loadAdminFinancials() {
   } catch (err) {
     console.error("Financial error:", err);
     container.innerHTML = '<p style="padding:2rem; color:var(--destructive);">Error generating financial reports.</p>';
+  }
+}
+
+async function loadAdminMessages() {
+  const container = $('#admin-messages-list');
+  container.innerHTML = '<p style="padding:1rem;">Loading messages...</p>';
+  try {
+    const { data: messages, error } = await supabase
+      .from('contact_messages')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      container.innerHTML = `<p style="padding:2rem; color:var(--destructive); text-align:center;">Access Denied: ${error.message}</p>`;
+      return;
+    }
+
+    if (!messages || messages.length === 0) {
+      container.innerHTML = '<p style="padding:2rem; text-align:center;">No contact messages found.</p>';
+      return;
+    }
+
+    let html = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${messages.map(m => `
+            <tr>
+              <td>${new Date(m.created_at).toLocaleString()}</td>
+              <td><strong>${m.name}</strong></td>
+              <td><a href="mailto:${m.email}" style="color: var(--primary); text-decoration: underline;">${m.email}</a></td>
+              <td style="max-width: 400px; white-space: pre-wrap; word-break: break-word;">${m.message}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    container.innerHTML = html;
+  } catch (err) {
+    console.error("Messages load error:", err);
+    container.innerHTML = '<p style="padding:2rem; color:var(--destructive);">Unexpected error loading messages.</p>';
   }
 }
 

@@ -700,7 +700,7 @@
     </div>
   </footer>
 
-  <!-- ===== AUTH MODALS ===== -->
+<!-- ===== AUTH MODALS ===== -->
   <div class="modal-overlay" id="loginModal">
     <div class="modal">
       <button class="modal-close" onclick="closeModal('loginModal')">&times;</button>
@@ -1083,6 +1083,10 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           Training Registrations
         </div>
+        <div class="db-sidebar-item" data-tab="messages" onclick="switchAdminTab('messages')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          Contact Messages
+        </div>
         <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
           <div class="db-sidebar-item" data-tab="financials" onclick="switchAdminTab('financials')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -1149,6 +1153,12 @@
            <div id="admin-trainings-list" class="admin-table-container"></div>
         </div>
 
+        <!-- Contact Messages Tab -->
+        <div class="admin-tab-content" id="admin-tab-messages" style="display:none;">
+           <div class="db-header"><h3>Contact Messages</h3></div>
+           <div id="admin-messages-list" class="admin-table-container"></div>
+        </div>
+
         <!-- Financial Reports Tab -->
         <div class="admin-tab-content" id="admin-tab-financials" style="display:none;">
            <div class="db-header"><h3>Financial Reports</h3></div>
@@ -1172,6 +1182,46 @@
            </div>
         </div>
       </main>
+    </div>
+  </div>
+
+  <!-- Community Modals -->
+  <div class="modal-overlay" id="createPostModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:2500; align-items:center; justify-content:center;">
+    <div style="background:var(--card); width:100%; max-width:600px; padding:2rem; border-radius:12px; border:1px solid var(--border);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h3 style="font-size:1.25rem; font-weight:800;">Create Post</h3>
+        <button onclick="closeCreatePostModal()" style="background:none; border:none; color:var(--foreground); cursor:pointer; font-size:1.5rem;">&times;</button>
+      </div>
+      <form onsubmit="handleCommunityPostSubmit(event)" style="display:flex; flex-direction:column; gap:1rem;">
+        <input type="text" id="postTitleInput" placeholder="Post Title (Optional)" style="width:100%; padding:0.75rem; border-radius:8px; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-family:inherit;">
+        <textarea id="postContentInput" placeholder="What's on your mind?" style="width:100%; min-height:120px; padding:0.75rem; border-radius:8px; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-family:inherit; resize:vertical;" required></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <input type="file" id="postMediaInput" accept="image/*" style="font-size:0.85rem;">
+          <button type="submit" class="btn btn-primary" id="postSubmitBtn">Post</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="post-detail-modal" id="postDetailModal">
+    <div class="post-detail-content">
+      <div class="post-detail-header">
+        <div class="post-author" id="detailPostAuthor">Loading...</div>
+        <button onclick="closePostDetailModal()" style="background:none; border:none; color:var(--foreground); cursor:pointer; font-size:1.5rem;">&times;</button>
+      </div>
+      <div class="post-detail-body">
+        <h2 id="detailPostTitle" style="font-size:1.5rem; font-weight:800; margin-bottom:1rem;"></h2>
+        <div id="detailPostContent" class="post-content"></div>
+        <div id="detailPostMedia" class="post-media" style="display:none; margin-top:1rem;"></div>
+        
+        <div class="comment-thread" id="detailCommentThread">
+          <!-- Comments go here -->
+        </div>
+      </div>
+      <div class="comment-input-area">
+        <textarea id="commentInput" placeholder="Write a comment..." rows="2"></textarea>
+        <button class="btn btn-primary" onclick="handleCommunityCommentSubmit()">Reply</button>
+      </div>
     </div>
   </div>
 

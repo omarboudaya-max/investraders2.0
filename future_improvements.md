@@ -22,7 +22,7 @@ This document outlines suggested features and enhancements for the Investrade Ad
 
 ## 5. CRM & Communication
 - **Direct Emailing**: Send emails to users directly from their table row.
-- **Newsletter Sync**: Sync training registrations with Mailchimp/Resend.
+- **Newsletter Sync**: Sync training registrations with Mailchimp.
 
 ---
 *Created on May 6, 2026*

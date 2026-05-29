@@ -1,8 +1,5 @@
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
-import { corsPreflight, json } from "../_shared/utils.ts";
-
-
+import { handleSafe, json, checkRateLimit, validateFields, logger } from "../_shared/utils.ts";
 
 const PLANS = {
   starter: { name: "Starter Plan", monthly: 29, annual: 23 },
@@ -11,33 +8,50 @@ const PLANS = {
 };
 
 Deno.serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  return handleSafe(req, async (req, supabase) => {
+    if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  try {
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-01-27.acacia"
-    });
+    // 1. Rate Limiting (10 requests per 60 seconds)
+    const rateLimit = await checkRateLimit(req, 'create_stripe_sub', 10, 60);
+    if (!rateLimit.allowed) {
+      return json({ error: `Too many requests. Please try again in ${rateLimit.reset} seconds.` }, 429);
+    }
+
+    // 2. Auth check
     const authHeader = req.headers.get("Authorization") || "";
     if (!authHeader.startsWith("Bearer ")) return json({ error: "Missing auth token" }, 401);
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SERVICE_ROLE_KEY") || ""
-    );
 
     const token = authHeader.replace("Bearer ", "");
     const { data: authData, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !authData.user) return json({ error: "Invalid auth token" }, 401);
 
-    const { planId, isAnnual } = await req.json();
+    // 3. Input Validation
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return json({ error: "Invalid JSON body" }, 400);
+    }
+
+    const validation = validateFields(body, {
+      planId: { type: "string", required: true, min: 3, max: 20 },
+      isAnnual: { type: "boolean", required: true }
+    });
+    if (!validation.isValid) {
+      return json({ error: "Validation failed", details: validation.errors }, 400);
+    }
+
+    const { planId, isAnnual } = body;
     const plan = PLANS[planId as keyof typeof PLANS];
     if (!plan) return json({ error: "Invalid plan ID" }, 400);
 
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-01-27.acacia"
+    });
+
     const origin = req.headers.get("origin") || Deno.env.get("APP_ORIGIN") || "https://www.investraders.net";
 
-    // 1. Check if user already has a stripe_customer_id
+    // 4. Fetch stripe_customer_id
     const { data: userData } = await supabase
       .from("users")
       .select("stripe_customer_id")
@@ -46,7 +60,6 @@ Deno.serve(async (req: Request) => {
 
     const customerId = userData?.stripe_customer_id;
 
-    // Monthly: charge plan.monthly every month. Annual: charge plan.annual * 12 once per year (annual = per-month equivalent when billed yearly).
     const lineItems = isAnnual
       ? [
           {
@@ -84,7 +97,7 @@ Deno.serve(async (req: Request) => {
       customer_email: customerId ? undefined : authData.user.email || undefined,
       payment_method_types: ["card"],
       line_items: lineItems,
-      success_url: `${origin}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/?checkout=success&session_id={CHECKOUT_SESSION_ID}&type=subscription`,
       cancel_url: `${origin}/?checkout=cancelled`,
       metadata: {
         userId: authData.user.id,
@@ -93,8 +106,7 @@ Deno.serve(async (req: Request) => {
       }
     });
 
+    logger.info(`Stripe subscription session created for user ${authData.user.id}, session ${session.id}`);
     return json({ url: session.url });
-  } catch (err) {
-    return json({ error: (err as Error).message }, 500);
-  }
+  });
 });
