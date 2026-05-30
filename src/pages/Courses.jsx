@@ -168,7 +168,7 @@ export default function Courses() {
       fetchEnrolledCourses()
     } catch (err) {
       console.error("Error processing enrollment:", err)
-      alert("Failed to process enrollment. Please try again.")
+      alert(`Failed to process enrollment: ${err.message || JSON.stringify(err)}`)
     } finally {
       setIsUploading(false)
     }
