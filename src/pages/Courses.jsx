@@ -23,7 +23,7 @@ const MOCK_COURSE = {
 }
 
 export default function Courses() {
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
   const [activeTab, setActiveTab] = useState('market') // market, enrolled
   const [showModal, setShowModal] = useState(false)
   const [modalStep, setModalStep] = useState(1) // 1: details, 2: payment, 3: success
@@ -51,7 +51,7 @@ export default function Courses() {
   
 
   useEffect(() => {
-    if (!profile) return
+    if (!user) return
     
     fetchEnrolledCourses()
 
@@ -59,7 +59,7 @@ export default function Courses() {
       .channel('public:course_enrollments')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'course_enrollments', filter: `user_id=eq.${profile.id}` },
+        { event: '*', schema: 'public', table: 'course_enrollments', filter: `user_id=eq.${user.id}` },
         () => {
           fetchEnrolledCourses()
         }
@@ -69,14 +69,20 @@ export default function Courses() {
     return () => {
       supabase.removeChannel(subscription)
     }
-  }, [profile])
+  }, [user])
 
   const fetchEnrolledCourses = async () => {
     try {
+      const userId = user?.id
+      if (!userId) {
+        setLoading(false)
+        return
+      }
+
       const { data, error } = await supabase
         .from('course_enrollments')
         .select('*')
-        .eq('user_id', profile.id)
+        .eq('user_id', userId)
       
       if (error) {
         alert("Fetch Error: " + error.message)
