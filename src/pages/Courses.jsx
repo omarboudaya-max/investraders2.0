@@ -34,6 +34,8 @@ export default function Courses() {
   const [enrollmentId, setEnrollmentId] = useState(null)
   const [enrolledCourses, setEnrolledCourses] = useState([])
   const [loading, setLoading] = useState(true)
+  const [proofFile, setProofFile] = useState(null)
+  const [isUploading, setIsUploading] = useState(false)
   
   // Form State
   const [formData, setFormData] = useState({
@@ -82,9 +84,39 @@ export default function Courses() {
       return
     }
 
+    if (paymentMethod === 'card') {
+      alert("Card payments are coming soon! Please use the PayPal option for immediate access.")
+      return
+    }
+
+    if (paymentMethod === 'manual' && !proofFile) {
+      alert("Please upload a proof of payment")
+      return
+    }
+
+    setIsUploading(true)
     try {
-      // Generate a mock unique ID for the enrollment
       const newId = 'ENR-' + Math.random().toString(36).substr(2, 9).toUpperCase()
+      const accessCode = Math.random().toString(36).substr(2, 6).toUpperCase()
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${newId}`
+      
+      let uploadedProofUrl = null
+      
+      if (paymentMethod === 'manual') {
+        const fileExt = proofFile.name.split('.').pop()
+        const fileName = `${newId}.${fileExt}`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('course_proofs')
+          .upload(fileName, proofFile)
+          
+        if (uploadError && uploadError.message !== 'The resource was not found') {
+          // It's possible the bucket doesn't exist, we'll just skip upload if it's missing for now
+          console.error("Upload error:", uploadError)
+        } else if (uploadData) {
+          const { data: { publicUrl } } = supabase.storage.from('course_proofs').getPublicUrl(fileName)
+          uploadedProofUrl = publicUrl
+        }
+      }
       
       const { error } = await supabase
         .from('course_enrollments')
@@ -95,19 +127,35 @@ export default function Courses() {
           course_id: MOCK_COURSE.id,
           course: MOCK_COURSE.title,
           price: MOCK_COURSE.price,
-          amount_paid: paymentMethod === 'manual' ? 0 : MOCK_COURSE.price,
-          status: paymentMethod === 'manual' ? 'manual_pending' : 'completed',
-          applicant_data: formData
+          payment_status: 'unpaid',
+          payment_provider: paymentMethod === 'manual' ? 'manual' : 'paypal',
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          age: formData.age,
+          country: formData.country,
+          education: formData.education,
+          professional: formData.professional,
+          motivation: formData.motivation,
+          access_code: accessCode,
+          qr_url: qrUrl,
+          proof_url: uploadedProofUrl
         }])
       
       if (error) throw error
 
       setEnrollmentId(newId)
+      
+      if (paymentMethod === 'paypal') {
+        window.open(`https://paypal.me/CobraAhmed/${MOCK_COURSE.price}`, '_blank')
+      }
+      
       setModalStep(3)
       fetchEnrolledCourses()
     } catch (err) {
       console.error("Error processing enrollment:", err)
       alert("Failed to process enrollment. Please try again.")
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -228,12 +276,15 @@ export default function Courses() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {enrolledCourses.map(enrollment => (
+                  {enrolledCourses.map(enrollment => {
+                    const isPaid = enrollment.payment_status === 'paid'
+                    return (
                     <div key={enrollment.id} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col">
                       <div className="h-40 bg-muted relative flex items-center justify-center">
                         <img src="/training_banner.png" alt="Course Banner" className="absolute inset-0 w-full h-full object-cover opacity-40" onError={(e) => e.target.style.display='none'} />
-                        <div className="absolute top-4 right-4 bg-background/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-emerald-500 flex items-center gap-1">
-                          <CheckCircle size={14} /> Enrolled
+                        <div className={`absolute top-4 right-4 bg-background/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${isPaid ? 'text-emerald-500' : 'text-amber-500'}`}>
+                          {isPaid ? <CheckCircle size={14} /> : null}
+                          {isPaid ? 'Enrolled' : 'Pending Payment'}
                         </div>
                         <Play size={48} className="text-foreground/50" />
                       </div>
@@ -241,22 +292,24 @@ export default function Courses() {
                         <h3 className="font-bold text-xl mb-2">{enrollment.course}</h3>
                         <p className="text-sm text-muted-foreground mb-6">Enrollment ID: <span className="font-mono text-xs">{enrollment.id}</span></p>
                         <div className="flex justify-between items-center pt-4 border-t border-border">
-                          <span className={`text-xs font-bold uppercase ${enrollment.status === 'completed' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                            {enrollment.status.replace('_', ' ')}
+                          <span className={`text-xs font-bold uppercase ${isPaid ? 'text-emerald-500' : 'text-amber-500'}`}>
+                            {enrollment.payment_status.replace('_', ' ')}
                           </span>
-                          <button 
-                            onClick={() => {
-                              setActiveVideo(enrollment.courses?.video_url)
-                              setShowVideoModal(true)
-                            }}
-                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                          >
-                            Enter Course
-                          </button>
+                          {isPaid && (
+                            <button 
+                              onClick={() => {
+                                setActiveVideo(enrollment.courses?.video_url)
+                                setShowVideoModal(true)
+                              }}
+                              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                            >
+                              Enter Course
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </div>
@@ -357,16 +410,29 @@ export default function Courses() {
                     </button>
                   </div>
 
+                  {paymentMethod === 'manual' && (
+                    <div className="mt-4 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
+                      <h4 className="font-bold text-amber-600 mb-2">Upload Proof of Payment</h4>
+                      <p className="text-sm text-muted-foreground mb-4">Please upload an image of your bank transfer receipt or cash deposit slip.</p>
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => setProofFile(e.target.files[0])}
+                        className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                      />
+                    </div>
+                  )}
+
                   <div className="flex justify-between mt-4 pt-6 border-t border-border">
                     <button onClick={() => setModalStep(1)} className="px-6 py-2 text-muted-foreground hover:text-foreground font-medium transition-colors">
                       Back
                     </button>
                     <button 
                       onClick={handlePaymentSubmit}
-                      disabled={!paymentMethod}
+                      disabled={!paymentMethod || isUploading}
                       className="px-8 py-2 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
-                      Complete Enrollment
+                      {isUploading ? 'Processing...' : 'Complete Enrollment'}
                     </button>
                   </div>
                 </div>
@@ -382,14 +448,20 @@ export default function Courses() {
                   <div>
                     <h2 className="text-3xl font-bold text-foreground mb-2">Enrollment Successful!</h2>
                     <p className="text-muted-foreground">You are now enrolled in {MOCK_COURSE.title}.</p>
-                    {paymentMethod === 'manual' && (
-                      <p className="text-amber-500 text-sm mt-2 font-medium bg-amber-500/10 px-4 py-2 rounded-lg inline-block">
-                        Your payment is pending manual verification.
-                      </p>
-                    )}
+                  {paymentMethod === 'paypal' && (
+                    <p className="text-blue-500 text-sm mt-2 font-medium bg-blue-500/10 px-4 py-2 rounded-lg inline-block">
+                      Please complete your payment in the PayPal tab. We will activate your access once verified.
+                    </p>
+                  )}
+                  {paymentMethod === 'manual' && (
+                    <p className="text-amber-500 text-sm mt-2 font-medium bg-amber-500/10 px-4 py-2 rounded-lg inline-block">
+                      Your proof of payment is pending manual verification by our admins.
+                    </p>
+                  )}
                   </div>
 
-                  <div className="bg-white p-4 rounded-xl shadow-sm border border-border mt-4">
+                  {/* Hide QR code if unpaid */}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-border mt-4 opacity-50 grayscale blur-[2px] pointer-events-none">
                     <img 
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${enrollmentId}`} 
                       alt="Enrollment QR Code" 
@@ -399,7 +471,7 @@ export default function Courses() {
                   <p className="text-sm font-mono text-muted-foreground mt-2">ID: {enrollmentId}</p>
                   
                   <p className="text-sm text-muted-foreground max-w-md mx-auto mt-4">
-                    Please save this QR code. You will need it to access the live sessions and course materials.
+                    Once your payment is marked as Paid, your QR code will unlock and you can access the course.
                   </p>
 
                   <button 
