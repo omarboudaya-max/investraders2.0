@@ -16,7 +16,7 @@ export default function Directory() {
   const fetchUsers = async () => {
     try {
       const [usersResponse, startupsResponse] = await Promise.all([
-        supabase.from('users').select('*').order('created_at', { ascending: false }),
+        supabase.from('users').select('*').order('joined_at', { ascending: false }),
         supabase.from('startups').select('*')
       ])
       
@@ -138,7 +138,7 @@ export default function Directory() {
                       </>
                     ) : (
                       <p className="text-sm text-muted-foreground line-clamp-2">
-                        {user.subscription_tier === 'pro' ? 'Pro Member' : 'Community Member'} joined {new Date(user.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                        {user.subscription_tier === 'pro' ? 'Pro Member' : 'Community Member'} joined {new Date(user.joined_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                       </p>
                     )}
                   </div>
