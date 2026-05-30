@@ -146,7 +146,7 @@ export default function Courses() {
       setEnrollmentId(newId)
       
       if (paymentMethod === 'paypal') {
-        window.open(`https://paypal.me/CobraAhmed/${MOCK_COURSE.price}`, '_blank')
+        window.open(`https://paypal.me/CobraAhmed`, '_blank')
       }
       
       setModalStep(3)
@@ -392,7 +392,10 @@ export default function Courses() {
                       className={`flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 transition-all ${paymentMethod === 'card' ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/50'}`}
                     >
                       <CreditCard size={32} />
-                      <span className="font-semibold text-sm">Credit Card</span>
+                      <div className="flex flex-col items-center">
+                        <span className="font-semibold text-sm">Credit Card</span>
+                        <span className="text-[10px] uppercase font-bold text-primary mt-1 px-2 py-0.5 bg-primary/10 rounded-full">Coming Soon</span>
+                      </div>
                     </button>
                     <button 
                       onClick={() => setPaymentMethod('paypal')}
@@ -449,9 +452,17 @@ export default function Courses() {
                     <h2 className="text-3xl font-bold text-foreground mb-2">Enrollment Successful!</h2>
                     <p className="text-muted-foreground">You are now enrolled in {MOCK_COURSE.title}.</p>
                   {paymentMethod === 'paypal' && (
-                    <p className="text-blue-500 text-sm mt-2 font-medium bg-blue-500/10 px-4 py-2 rounded-lg inline-block">
-                      Please complete your payment in the PayPal tab. We will activate your access once verified.
-                    </p>
+                    <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl mt-2 text-center w-full">
+                      <p className="text-blue-600 text-sm font-medium mb-3">
+                        We have opened PayPal in a new tab. If it didn't open, click the button below.
+                      </p>
+                      <a href="https://paypal.me/CobraAhmed" target="_blank" rel="noreferrer" className="inline-block px-6 py-2 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition-colors">
+                        Pay with PayPal
+                      </a>
+                      <p className="text-blue-500/70 text-xs mt-3">
+                        We will activate your access once your payment is verified.
+                      </p>
+                    </div>
                   )}
                   {paymentMethod === 'manual' && (
                     <p className="text-amber-500 text-sm mt-2 font-medium bg-amber-500/10 px-4 py-2 rounded-lg inline-block">
