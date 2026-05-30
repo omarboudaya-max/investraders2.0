@@ -47,7 +47,6 @@ export default function Courses() {
     motivation: ''
   })
   
-  const [paymentMethod, setPaymentMethod] = useState('')
 
   useEffect(() => {
     if (profile) {
