@@ -582,13 +582,13 @@ function updateNavForUser() {
     
     if (loginBtn) {
       loginBtn.textContent = 'Sign In';
-      loginBtn.href = '#login';
+      loginBtn.href = '/app.html';
       loginBtn.style.fontWeight = '500';
     }
     if (getStartedBtn) {
       getStartedBtn.textContent = 'Get Started';
       getStartedBtn.onclick = null;
-      getStartedBtn.href = '#register';
+      getStartedBtn.href = '/app.html';
     }
   }
 }
