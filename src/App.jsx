@@ -2,12 +2,11 @@ import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import LiveRoom from './pages/LiveRoom'
 import AIAgentChat from './pages/AIAgentChat'
-
-// Placeholders for Phase 3
-const Feed = () => <div className="p-8 text-center text-muted-foreground">Feed Page (Coming Soon)</div>
-const Community = () => <div className="p-8 text-center text-muted-foreground">Community Page (Coming Soon)</div>
-const Events = () => <div className="p-8 text-center text-muted-foreground">Events Page (Coming Soon)</div>
-const Messages = () => <div className="p-8 text-center text-muted-foreground">Messages Page (Coming Soon)</div>
+import Feed from './pages/Feed'
+import Community from './pages/Community'
+import Messages from './pages/Messages'
+import Events from './pages/Events'
+import Directory from './pages/Directory'
 
 function App() {
   return (
@@ -19,6 +18,7 @@ function App() {
         <Route path="live" element={<LiveRoom />} />
         <Route path="messages" element={<Messages />} />
         <Route path="ai" element={<AIAgentChat />} />
+        <Route path="directory" element={<Directory />} />
         <Route path="*" element={<div className="p-8 text-center">404 Not Found</div>} />
       </Route>
     </Routes>
