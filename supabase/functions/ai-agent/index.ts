@@ -13,16 +13,20 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json()
+    const { prompt, history } = await req.json()
     const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
 
     if (!GROQ_API_KEY) {
       throw new Error('GROQ_API_KEY is not set')
     }
 
-    if (!prompt) {
-      throw new Error('Prompt is required')
+    if (!prompt && !history) {
+      throw new Error('Prompt or history is required')
     }
+
+    // Build messages array
+    const systemMessage = { role: "system", content: "You are Investrade AI, a world-class Pitch Coach and Startup Advisor. Be concise, brilliant, and directly helpful to founders and investors. Format your responses in clean markdown." };
+    const messages = history ? [systemMessage, ...history] : [systemMessage, { role: "user", content: prompt }];
 
     // Call Groq API (stream=true)
     const groqUrl = `https://api.groq.com/openai/v1/chat/completions`
@@ -35,10 +39,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "system", content: "You are Investrade AI, a world-class Pitch Coach and Startup Advisor. Be concise, brilliant, and directly helpful to founders and investors. Format your responses in clean markdown." },
-          { role: "user", content: prompt }
-        ],
+        messages: messages,
         stream: true
       })
     })

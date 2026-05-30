@@ -33,13 +33,20 @@ export default function AIAgentChat() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       
+      // Prepare history (limit to last 10 messages)
+      const historyToSend = messages.slice(-10).map(msg => ({
+        role: msg.role === 'ai' ? 'assistant' : 'user',
+        content: msg.content
+      }))
+      historyToSend.push({ role: 'user', content: userMsg })
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-agent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify({ prompt: userMsg })
+        body: JSON.stringify({ history: historyToSend })
       })
 
       if (!response.ok) throw new Error('Network response was not ok')
