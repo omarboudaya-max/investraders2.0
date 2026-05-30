@@ -659,6 +659,10 @@ window.switchAppView = function(viewId) {
   if (viewId === 'audience' && window.loadAudience) {
     window.loadAudience();
   }
+  
+  if (viewId === 'feed' && window.loadFeed) {
+    window.loadFeed();
+  }
 };
 
 window.renderAppView = function(viewId) {
@@ -2127,6 +2131,40 @@ window.populateDashboard = async function() {
       ${startupProfileViewPageHTML}
     `;
   main.innerHTML += `
+    <!-- FEED -->
+    <div id="dashFeed" style="display:none; padding: 2rem; max-width: 800px; margin: 0 auto;">
+      <div class="dash-welcome" style="margin-bottom: 2rem;">
+        <div class="dash-welcome-text">
+          <h1>Feed</h1>
+          <p>See what's happening across the Investraders community.</p>
+        </div>
+      </div>
+      
+      <!-- Create Post Box -->
+      <div class="dash-panel" style="margin-bottom: 2rem; padding: 1.5rem;">
+        <div style="display:flex; gap:1rem;">
+          <div class="app-avatar" id="feedUserAvatar" style="flex-shrink:0;">U</div>
+          <div style="flex:1;">
+            <textarea id="feedPostInput" placeholder="Start a post..." style="width:100%; border:none; outline:none; background:transparent; resize:none; font-family:inherit; font-size:1rem; min-height:60px; color:var(--foreground);"></textarea>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+          <div style="display:flex; gap: 1rem;">
+            <button class="btn btn-ghost" style="padding:0.4rem 0.8rem; color:var(--muted-fg);" onclick="alert('Media upload coming soon!')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.4rem; vertical-align:middle;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              Media
+            </button>
+          </div>
+          <button class="btn btn-primary" onclick="handleFeedPostSubmit()">Post</button>
+        </div>
+      </div>
+      
+      <!-- Feed Posts Area -->
+      <div id="feedPostsArea">
+        <div style="text-align:center; padding:3rem; color:var(--muted-fg);">Loading feed...</div>
+      </div>
+    </div>
+    
     <!-- DIRECT MESSAGES -->
     <div id="dashMessages" style="display:none; height:100%;">
       <div style="display:flex; height:100%; width:100%;">
@@ -3934,6 +3972,108 @@ window.loadAudience = async function() {
   } catch (err) {
     console.error("Error loading audience:", err);
     tbody.innerHTML = '<tr><td colspan="3" style="padding:2rem; text-align:center; color:red;">Failed to load audience data.</td></tr>';
+  }
+};
+
+// ======================================================================
+// FEED LOGIC
+// ======================================================================
+
+const DEFAULT_FEED_SPACE_ID = '00000000-0000-0000-0000-000000000001'; // General Discussion
+
+window.loadFeed = async function() {
+  if (!currentUserProfile) return;
+  
+  const avatarEl = document.getElementById('feedUserAvatar');
+  if (avatarEl) {
+    avatarEl.textContent = currentUserProfile.first_name ? currentUserProfile.first_name.charAt(0).toUpperCase() : 'U';
+  }
+  
+  const postsArea = document.getElementById('feedPostsArea');
+  if (!postsArea) return;
+  
+  try {
+    const { data: posts, error } = await supabase
+      .from('community_posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+      
+    if (error) throw error;
+    
+    if (!posts || posts.length === 0) {
+      postsArea.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--muted-fg);">No posts yet. Be the first to share!</div>';
+      return;
+    }
+    
+    let html = '';
+    for (const p of posts) {
+      const avatarStr = p.user_name ? p.user_name.charAt(0).toUpperCase() : 'U';
+      const timeStr = new Date(p.created_at).toLocaleString();
+      
+      html += `
+        <div class="dash-panel" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
+            <div class="app-avatar">${avatarStr}</div>
+            <div>
+              <div style="font-weight:600;">${p.user_name}</div>
+              <div style="font-size:0.8rem; color:var(--muted-fg); text-transform:capitalize;">${p.user_role} &bull; ${timeStr}</div>
+            </div>
+          </div>
+          <div style="font-size:1rem; line-height:1.6; color:var(--foreground); white-space:pre-wrap;">${p.content}</div>
+          
+          <div style="display:flex; gap:1rem; margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border);">
+            <button class="btn btn-ghost" style="padding:0.4rem 0.8rem; color:var(--muted-fg);" onclick="alert('Likes coming soon!')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.4rem; vertical-align:middle;"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> Like
+            </button>
+            <button class="btn btn-ghost" style="padding:0.4rem 0.8rem; color:var(--muted-fg);" onclick="alert('Comments coming soon!')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.4rem; vertical-align:middle;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> Comment
+            </button>
+          </div>
+        </div>
+      `;
+    }
+    
+    postsArea.innerHTML = html;
+    
+  } catch(err) {
+    console.error("Error loading feed:", err);
+    postsArea.innerHTML = '<div style="text-align:center; padding:3rem; color:red;">Failed to load feed.</div>';
+  }
+};
+
+window.handleFeedPostSubmit = async function() {
+  if (!currentUserProfile) return;
+  
+  const inputEl = document.getElementById('feedPostInput');
+  const content = inputEl.value.trim();
+  if (!content) return;
+  
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.textContent = 'Posting...';
+  
+  try {
+    const { error } = await supabase
+      .from('community_posts')
+      .insert([{
+        space_id: DEFAULT_FEED_SPACE_ID,
+        user_id: currentUserProfile.uid,
+        user_name: `${currentUserProfile.first_name} ${currentUserProfile.last_name || ''}`.trim(),
+        user_role: currentUserProfile.role || 'member',
+        content: content
+      }]);
+      
+    if (error) throw error;
+    
+    inputEl.value = '';
+    loadFeed();
+  } catch(err) {
+    console.error("Error posting to feed:", err);
+    alert("Failed to post. Please try again.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Post';
   }
 };
 
