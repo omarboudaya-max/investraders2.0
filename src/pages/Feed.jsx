@@ -68,7 +68,7 @@ export default function Feed() {
       <div className="hidden md:flex w-64 flex-col gap-4 flex-shrink-0">
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <div className="h-16 bg-gradient-to-r from-blue-600 to-indigo-600 relative">
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full border-4 border-card bg-primary/20 flex items-center justify-center text-primary font-bold text-xl">
+            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full border-4 border-card bg-secondary flex items-center justify-center text-secondary-foreground font-bold text-xl">
               {profile?.first_name?.charAt(0).toUpperCase() || 'U'}
             </div>
           </div>
