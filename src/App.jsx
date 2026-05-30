@@ -9,6 +9,7 @@ import Events from './pages/Events'
 import Directory from './pages/Directory'
 import Courses from './pages/Courses'
 import Profile from './pages/Profile'
+import Audience from './pages/Audience'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="messages" element={<Messages />} />
         <Route path="ai" element={<AIAgentChat />} />
         <Route path="directory" element={<Directory />} />
+        <Route path="audience" element={<Audience />} />
         <Route path="courses" element={<Courses />} />
         <Route path="profile/:id" element={<Profile />} />
         <Route path="*" element={<div className="p-8 text-center">404 Not Found</div>} />

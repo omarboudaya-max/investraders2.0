@@ -62,7 +62,7 @@ export default function Courses() {
         .from('course_enrollments')
         .select('*')
         .eq('user_id', profile.id)
-        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
       
       if (error) throw error
       setEnrolledCourses(data || [])
