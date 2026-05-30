@@ -9,6 +9,7 @@ export default function Profile() {
   const { profile: currentUser } = useAuth()
   const navigate = useNavigate()
   const [userProfile, setUserProfile] = useState(null)
+  const [startupProfile, setStartupProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -28,6 +29,15 @@ export default function Profile() {
       
       if (error) throw error
       setUserProfile(data)
+
+      if (data.role === 'founder' && data.startup_id) {
+        const { data: startupData } = await supabase
+          .from('startups')
+          .select('*')
+          .eq('owner_uid', id)
+          .single()
+        if (startupData) setStartupProfile(startupData)
+      }
     } catch (err) {
       console.error("Error fetching profile:", err)
     } finally {
@@ -115,9 +125,40 @@ export default function Profile() {
             </>
           )}
           {userProfile.role === 'founder' && (
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-1">Startup ID</h3>
-              <p>{userProfile.startup_id || 'Not linked'}</p>
+            <div className="col-span-1 md:col-span-2 mt-2 border-t border-border pt-6">
+              <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                <Briefcase size={20} className="text-primary" /> Startup Details
+              </h3>
+              {startupProfile ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-1">Company Name</h3>
+                    <p className="font-medium">{startupProfile.name}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-1">Field & Stage</h3>
+                    <p>{startupProfile.field} • {startupProfile.stage}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-1">Team Size</h3>
+                    <p>{startupProfile.employees}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-1">Capital Raised</h3>
+                    <p>{startupProfile.capital}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-1">Website</h3>
+                    <a href={startupProfile.website} target="_blank" rel="noreferrer" className="text-primary hover:underline">{startupProfile.website}</a>
+                  </div>
+                  <div className="col-span-1 md:col-span-2">
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-1">Description</h3>
+                    <p className="text-sm leading-relaxed">{startupProfile.description}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">Startup profile not linked or created yet.</p>
+              )}
             </div>
           )}
         </div>

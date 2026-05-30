@@ -5,6 +5,7 @@ import { Search, Mail, Filter, ShieldCheck, TrendingUp, Building } from 'lucide-
 
 export default function Directory() {
   const [users, setUsers] = useState([])
+  const [startups, setStartups] = useState({})
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // all, founder, investor, admin
 
@@ -14,13 +15,22 @@ export default function Directory() {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const [usersResponse, startupsResponse] = await Promise.all([
+        supabase.from('users').select('*').order('created_at', { ascending: false }),
+        supabase.from('startups').select('*')
+      ])
       
-      if (error) throw error
-      setUsers(data || [])
+      if (usersResponse.error) throw usersResponse.error
+      if (startupsResponse.error) throw startupsResponse.error
+      
+      setUsers(usersResponse.data || [])
+      
+      const startupMap = {}
+      ;(startupsResponse.data || []).forEach(s => {
+        startupMap[s.owner_uid] = s
+      })
+      setStartups(startupMap)
+      
     } catch (err) {
       console.error("Error fetching directory:", err)
     } finally {
@@ -115,9 +125,23 @@ export default function Directory() {
                     {user.role || 'Member'}
                   </div>
                   
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-6 h-10">
-                    {user.subscription_tier === 'pro' ? 'Pro Member' : 'Community Member'} joined {new Date(user.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                  </p>
+                  <div className="h-20 w-full mb-6 flex flex-col items-center justify-start overflow-hidden">
+                    {user.role === 'founder' && startups[user.id] ? (
+                      <>
+                        <p className="text-sm font-semibold text-foreground mb-1">{startups[user.id].name}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{startups[user.id].description || `${startups[user.id].field} • ${startups[user.id].stage}`}</p>
+                      </>
+                    ) : user.role === 'investor' ? (
+                      <>
+                        <p className="text-sm font-semibold text-foreground mb-1">{user.investor_fund || 'Independent Investor'}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{user.investor_focus || 'Generalist'}</p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {user.subscription_tier === 'pro' ? 'Pro Member' : 'Community Member'} joined {new Date(user.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
                   
                   <div className="w-full grid grid-cols-2 gap-3 mt-auto pt-4 border-t border-border">
                     <Link to={`/messages?user=${user.id}`} className="flex items-center justify-center gap-2 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-colors">
