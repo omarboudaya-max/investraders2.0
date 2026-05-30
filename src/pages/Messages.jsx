@@ -5,7 +5,7 @@ import { Search, Send, User, MessageSquare, Plus, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 
 export default function Messages() {
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
   const [threads, setThreads] = useState([])
   const [activeThread, setActiveThread] = useState(null)
   const [messages, setMessages] = useState([])
@@ -18,7 +18,7 @@ export default function Messages() {
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
-    if (profile) {
+    if (user) {
       fetchThreads().then(() => {
         const userId = searchParams.get('user')
         if (userId) {
@@ -26,7 +26,7 @@ export default function Messages() {
         }
       })
     }
-  }, [profile])
+  }, [user])
 
   useEffect(() => {
     if (activeThread) {
@@ -59,6 +59,12 @@ export default function Messages() {
 
   const fetchThreads = async () => {
     try {
+      const userId = user?.id
+      if (!userId) {
+        setLoading(false)
+        return
+      }
+
       const { data, error } = await supabase
         .from('chat_thread_participants')
         .select(`
@@ -68,7 +74,7 @@ export default function Messages() {
             created_at
           )
         `)
-        .eq('user_id', profile.id)
+        .eq('user_id', userId)
       
       if (error) throw error
 
@@ -84,7 +90,7 @@ export default function Messages() {
         .from('chat_thread_participants')
         .select('thread_id, user_id')
         .in('thread_id', threadIds)
-        .neq('user_id', profile.id)
+        .neq('user_id', userId)
       
       if (otherErr) throw otherErr
 
@@ -146,19 +152,23 @@ export default function Messages() {
         return
       }
 
+      const currentUserId = user?.id
+      if (!currentUserId) return
+
       // Create new thread
       const { data: threadData, error: threadErr } = await supabase
         .from('chat_threads')
         .insert([{}])
         .select()
         .single()
+      
       if (threadErr) throw threadErr
 
       // Add participants
       const { error: partErr } = await supabase
         .from('chat_thread_participants')
         .insert([
-          { thread_id: threadData.id, user_id: profile.id },
+          { thread_id: threadData.id, user_id: currentUserId },
           { thread_id: threadData.id, user_id: userId }
         ])
       if (partErr) throw partErr
@@ -197,15 +207,18 @@ export default function Messages() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
-    if (!newMessage.trim() || !activeThread || !profile) return
+    if (!newMessage.trim() || !activeThread) return
+
+    const userId = user?.id
+    if (!userId) return
 
     try {
       const { error } = await supabase
         .from('direct_messages')
         .insert([{
           thread_id: activeThread.thread_id,
-          sender_id: profile.id,
-          content: newMessage.trim()
+          sender_id: userId,
+          content: newMessage
         }])
       
       if (error) throw error
@@ -276,11 +289,11 @@ export default function Messages() {
                 </div>
               ) : (
                 messages.map(msg => {
-                  const isMine = msg.sender_id === profile?.id
+                  const isMine = msg.sender_id === user?.id
                   return (
-                    <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[70%] rounded-2xl px-5 py-3 ${isMine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-card border border-border text-foreground rounded-bl-sm'}`}>
-                        <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    <div key={msg.id} className={`flex ${msg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${msg.sender_id === user?.id ? 'bg-primary text-primary-foreground rounded-tr-sm' : 'bg-muted text-foreground rounded-tl-sm'}`}>
+                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                         <span className={`text-[0.65rem] block mt-1 ${isMine ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
                           {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </span>
