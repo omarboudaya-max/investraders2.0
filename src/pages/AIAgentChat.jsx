@@ -60,7 +60,7 @@ export default function AIAgentChat() {
           if (line.startsWith('data: ') && line !== 'data: [DONE]') {
             try {
               const data = JSON.parse(line.slice(6))
-              const textPart = data.choices?.[0]?.delta?.content
+              const textPart = data.candidates?.[0]?.content?.parts?.[0]?.text
               if (textPart) {
                 aiText += textPart
                 setMessages(prev => {

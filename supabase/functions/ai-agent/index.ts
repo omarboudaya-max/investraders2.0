@@ -14,46 +14,42 @@ Deno.serve(async (req) => {
 
   try {
     const { prompt } = await req.json()
-    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 
-    if (!GROQ_API_KEY) {
-      throw new Error('GROQ_API_KEY is not set')
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not set')
     }
 
     if (!prompt) {
       throw new Error('Prompt is required')
     }
 
-    // Call Groq API (stream=true)
-    const groqUrl = `https://api.groq.com/openai/v1/chat/completions`
+    // Call Gemini API (stream=true)
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`
 
-    const response = await fetch(groqUrl, {
+    const response = await fetch(geminiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "llama3-8b-8192",
-        messages: [
-          {
-            role: "system",
-            content: "You are Investrade AI, a world-class Pitch Coach and Startup Advisor. Be concise, brilliant, and directly helpful to founders and investors. Format your responses in clean markdown."
-          },
+        contents: [
           {
             role: "user",
-            content: prompt
+            parts: [{ text: prompt }]
           }
         ],
-        stream: true,
-        temperature: 0.7
+        systemInstruction: {
+          role: "user",
+          parts: [{ text: "You are Investrade AI, a world-class Pitch Coach and Startup Advisor. Be concise, brilliant, and directly helpful to founders and investors. Format your responses in clean markdown." }]
+        }
       })
     })
 
     if (!response.ok) {
       const errText = await response.text()
-      console.error("Groq Error:", errText)
-      throw new Error(`Groq API error: ${response.status}`)
+      console.error("Gemini Error:", errText)
+      throw new Error(`Gemini API error: ${response.status}`)
     }
 
     // Return the stream directly to the client
