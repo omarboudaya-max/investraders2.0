@@ -13,7 +13,6 @@ export default function Feed() {
   const [postContent, setPostContent] = useState('')
   const [isPosting, setIsPosting] = useState(false)
   const [selectedImage, setSelectedImage] = useState(null)
-  const [selectedImage, setSelectedImage] = useState(null)
   const [showEventModal, setShowEventModal] = useState(false)
   const [eventData, setEventData] = useState({ title: '', type: 'masterclass', date: '' })
   const [suggestions, setSuggestions] = useState([])
