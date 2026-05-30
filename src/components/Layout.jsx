@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import TopHeader from './TopHeader'
 import { useAuth } from '../contexts/AuthContext'
+import Auth from '../pages/Auth'
 
 export default function Layout() {
   const { user, loading } = useAuth()
@@ -10,14 +11,9 @@ export default function Layout() {
     return <div className="h-screen w-screen flex items-center justify-center bg-background text-foreground">Loading...</div>
   }
 
-  // If not logged in, we could redirect, but for now we just show a login prompt
+  // If not logged in, render the Auth module directly
   if (!user) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-background text-foreground">
-        <h1 className="text-3xl font-bold text-primary mb-4">Investraders Auth Required</h1>
-        <p>Please log in using the legacy landing page for now, or implement a new React Login page here.</p>
-      </div>
-    )
+    return <Auth />
   }
 
   return (
