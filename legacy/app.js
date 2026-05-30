@@ -561,21 +561,9 @@ function updateNavForUser() {
   const webAppShell = document.getElementById('webAppShell');
   
   if (currentUserProfile) {
-    if (landingPage) landingPage.style.display = 'none';
-    if (webAppShell) {
-      webAppShell.style.display = 'flex';
-      
-      const appAvatarTop = document.getElementById('appAvatarTop');
-      if (appAvatarTop) appAvatarTop.textContent = currentUserProfile.firstName?.charAt(0).toUpperCase() || 'U';
-      
-      const isAdmin = currentUserProfile.role === 'admin';
-      const adminSidebarGroup = document.getElementById('adminSidebarGroup');
-      if (adminSidebarGroup) adminSidebarGroup.style.display = isAdmin ? 'block' : 'none';
-      
-      if (!window.currentAppView) {
-        switchAppView('feed');
-      }
-    }
+    // Force redirect to the new React Application if authenticated
+    window.location.href = '/app.html';
+    return;
   } else {
     if (landingPage) landingPage.style.display = 'block';
     if (webAppShell) webAppShell.style.display = 'none';
