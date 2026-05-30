@@ -111,6 +111,10 @@ export default function Courses() {
 
     setIsUploading(true)
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const userId = profile?.id || session?.user?.id
+      if (!userId) throw new Error("User session not found. Please log in again.")
+
       const newId = 'ENR-' + Math.random().toString(36).substr(2, 9).toUpperCase()
       const accessCode = Math.random().toString(36).substr(2, 6).toUpperCase()
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${newId}`
@@ -137,7 +141,7 @@ export default function Courses() {
         .from('course_enrollments')
         .insert([{
           id: newId,
-          user_id: profile.id,
+          user_id: userId,
           email: formData.email,
           course_id: MOCK_COURSE.id,
           course: MOCK_COURSE.title,
