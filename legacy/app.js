@@ -1000,41 +1000,21 @@ function checkAuthAndOpen(modalId) {
   openModal(modalId);
 }
 
-$('#loginBtn').addEventListener('click', (e) => {
-  e.preventDefault();
-  if (currentUserProfile) {
-    if (auth && confirm('Do you want to sign out?')) {
-      signOut(auth).then(() => {
-        showToast('You have been signed out.', 'success');
-      });
-    }
-  } else {
-    checkAuthAndOpen('loginModal');
-  }
-});
+// $('#loginBtn').addEventListener('click', (e) => {
+//   // Link handled by HTML href
+// });
 
-$('#getStartedBtn').addEventListener('click', (e) => {
-  e.preventDefault();
-  if (currentUserProfile) {
-    if (window.openDashboard) window.openDashboard();
-  } else {
-    checkAuthAndOpen('registerModal');
-  }
-});
+// $('#getStartedBtn').addEventListener('click', (e) => {
+//   // Link handled by HTML href
+// });
 
-// CTA buttons → register
-$$('a[href="#register"]').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    checkAuthAndOpen('registerModal');
-  });
-});
-$$('a[href="#login"]').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    checkAuthAndOpen('loginModal');
-  });
-});
+// // CTA buttons → register
+// $$('a[href="#register"]').forEach(btn => {
+//   // Link handled by HTML href
+// });
+// $$('a[href="#login"]').forEach(btn => {
+//   // Link handled by HTML href
+// });
 
 // ---- Login handler ----
 window.handleLogin = async function(e) {
