@@ -229,9 +229,9 @@ export default function Courses() {
           
           {activeTab === 'market' ? (
             /* MARKETPLACE VIEW */
-            <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm flex flex-col lg:flex-row">
+            <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm flex flex-col md:flex-row max-w-4xl mx-auto">
               {/* Course Media / Video iframe */}
-              <div className="lg:w-1/2 relative bg-black flex flex-col justify-center min-h-[300px] lg:min-h-full">
+              <div className="md:w-1/2 relative bg-black flex flex-col justify-center min-h-[250px] md:min-h-full">
                 <iframe 
                   className="w-full aspect-video" 
                   src="https://www.youtube.com/embed/i_kmrDifdoI?rel=0" 
@@ -243,45 +243,44 @@ export default function Courses() {
               </div>
               
               {/* Course Info */}
-              <div className="lg:w-1/2 p-8 lg:p-12 flex flex-col justify-center">
-                <div className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider rounded-full w-max mb-4">
+              <div className="md:w-1/2 p-6 lg:p-8 flex flex-col justify-center">
+                <div className="inline-block px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider rounded-full w-max mb-3">
                   Flagship Masterclass
                 </div>
-                <h2 className="text-3xl font-bold text-foreground mb-4">{MOCK_COURSE.title}</h2>
-                <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+                <h2 className="text-xl font-bold text-foreground mb-2">{MOCK_COURSE.title}</h2>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                   {MOCK_COURSE.description}
                 </p>
                 
-                <div className="flex flex-col gap-3 mb-8 max-h-[300px] overflow-y-auto pr-2">
+                <div className="flex flex-col gap-2 mb-6 max-h-[180px] overflow-y-auto pr-2">
                   {MOCK_COURSE.syllabus.map((module, idx) => (
-                    <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
-                      <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">
+                    <div key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-muted/50 border border-border/50">
+                      <div className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center flex-shrink-0 text-[10px] font-bold mt-0.5">
                         {idx + 1}
                       </div>
                       <div>
-                        <h4 className="font-bold text-foreground text-sm">{module.title}</h4>
-                        <p className="text-xs text-muted-foreground mt-0.5">{module.desc}</p>
+                        <h4 className="font-semibold text-foreground text-xs">{module.title}</h4>
                       </div>
                     </div>
                   ))}
                 </div>
                 
-                <div className="flex items-center gap-6 mb-8">
+                <div className="flex items-center gap-4 mb-6">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-foreground">${MOCK_COURSE.price}</span>
-                    <span className="text-lg text-muted-foreground line-through">${MOCK_COURSE.original_price}</span>
+                    <span className="text-2xl font-bold text-foreground">${MOCK_COURSE.price}</span>
+                    <span className="text-sm text-muted-foreground line-through">${MOCK_COURSE.original_price}</span>
                   </div>
-                  <div className="text-sm text-amber-500 font-medium bg-amber-500/10 px-3 py-1 rounded-full">50% Off Limited Time</div>
+                  <div className="text-xs text-amber-500 font-medium bg-amber-500/10 px-2 py-1 rounded-full">50% Off</div>
                 </div>
 
                 {isEnrolled ? (
-                  <button className={`w-full py-4 rounded-xl font-bold border flex items-center justify-center gap-2 cursor-default ${isFullyPaid ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30' : 'bg-amber-500/10 text-amber-500 border-amber-500/30'}`}>
-                    {isFullyPaid ? <><CheckCircle size={20} /> You are enrolled in this course</> : 'Your payment is pending review'}
+                  <button className={`w-full py-3 rounded-lg text-sm font-bold border flex items-center justify-center gap-2 cursor-default ${isFullyPaid ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30' : 'bg-amber-500/10 text-amber-500 border-amber-500/30'}`}>
+                    {isFullyPaid ? <><CheckCircle size={16} /> Enrolled</> : 'Payment Pending'}
                   </button>
                 ) : (
                   <button 
                     onClick={() => setShowModal(true)}
-                    className="w-full py-4 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-lg hover:shadow-primary/25"
+                    className="w-full py-3 rounded-lg text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-md hover:shadow-primary/25"
                   >
                     Enroll Now
                   </button>
