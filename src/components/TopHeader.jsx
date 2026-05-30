@@ -8,12 +8,17 @@ export default function TopHeader() {
   const { profile } = useAuth()
   const { isDark, toggleTheme } = useTheme()
   const [showDropdown, setShowDropdown] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const dropdownRef = useRef(null)
+  const notifRef = useRef(null)
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false)
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setShowNotifications(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -43,10 +48,40 @@ export default function TopHeader() {
         >
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
         </button>
-        <button className="text-muted-foreground hover:text-foreground relative p-2 rounded-full hover:bg-muted">
-          <Bell size={20} />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
-        </button>
+        <div className="relative" ref={notifRef}>
+          <button 
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="text-muted-foreground hover:text-foreground relative p-2 rounded-full hover:bg-muted transition-colors"
+          >
+            <Bell size={20} />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
+          </button>
+          
+          {showNotifications && (
+            <div className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-xl py-2 z-50">
+              <div className="px-4 py-2 border-b border-border">
+                <h3 className="font-bold text-foreground">Notifications</h3>
+              </div>
+              <div className="flex flex-col max-h-80 overflow-y-auto">
+                <div className="px-4 py-3 hover:bg-muted cursor-pointer transition-colors border-b border-border">
+                  <p className="text-sm text-foreground"><strong>Sarah Jenkins</strong> liked your post.</p>
+                  <p className="text-xs text-muted-foreground mt-1">2 hours ago</p>
+                </div>
+                <div className="px-4 py-3 hover:bg-muted cursor-pointer transition-colors border-b border-border">
+                  <p className="text-sm text-foreground"><strong>Marcus Doe</strong> viewed your profile.</p>
+                  <p className="text-xs text-muted-foreground mt-1">5 hours ago</p>
+                </div>
+                <div className="px-4 py-3 hover:bg-muted cursor-pointer transition-colors">
+                  <p className="text-sm text-foreground">System: Platform upgrade complete. Welcome to v2.0!</p>
+                  <p className="text-xs text-muted-foreground mt-1">1 day ago</p>
+                </div>
+              </div>
+              <div className="px-4 py-2 border-t border-border text-center">
+                <button className="text-sm text-primary font-semibold hover:underline">Mark all as read</button>
+              </div>
+            </div>
+          )}
+        </div>
         
         <div className="relative" ref={dropdownRef}>
           <button 

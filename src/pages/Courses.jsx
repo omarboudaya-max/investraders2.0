@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Play, CheckCircle, Search, CreditCard, Banknote, ShieldCheck, X } from 'lucide-react'
+import { Play, CheckCircle, Search, CreditCard, Banknote, ShieldCheck, X, PlayCircle } from 'lucide-react'
 
 const MOCK_COURSE = {
   id: 'investrade_ai_course_001',
@@ -24,14 +24,16 @@ const MOCK_COURSE = {
 
 export default function Courses() {
   const { profile } = useAuth()
-  const [activeTab, setActiveTab] = useState('market') // 'market' | 'enrolled'
+  const [activeTab, setActiveTab] = useState('market') // market, enrolled
+  const [showModal, setShowModal] = useState(false)
+  const [modalStep, setModalStep] = useState(1) // 1: details, 2: payment, 3: success
+  const [paymentMethod, setPaymentMethod] = useState(null)
+  const [selectedCourse, setSelectedCourse] = useState(null)
+  const [showVideoModal, setShowVideoModal] = useState(false)
+  const [activeVideo, setActiveVideo] = useState(null)
+  const [enrollmentId, setEnrollmentId] = useState(null)
   const [enrolledCourses, setEnrolledCourses] = useState([])
   const [loading, setLoading] = useState(true)
-
-  // Modal State
-  const [showModal, setShowModal] = useState(false)
-  const [modalStep, setModalStep] = useState(1)
-  const [enrollmentId, setEnrollmentId] = useState(null)
   
   // Form State
   const [formData, setFormData] = useState({
@@ -243,7 +245,13 @@ export default function Courses() {
                           <span className={`text-xs font-bold uppercase ${enrollment.status === 'completed' ? 'text-emerald-500' : 'text-amber-500'}`}>
                             {enrollment.status.replace('_', ' ')}
                           </span>
-                          <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                          <button 
+                            onClick={() => {
+                              setActiveVideo(enrollment.courses?.video_url)
+                              setShowVideoModal(true)
+                            }}
+                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                          >
                             Enter Course
                           </button>
                         </div>
@@ -404,6 +412,37 @@ export default function Courses() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Viewer Modal */}
+      {showVideoModal && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <button 
+            onClick={() => setShowVideoModal(false)}
+            className="absolute top-6 right-6 p-2 text-white hover:bg-white/20 rounded-full transition-colors"
+          >
+            <X size={24} />
+          </button>
+          
+          <div className="w-full max-w-5xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-white/10 relative flex items-center justify-center">
+            {activeVideo ? (
+              <iframe 
+                width="100%" 
+                height="100%" 
+                src={activeVideo.replace('watch?v=', 'embed/')} 
+                title="Course Video" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <div className="text-center text-white/50">
+                <PlayCircle size={64} className="mx-auto mb-4 opacity-50" />
+                <p>No video URL provided for this course.</p>
+              </div>
+            )}
           </div>
         </div>
       )}

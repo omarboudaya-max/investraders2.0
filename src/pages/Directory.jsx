@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Search, Mail, Filter, ShieldCheck, TrendingUp, Building } from 'lucide-react'
 
@@ -119,12 +120,12 @@ export default function Directory() {
                   </p>
                   
                   <div className="w-full grid grid-cols-2 gap-3 mt-auto pt-4 border-t border-border">
-                    <button className="flex items-center justify-center gap-2 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-colors">
+                    <Link to={`/messages?user=${user.id}`} className="flex items-center justify-center gap-2 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-colors">
                       <Mail size={16} /> Message
-                    </button>
-                    <button className="flex items-center justify-center gap-2 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-colors">
+                    </Link>
+                    <Link to={`/profile/${user.id}`} className="flex items-center justify-center gap-2 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-colors">
                       Profile
-                    </button>
+                    </Link>
                   </div>
                 </div>
               )

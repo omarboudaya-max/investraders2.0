@@ -17,6 +17,9 @@ export default function Feed() {
   const [eventData, setEventData] = useState({ title: '', type: 'masterclass', date: '' })
   const [suggestions, setSuggestions] = useState([])
   const [stats, setStats] = useState({ viewers: 0, connections: 0 })
+  const [activeCommentPost, setActiveCommentPost] = useState(null)
+  const [commentText, setCommentText] = useState('')
+  const [followingIds, setFollowingIds] = useState(new Set())
   const fileInputRef = useRef(null)
 
   const fetchData = async () => {
@@ -24,7 +27,11 @@ export default function Feed() {
       // 1. Fetch Posts
       const { data: postsData, error: postsErr } = await supabase
         .from('community_posts')
-        .select('*')
+        .select(`
+          *,
+          community_reactions ( id, user_id, emoji ),
+          community_comments ( id, user_id, user_name, content, created_at )
+        `)
         .order('created_at', { ascending: false })
         .limit(50)
       if (!postsErr) setPosts(postsData || [])
@@ -45,6 +52,16 @@ export default function Feed() {
           .eq('viewed_id', profile.id)
         
         if (!viewsErr) setStats(prev => ({ ...prev, viewers: count || 0 }))
+
+        // 4. Fetch Following
+        const { data: follows } = await supabase
+          .from('user_follows')
+          .select('following_id')
+          .eq('follower_id', profile.id)
+        
+        if (follows) {
+          setFollowingIds(new Set(follows.map(f => f.following_id)))
+        }
       }
     } catch (err) {
       console.error("Error fetching feed data:", err)
@@ -154,6 +171,73 @@ export default function Feed() {
     }
   }
 
+  const handleLike = async (postId, reactions) => {
+    if (!profile) return
+    const existing = reactions?.find(r => r.user_id === profile.id && r.emoji === 'heart')
+    
+    try {
+      if (existing) {
+        await supabase.from('community_reactions').delete().eq('id', existing.id)
+      } else {
+        await supabase.from('community_reactions').insert([{
+          post_id: postId,
+          user_id: profile.id,
+          emoji: 'heart'
+        }])
+      }
+      fetchData()
+    } catch (err) {
+      console.error("Error toggling like:", err)
+    }
+  }
+
+  const handleComment = async (postId) => {
+    if (!commentText.trim() || !profile) return
+    try {
+      await supabase.from('community_comments').insert([{
+        post_id: postId,
+        user_id: profile.id,
+        user_name: `${profile.first_name} ${profile.last_name || ''}`.trim(),
+        user_role: profile.role || 'member',
+        content: commentText.trim()
+      }])
+      setCommentText('')
+      setActiveCommentPost(null)
+      fetchData()
+    } catch (err) {
+      console.error("Error posting comment:", err)
+    }
+  }
+
+  const handleShare = async (post) => {
+    const url = `${window.location.origin}/app.html?post=${post.id}`
+    if (navigator.share) {
+      navigator.share({
+        title: `Post by ${post.user_name}`,
+        text: post.content,
+        url: url,
+      }).catch(console.error)
+    } else {
+      navigator.clipboard.writeText(url)
+      alert("Post link copied to clipboard!")
+    }
+  }
+
+  const handleFollow = async (userId) => {
+    if (!profile) return
+    try {
+      if (followingIds.has(userId)) {
+        await supabase.from('user_follows').delete().match({ follower_id: profile.id, following_id: userId })
+        setFollowingIds(prev => { const n = new Set(prev); n.delete(userId); return n; })
+      } else {
+        await supabase.from('user_follows').insert([{ follower_id: profile.id, following_id: userId }])
+        setFollowingIds(prev => { const n = new Set(prev); n.add(userId); return n; })
+      }
+    } catch (err) {
+      console.error("Error toggling follow:", err)
+    }
+  }
+
   return (
     <div className="flex w-full max-w-7xl mx-auto p-4 lg:p-6 gap-6 justify-center">
       
@@ -245,7 +329,11 @@ export default function Feed() {
                   >
                     <Video size={20} className="text-amber-500" /> <span className="hidden sm:inline">Event</span>
                   </button>
-                  <button type="button" className="flex items-center gap-2 text-muted-foreground hover:bg-muted px-3 py-2 rounded-lg transition-colors font-medium text-sm">
+                  <button 
+                    type="button" 
+                    onClick={() => { alert("Job Portal is currently in beta testing and will be available soon.") }}
+                    className="flex items-center gap-2 text-muted-foreground hover:bg-muted px-3 py-2 rounded-lg transition-colors font-medium text-sm"
+                  >
                     <Briefcase size={20} className="text-emerald-500" /> <span className="hidden sm:inline">Job</span>
                   </button>
                 </div>
@@ -292,20 +380,81 @@ export default function Feed() {
                   </div>
                 )}
                 
-                <div className="flex justify-between mt-4 pt-2 border-t border-border">
-                  <button className="flex-1 flex justify-center items-center gap-2 text-muted-foreground hover:bg-muted py-3 rounded-lg transition-colors font-medium">
-                    <Heart size={20} /> <span className="text-sm">Like</span>
+                {((post.community_reactions?.length || 0) > 0 || (post.community_comments?.length || 0) > 0) && (
+                  <div className="flex justify-between items-center text-xs text-muted-foreground mb-3 px-1">
+                    <span className="flex items-center gap-1"><Heart size={12} className="fill-blue-500 text-blue-500"/> {post.community_reactions?.length || 0}</span>
+                    <span>{post.community_comments?.length || 0} comments</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between mt-2 pt-2 border-t border-border">
+                  <button 
+                    onClick={() => handleLike(post.id, post.community_reactions)}
+                    className={`flex-1 flex justify-center items-center gap-2 py-3 rounded-lg transition-colors font-medium ${post.community_reactions?.some(r => r.user_id === profile?.id) ? 'text-blue-500' : 'text-muted-foreground hover:bg-muted'}`}
+                  >
+                    <Heart size={20} className={post.community_reactions?.some(r => r.user_id === profile?.id) ? 'fill-blue-500' : ''} /> <span className="text-sm">Like</span>
                   </button>
-                  <button className="flex-1 flex justify-center items-center gap-2 text-muted-foreground hover:bg-muted py-3 rounded-lg transition-colors font-medium">
+                  <button 
+                    onClick={() => setActiveCommentPost(activeCommentPost === post.id ? null : post.id)}
+                    className="flex-1 flex justify-center items-center gap-2 text-muted-foreground hover:bg-muted py-3 rounded-lg transition-colors font-medium"
+                  >
                     <MessageSquare size={20} /> <span className="text-sm">Comment</span>
                   </button>
-                  <button className="flex-1 flex justify-center items-center gap-2 text-muted-foreground hover:bg-muted py-3 rounded-lg transition-colors font-medium">
-                    <Repeat size={20} /> <span className="text-sm">Repost</span>
+                  <button 
+                    onClick={() => handleShare(post)}
+                    className="flex-1 flex justify-center items-center gap-2 text-muted-foreground hover:bg-muted py-3 rounded-lg transition-colors font-medium"
+                  >
+                    <Share2 size={20} /> <span className="text-sm">Share</span>
                   </button>
-                  <button className="flex-1 flex justify-center items-center gap-2 text-muted-foreground hover:bg-muted py-3 rounded-lg transition-colors font-medium">
+                  <button 
+                    onClick={() => handleShare(post)}
+                    className="flex-1 flex justify-center items-center gap-2 text-muted-foreground hover:bg-muted py-3 rounded-lg transition-colors font-medium"
+                  >
                     <Send size={20} /> <span className="text-sm">Send</span>
                   </button>
                 </div>
+
+                {/* Comments Section */}
+                {activeCommentPost === post.id && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <div className="flex gap-2 mb-4">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold flex-shrink-0 text-xs">
+                        {profile?.first_name?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                      <div className="flex-1 flex border border-border rounded-full overflow-hidden focus-within:border-primary">
+                        <input 
+                          type="text" 
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          placeholder="Add a comment..." 
+                          className="flex-1 bg-transparent px-4 py-2 outline-none text-sm"
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleComment(post.id) }}
+                        />
+                        <button 
+                          onClick={() => handleComment(post.id)}
+                          disabled={!commentText.trim()}
+                          className="px-4 text-primary font-semibold hover:bg-muted disabled:opacity-50"
+                        >
+                          Post
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      {post.community_comments?.map(comment => (
+                        <div key={comment.id} className="flex gap-2">
+                          <div className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold flex-shrink-0 text-xs mt-1">
+                            {comment.user_name?.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="bg-muted px-4 py-2.5 rounded-2xl rounded-tl-sm flex-1">
+                            <h4 className="font-semibold text-sm text-foreground">{comment.user_name}</h4>
+                            <p className="text-sm text-foreground mt-0.5">{comment.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -352,9 +501,12 @@ export default function Feed() {
                     {s.first_name} {s.last_name}
                   </Link>
                   <p className="text-xs text-muted-foreground mb-2 capitalize">{s.role}</p>
-                  <Link to={`/profile/${s.id}`} className="flex items-center justify-center gap-1 w-full py-1.5 rounded-full border border-border text-sm font-semibold hover:bg-muted hover:border-foreground transition-all">
-                    <Plus size={16} /> Follow
-                  </Link>
+                  <button 
+                    onClick={() => handleFollow(s.id)}
+                    className={`flex items-center justify-center gap-1 w-full py-1.5 rounded-full border text-sm font-semibold transition-all ${followingIds.has(s.id) ? 'bg-muted border-border text-foreground' : 'border-border text-foreground hover:bg-muted hover:border-foreground'}`}
+                  >
+                    {followingIds.has(s.id) ? 'Following' : <><Plus size={16} /> Follow</>}
+                  </button>
                 </div>
               </div>
             ))}
