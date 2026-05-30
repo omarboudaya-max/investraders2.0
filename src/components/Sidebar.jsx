@@ -16,9 +16,9 @@ export default function Sidebar() {
     { name: 'AI Agents', path: '/ai', icon: Bot },
   ]
   
-  if (profile?.role === 'admin') {
-    navItems.push({ name: 'Manage Audience', path: '/audience', icon: Users })
-  }
+  const adminItems = profile?.role === 'admin' ? [
+    { name: 'Manage Audience', path: '/audience', icon: Users }
+  ] : []
 
   return (
     <aside className="w-64 border-r border-border bg-background flex flex-col h-full">
@@ -26,6 +26,7 @@ export default function Sidebar() {
         <h2 className="text-xl font-bold text-primary">Investraders</h2>
       </div>
       <div className="flex-1 overflow-y-auto py-4 flex flex-col gap-2 px-4">
+        <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-4 mt-2">Main Menu</div>
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = location.pathname === item.path
@@ -44,6 +45,30 @@ export default function Sidebar() {
             </Link>
           )
         })}
+
+        {adminItems.length > 0 && (
+          <>
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-6 mb-2 px-4">Admin Panel</div>
+            {adminItems.map((item) => {
+              const Icon = item.icon
+              const isActive = location.pathname === item.path
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
+                    isActive 
+                      ? 'bg-red-500 text-white' 
+                      : 'text-red-500 hover:bg-red-500/10'
+                  }`}
+                >
+                  <Icon size={20} />
+                  <span className="font-medium">{item.name}</span>
+                </Link>
+              )
+            })}
+          </>
+        )}
       </div>
       <div className="p-4 border-t border-border">
         <button
