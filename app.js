@@ -557,38 +557,121 @@ function updatePricingUI() {
 function updateNavForUser() {
   const loginBtn = $('#loginBtn');
   const getStartedBtn = $('#getStartedBtn');
-  const manageSubBtn = $('#manageSubBtn');
+  const landingPage = document.getElementById('landingPage');
+  const webAppShell = document.getElementById('webAppShell');
   
   if (currentUserProfile) {
-    loginBtn.textContent = `Hello, ${currentUserProfile.firstName}`;
-    loginBtn.href = 'javascript:void(0)';
-    loginBtn.style.fontWeight = '600';
-    
-    // Check if admin
-    const isAdmin = currentUserProfile.role === 'admin';
-    
-    if (isAdmin) {
-      getStartedBtn.textContent = 'Admin Dash';
-      getStartedBtn.onclick = (e) => { e.preventDefault(); openAdminDashboard(); };
-    } else {
-      getStartedBtn.textContent = 'Dashboard';
-      getStartedBtn.onclick = (e) => { e.preventDefault(); openDashboard(); };
-    }
-
-    // Show manage subscription button if they have a stripe customer ID
-    if (manageSubBtn) {
-      manageSubBtn.style.display = currentUserProfile.stripe_customer_id ? 'inline-block' : 'none';
+    if (landingPage) landingPage.style.display = 'none';
+    if (webAppShell) {
+      webAppShell.style.display = 'flex';
+      
+      const appAvatarTop = document.getElementById('appAvatarTop');
+      if (appAvatarTop) appAvatarTop.textContent = currentUserProfile.firstName?.charAt(0).toUpperCase() || 'U';
+      
+      const isAdmin = currentUserProfile.role === 'admin';
+      const adminSidebarGroup = document.getElementById('adminSidebarGroup');
+      if (adminSidebarGroup) adminSidebarGroup.style.display = isAdmin ? 'block' : 'none';
+      
+      if (!window.currentAppView) {
+        switchAppView('feed');
+      }
     }
   } else {
-    loginBtn.textContent = 'Sign In';
-    loginBtn.href = '#login';
-    loginBtn.style.fontWeight = '500';
-    getStartedBtn.textContent = 'Get Started';
-    getStartedBtn.onclick = null;
-    getStartedBtn.href = '#register';
-    if (manageSubBtn) manageSubBtn.style.display = 'none';
+    if (landingPage) landingPage.style.display = 'block';
+    if (webAppShell) webAppShell.style.display = 'none';
+    
+    if (loginBtn) {
+      loginBtn.textContent = 'Sign In';
+      loginBtn.href = '#login';
+      loginBtn.style.fontWeight = '500';
+    }
+    if (getStartedBtn) {
+      getStartedBtn.textContent = 'Get Started';
+      getStartedBtn.onclick = null;
+      getStartedBtn.href = '#register';
+    }
   }
 }
+
+window.switchAppView = function(viewId) {
+  // Update sidebar active states
+  document.querySelectorAll('.sidebar-item').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.querySelector(`.sidebar-item[onclick="switchAppView('${viewId}')"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  window.currentAppView = viewId;
+
+  // Mapping viewId to legacy dashboard tab IDs
+  const tabMap = {
+    'feed': 'dashOverview',
+    'community': 'dashCommunityForum',
+    'directory': 'dashDirectory',
+    'courses': 'dashMarketCourses',
+    'events': 'dashEvents',
+    'messages': 'dashMessages',
+    'audience': 'dashAudience'
+  };
+
+  const tabId = tabMap[viewId];
+  
+  // Update tabs dynamically by selecting children of appMainContent
+  const mainTabs = document.getElementById('appMainContent')?.children;
+  if (mainTabs) {
+    let found = false;
+    Array.from(mainTabs).forEach(tab => {
+      if (tab.id) {
+        if (tab.id === tabId) {
+          tab.style.display = 'block';
+          found = true;
+        } else {
+          tab.style.display = 'none';
+        }
+      }
+    });
+
+    // If the tab wasn't found, it might be a new feature (like events, messages)
+    // We can inject a placeholder for now.
+    if (!found && tabId) {
+       let placeholder = document.getElementById(tabId);
+       if (!placeholder) {
+         placeholder = document.createElement('div');
+         placeholder.id = tabId;
+         placeholder.innerHTML = `<div class="dash-welcome"><div class="dash-welcome-text"><h1>${viewId.charAt(0).toUpperCase() + viewId.slice(1)}</h1><p>This feature is being rolled out.</p></div></div>`;
+         document.getElementById('appMainContent').appendChild(placeholder);
+       }
+       placeholder.style.display = 'block';
+    }
+  }
+
+  // Load community spaces if community is active
+  if (viewId === 'community' && window.loadCommunitySpaces) {
+    window.loadCommunitySpaces();
+  }
+  
+  if (viewId === 'messages' && window.loadDirectMessageThreads) {
+    window.loadDirectMessageThreads();
+  }
+  
+  if (viewId === 'events' && window.loadEvents) {
+    window.loadEvents();
+  }
+  
+  if (viewId === 'audience' && window.loadAudience) {
+    window.loadAudience();
+  }
+};
+
+window.renderAppView = function(viewId) {
+  // Legacy: Populate all tabs into appMainContent once
+  const appMain = document.getElementById('appMainContent');
+  if (appMain && appMain.children.length === 0) {
+    if (window.populateDashboard) window.populateDashboard().then(() => {
+       switchAppView(viewId);
+    });
+  } else {
+    switchAppView(viewId);
+  }
+};
 
 let userProfileSubscription = null;
 let courseEnrollmentSubscription = null;
@@ -1697,7 +1780,7 @@ window.populateDashboard = async function() {
   const welcomeStr = `Welcome back, ${p.firstName} 👋`;
 
   const sidebar = $('#dashSidebar');
-  const main = $('#dashMain');
+  const main = $('#appMainContent');
 
   // Fetch Startup Data if Founder
   let s = p; // default to legacy (info in user doc)
@@ -2043,9 +2126,89 @@ window.populateDashboard = async function() {
       </div>
       ${startupProfileViewPageHTML}
     `;
+  main.innerHTML += `
+    <!-- DIRECT MESSAGES -->
+    <div id="dashMessages" style="display:none; height:100%;">
+      <div style="display:flex; height:100%; width:100%;">
+        <div style="width: 320px; border-right: 1px solid var(--border); background: var(--background); display:flex; flex-direction:column;">
+          <div style="padding: 1.5rem; border-bottom: 1px solid var(--border);">
+            <div class="app-search" style="width:100%;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" placeholder="Search messages..." style="outline:none;background:transparent;border:none;width:100%;" />
+            </div>
+          </div>
+          <div style="flex:1; overflow-y:auto;" id="chatThreadsList">
+            <div style="padding:1.5rem; text-align:center; color:var(--muted-fg);">Loading conversations...</div>
+          </div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; background: var(--card);">
+          <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap: 1rem;">
+              <div class="app-avatar" id="activeChatAvatar" style="display:none;"></div>
+              <div>
+                <h3 id="activeChatName" style="font-weight:600; margin:0;">Select a conversation</h3>
+                <p id="activeChatRole" style="font-size:0.8rem; color:var(--muted-fg); margin:0;"></p>
+              </div>
+            </div>
+            <button class="btn btn-outline" style="padding:0.4rem 0.8rem; font-size:0.8rem;">View Profile</button>
+          </div>
+          <div style="flex:1; overflow-y:auto; padding: 1.5rem; display:flex; flex-direction:column; gap:1rem;" id="chatMessagesArea">
+            <div style="text-align:center; color:var(--muted-fg); margin:auto;">Click a conversation on the left to start chatting.</div>
+          </div>
+          <div style="padding: 1.5rem; border-top: 1px solid var(--border); background: var(--background);">
+            <form onsubmit="handleSendDM(event)" style="display:flex; gap:1rem; align-items:center;">
+              <input type="text" id="chatMessageInput" placeholder="Write a message..." style="flex:1; padding:1rem; border:1px solid var(--border); border-radius:99px; background:var(--card); color:var(--foreground);" disabled />
+              <button type="submit" class="btn btn-primary" style="border-radius:99px; padding: 0.8rem 1.5rem;" id="chatSendBtn" disabled>Send</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- EVENTS -->
+    <div id="dashEvents" style="display:none;">
+      <div class="dash-welcome"><div class="dash-welcome-text"><h1>Events & Live Rooms</h1><p>Join live masterclasses, AMAs, and networking sessions.</p></div></div>
+      <div id="eventsBannerArea" style="margin-top: 2rem;"></div>
+      <div class="dash-grid wide" style="margin-top: 2rem;">
+        <div class="dash-panel" style="width:100%;">
+           <div class="dash-panel-header" style="display:flex; justify-content:space-between; width:100%;">
+             <span class="dash-panel-title">Upcoming Schedule</span>
+             <button class="btn btn-outline" style="font-size:0.8rem; padding:0.4rem 0.8rem; display:none;" id="adminCreateEventBtn" onclick="openCreateEventModal()">+ Create Event</button>
+           </div>
+           <div id="eventsListArea" class="dash-info-list">
+             <div style="padding:2rem; text-align:center; color:var(--muted-fg);">Loading events...</div>
+           </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- AUDIENCE (CRM) -->
+    <div id="dashAudience" style="display:none; padding:2rem;">
+      <div class="dash-welcome"><div class="dash-welcome-text"><h1>Manage Audience</h1><p>Admin control center for users and segments.</p></div></div>
+      <div class="dash-panel" style="margin-top:2rem;">
+        <div class="dash-panel-header" style="border-bottom: 1px solid var(--border); padding-bottom:1rem; margin-bottom:1rem; display:flex; justify-content:space-between;">
+           <div style="display:flex; gap:2rem;">
+             <span style="font-weight:600; border-bottom:2px solid var(--primary); padding-bottom:1rem; margin-bottom:-1rem;">All Members</span>
+           </div>
+        </div>
+        <table style="width:100%; border-collapse: collapse; text-align:left;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border); color:var(--muted-fg); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">
+              <th style="padding:1rem;">Name</th>
+              <th style="padding:1rem;">Role</th>
+              <th style="padding:1rem;">Joined</th>
+            </tr>
+          </thead>
+          <tbody id="audienceTableBody">
+            <tr><td colspan="3" style="padding:2rem; text-align:center;">Loading audience data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
 
-    // Fetch Startup Directory content
-    fetchStartupDirectory();
+  // Fetch Startup Directory content
+  fetchStartupDirectory();
   }
 }
 
@@ -3269,6 +3432,510 @@ async function loadAdminMessages() {
     container.innerHTML = '<p style="padding:2rem; color:var(--destructive);">Unexpected error loading messages.</p>';
   }
 }
+
+// ======================================================================
+// DIRECT MESSAGING (CHAT) LOGIC
+// ======================================================================
+
+window.currentActiveThreadId = null;
+let chatMessagesSubscription = null;
+
+window.loadDirectMessageThreads = async function() {
+  if (!currentUserProfile) return;
+  
+  const threadsList = document.getElementById('chatThreadsList');
+  if (!threadsList) return;
+  
+  try {
+    const { data: myParticipations, error: pErr } = await supabase
+      .from('chat_thread_participants')
+      .select('thread_id')
+      .eq('user_id', currentUserProfile.uid);
+      
+    if (pErr) throw pErr;
+    
+    if (!myParticipations || myParticipations.length === 0) {
+      threadsList.innerHTML = '<div style="padding:1.5rem; text-align:center; color:var(--muted-fg);">No conversations yet.</div>';
+      return;
+    }
+    
+    const threadIds = myParticipations.map(p => p.thread_id);
+    
+    const { data: otherParticipants, error: opErr } = await supabase
+      .from('chat_thread_participants')
+      .select('thread_id, user_id')
+      .in('thread_id', threadIds)
+      .neq('user_id', currentUserProfile.uid);
+      
+    if (opErr) throw opErr;
+    
+    const otherUserIds = otherParticipants.map(op => op.user_id);
+    
+    let otherUsers = [];
+    if (otherUserIds.length > 0) {
+      const { data: users, error: uErr } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, role')
+        .in('id', otherUserIds);
+        
+      if (uErr) throw uErr;
+      otherUsers = users;
+    }
+    
+    let html = '';
+    const threadsMap = {};
+    for (const op of otherParticipants) {
+      const user = otherUsers.find(u => u.id === op.user_id);
+      if (user) {
+        threadsMap[op.thread_id] = user;
+      }
+    }
+    
+    for (const threadId of threadIds) {
+      const otherUser = threadsMap[threadId];
+      if (!otherUser) continue;
+      
+      const avatarStr = otherUser.first_name ? otherUser.first_name.charAt(0).toUpperCase() : 'U';
+      const nameStr = `${otherUser.first_name || 'User'} ${otherUser.last_name || ''}`;
+      
+      html += `
+        <div class="chat-thread-item" onclick="openDirectMessageThread('${threadId}', '${otherUser.id}', '${nameStr.replace(/'/g, "\\'")}', '${otherUser.role}')" style="display:flex; align-items:center; gap:1rem; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); cursor:pointer; transition:background 0.2s;">
+          <div class="app-avatar">${avatarStr}</div>
+          <div>
+            <div style="font-weight:600; font-size:0.95rem; color:var(--foreground);">${nameStr}</div>
+            <div style="font-size:0.8rem; color:var(--muted-fg); text-transform:capitalize;">${otherUser.role || 'Member'}</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    threadsList.innerHTML = html || '<div style="padding:1.5rem; text-align:center; color:var(--muted-fg);">No active conversations.</div>';
+    
+  } catch (err) {
+    console.error("Error loading DM threads:", err);
+    threadsList.innerHTML = '<div style="padding:1.5rem; text-align:center; color:red;">Failed to load messages.</div>';
+  }
+};
+
+window.openDirectMessageThread = async function(threadId, otherUserId, nameStr, roleStr) {
+  window.currentActiveThreadId = threadId;
+  
+  // Update header
+  const nameEl = document.getElementById('activeChatName');
+  const roleEl = document.getElementById('activeChatRole');
+  const avatarEl = document.getElementById('activeChatAvatar');
+  const inputEl = document.getElementById('chatMessageInput');
+  const sendBtn = document.getElementById('chatSendBtn');
+  
+  if (nameEl) nameEl.textContent = nameStr;
+  if (roleEl) roleEl.textContent = roleStr;
+  if (avatarEl) {
+    avatarEl.style.display = 'flex';
+    avatarEl.textContent = nameStr.charAt(0).toUpperCase();
+  }
+  
+  if (inputEl) {
+    inputEl.disabled = false;
+    inputEl.focus();
+  }
+  if (sendBtn) sendBtn.disabled = false;
+  
+  // Load messages
+  const messagesArea = document.getElementById('chatMessagesArea');
+  messagesArea.innerHTML = '<div style="text-align:center; color:var(--muted-fg); margin:auto;">Loading messages...</div>';
+  
+  try {
+    const { data: messages, error } = await supabase
+      .from('direct_messages')
+      .select('*')
+      .eq('thread_id', threadId)
+      .order('created_at', { ascending: true });
+      
+    if (error) throw error;
+    
+    renderChatMessages(messages);
+    
+    // Subscribe to new messages
+    if (chatMessagesSubscription) chatMessagesSubscription.unsubscribe();
+    
+    chatMessagesSubscription = supabase
+      .channel(`chat_messages_${threadId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `thread_id=eq.${threadId}` },
+        (payload) => {
+          if (payload.new.sender_id !== currentUserProfile.uid) {
+            appendChatMessage(payload.new);
+          }
+        }
+      )
+      .subscribe();
+      
+  } catch(err) {
+    console.error("Error loading messages:", err);
+    messagesArea.innerHTML = '<div style="text-align:center; color:red; margin:auto;">Error loading messages.</div>';
+  }
+};
+
+function renderChatMessages(messages) {
+  const messagesArea = document.getElementById('chatMessagesArea');
+  if (!messages || messages.length === 0) {
+    messagesArea.innerHTML = '<div style="text-align:center; color:var(--muted-fg); margin:auto;">No messages yet. Say hi!</div>';
+    return;
+  }
+  
+  messagesArea.innerHTML = '';
+  messages.forEach(msg => appendChatMessage(msg));
+}
+
+function appendChatMessage(msg) {
+  const messagesArea = document.getElementById('chatMessagesArea');
+  
+  if (messagesArea.innerHTML.includes('No messages yet')) {
+    messagesArea.innerHTML = '';
+  }
+  
+  const isMe = msg.sender_id === currentUserProfile.uid;
+  const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+  const align = isMe ? 'flex-end' : 'flex-start';
+  const bg = isMe ? 'var(--primary)' : 'var(--muted)';
+  const color = isMe ? '#fff' : 'var(--foreground)';
+  const borderRadius = isMe ? '12px 12px 0 12px' : '12px 12px 12px 0';
+  
+  const msgEl = document.createElement('div');
+  msgEl.style.display = 'flex';
+  msgEl.style.flexDirection = 'column';
+  msgEl.style.alignSelf = align;
+  msgEl.style.maxWidth = '70%';
+  msgEl.style.marginBottom = '1rem';
+  
+  msgEl.innerHTML = `
+    <div style="background:${bg}; color:${color}; padding:0.75rem 1rem; border-radius:${borderRadius}; font-size:0.95rem; line-height:1.4;">
+      ${msg.content}
+    </div>
+    <div style="font-size:0.7rem; color:var(--muted-fg); margin-top:0.25rem; align-self:${isMe ? 'flex-end' : 'flex-start'};">
+      ${timeStr}
+    </div>
+  `;
+  
+  messagesArea.appendChild(msgEl);
+  messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+
+window.handleSendDM = async function(e) {
+  e.preventDefault();
+  if (!currentActiveThreadId) return;
+  
+  const inputEl = document.getElementById('chatMessageInput');
+  const content = inputEl.value.trim();
+  if (!content) return;
+  
+  inputEl.value = '';
+  
+  // Optimistic UI
+  const tempMsg = {
+    id: 'temp_' + Date.now(),
+    thread_id: currentActiveThreadId,
+    sender_id: currentUserProfile.uid,
+    content: content,
+    created_at: new Date().toISOString()
+  };
+  appendChatMessage(tempMsg);
+  
+  try {
+    const { error } = await supabase
+      .from('direct_messages')
+      .insert([
+        {
+          thread_id: currentActiveThreadId,
+          sender_id: currentUserProfile.uid,
+          content: content
+        }
+      ]);
+      
+    if (error) throw error;
+  } catch(err) {
+    console.error("Error sending DM:", err);
+    alert("Failed to send message.");
+  }
+};
+
+window.startChatWithUser = async function(userId) {
+  if (!currentUserProfile) return;
+  if (userId === currentUserProfile.uid) return alert("You can't chat with yourself.");
+  
+  try {
+    // Check if thread exists
+    const { data: myThreads, error: err1 } = await supabase
+      .from('chat_thread_participants')
+      .select('thread_id')
+      .eq('user_id', currentUserProfile.uid);
+      
+    if (err1) throw err1;
+    
+    let existingThreadId = null;
+    if (myThreads && myThreads.length > 0) {
+      const threadIds = myThreads.map(t => t.thread_id);
+      
+      const { data: otherUserThreads, error: err2 } = await supabase
+        .from('chat_thread_participants')
+        .select('thread_id')
+        .eq('user_id', userId)
+        .in('thread_id', threadIds);
+        
+      if (err2) throw err2;
+      
+      if (otherUserThreads && otherUserThreads.length > 0) {
+        existingThreadId = otherUserThreads[0].thread_id;
+      }
+    }
+    
+    if (existingThreadId) {
+      // Thread exists, open it
+      switchAppView('messages');
+      // wait a bit for dom to render
+      setTimeout(() => {
+        loadDirectMessageThreads(); // reload threads to be safe
+        
+        supabase.from('users').select('id, first_name, last_name, role').eq('id', userId).single().then(({data}) => {
+          if (data) {
+            const nameStr = `${data.first_name} ${data.last_name || ''}`;
+            openDirectMessageThread(existingThreadId, userId, nameStr, data.role);
+          }
+        });
+      }, 100);
+      return;
+    }
+    
+    // Create new thread
+    const { data: newThread, error: err3 } = await supabase
+      .from('chat_threads')
+      .insert([{}])
+      .select()
+      .single();
+      
+    if (err3) throw err3;
+    
+    // Add participants
+    const { error: err4 } = await supabase
+      .from('chat_thread_participants')
+      .insert([
+        { thread_id: newThread.id, user_id: currentUserProfile.uid },
+        { thread_id: newThread.id, user_id: userId }
+      ]);
+      
+    if (err4) throw err4;
+    
+    switchAppView('messages');
+    setTimeout(() => {
+      loadDirectMessageThreads();
+      
+      supabase.from('users').select('id, first_name, last_name, role').eq('id', userId).single().then(({data}) => {
+        if (data) {
+          const nameStr = `${data.first_name} ${data.last_name || ''}`;
+          openDirectMessageThread(newThread.id, userId, nameStr, data.role);
+        }
+      });
+    }, 100);
+    
+  } catch(err) {
+    console.error("Error starting chat:", err);
+    alert("Failed to start chat.");
+  }
+};
+
+// ======================================================================
+// EVENTS LOGIC
+// ======================================================================
+
+window.loadEvents = async function() {
+  if (!currentUserProfile) return;
+  
+  const eventsListArea = document.getElementById('eventsListArea');
+  const eventsBannerArea = document.getElementById('eventsBannerArea');
+  const adminCreateBtn = document.getElementById('adminCreateEventBtn');
+  
+  if (!eventsListArea) return;
+  
+  if (currentUserProfile.role === 'admin' && adminCreateBtn) {
+    adminCreateBtn.style.display = 'block';
+  }
+  
+  try {
+    const { data: events, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('start_time', { ascending: true });
+      
+    if (error) throw error;
+    
+    const { data: myRegs, error: rErr } = await supabase
+      .from('event_registrations')
+      .select('event_id')
+      .eq('user_id', currentUserProfile.uid);
+      
+    if (rErr) throw rErr;
+    
+    const myRegSet = new Set(myRegs.map(r => r.event_id));
+    
+    const now = new Date();
+    const upcomingEvents = events.filter(e => new Date(e.start_time) >= now);
+    const pastEvents = events.filter(e => new Date(e.start_time) < now);
+    
+    if (upcomingEvents.length > 0) {
+      const nextEvent = upcomingEvents[0];
+      const isReg = myRegSet.has(nextEvent.id);
+      const coverUrl = nextEvent.cover_image || 'https://images.unsplash.com/photo-1556761175-5973dc0f32d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+      
+      if (eventsBannerArea) {
+        eventsBannerArea.innerHTML = `
+          <div class="dash-panel" style="background: linear-gradient(135deg, var(--primary) 0%, hsl(230, 84%, 40%) 100%); color:white; padding: 3rem; position:relative; overflow:hidden;">
+            <div style="position:relative; z-index:2; max-width: 60%;">
+               <span style="background:rgba(255,255,255,0.2); padding:0.4rem 1rem; border-radius:99px; font-size:0.8rem; font-weight:600; text-transform:uppercase;">Next Event • ${new Date(nextEvent.start_time).toLocaleDateString()}</span>
+               <h2 style="font-size:2.5rem; font-weight:800; margin:1rem 0;">${nextEvent.title}</h2>
+               <p style="opacity:0.9; margin-bottom: 2rem;">${nextEvent.description || 'Join us for this exciting live session.'}</p>
+               <button class="btn" onclick="handleEventRegistration('${nextEvent.id}', ${isReg})" style="background:${isReg ? 'transparent' : 'white'}; color:${isReg ? 'white' : 'var(--primary)'}; border:${isReg ? '1px solid white' : 'none'}; cursor:pointer;">
+                 ${isReg ? 'Registered (Cancel)' : 'Register Now'}
+               </button>
+            </div>
+            <div style="position:absolute; right: -50px; top: 50%; transform:translateY(-50%); width: 400px; height: 250px; background:url('${coverUrl}') center/cover; border-radius: 12px; box-shadow: -10px 0 30px rgba(0,0,0,0.3);"></div>
+          </div>
+        `;
+      }
+    } else {
+      if (eventsBannerArea) eventsBannerArea.innerHTML = '';
+    }
+    
+    let html = '';
+    
+    for (const e of upcomingEvents) {
+      const isReg = myRegSet.has(e.id);
+      const d = new Date(e.start_time);
+      const monthStr = d.toLocaleString('default', { month: 'short' }).toUpperCase();
+      const dayStr = d.getDate().toString().padStart(2, '0');
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      html += `
+        <div class="dash-info-row" style="align-items:center; padding: 1.5rem; border-bottom: 1px solid var(--border);">
+          <div style="background:var(--muted); padding:1rem; border-radius:8px; text-align:center; min-width:80px;">
+            <div style="font-weight:700; font-size:1.2rem; color:var(--muted-fg);">${monthStr}</div>
+            <div style="font-size:1.5rem; font-weight:800; color:var(--primary);">${dayStr}</div>
+          </div>
+          <div class="dash-info-content" style="margin-left: 1.5rem;">
+            <h4 style="font-size:1.2rem; font-weight:600; margin:0 0 0.5rem 0;">${e.title}</h4>
+            <p style="color:var(--muted-fg); margin:0;">${timeStr} &bull; <span style="text-transform:capitalize;">${(e.event_type || 'event').replace('_', ' ')}</span></p>
+          </div>
+          <button class="btn ${isReg ? 'btn-ghost' : 'btn-outline'}" onclick="handleEventRegistration('${e.id}', ${isReg})" style="margin-left:auto;">
+            ${isReg ? 'Registered' : 'RSVP'}
+          </button>
+        </div>
+      `;
+    }
+    
+    if (upcomingEvents.length === 0) {
+      html = '<div style="padding:2rem; text-align:center; color:var(--muted-fg);">No upcoming events scheduled.</div>';
+    }
+    
+    eventsListArea.innerHTML = html;
+    
+  } catch (err) {
+    console.error("Error loading events:", err);
+    eventsListArea.innerHTML = '<div style="padding:2rem; text-align:center; color:red;">Failed to load events.</div>';
+  }
+};
+
+window.handleEventRegistration = async function(eventId, isRegistered) {
+  if (!currentUserProfile) return;
+  
+  try {
+    if (isRegistered) {
+      const { error } = await supabase
+        .from('event_registrations')
+        .delete()
+        .eq('event_id', eventId)
+        .eq('user_id', currentUserProfile.uid);
+      if (error) throw error;
+      alert("Registration cancelled.");
+    } else {
+      const { error } = await supabase
+        .from('event_registrations')
+        .insert([{ event_id: eventId, user_id: currentUserProfile.uid }]);
+      if (error) throw error;
+      alert("Successfully registered for the event!");
+    }
+    
+    loadEvents();
+  } catch(err) {
+    console.error("Error toggling event registration:", err);
+    alert("Failed to process registration.");
+  }
+};
+
+// ======================================================================
+// AUDIENCE / CRM LOGIC
+// ======================================================================
+
+window.loadAudience = async function() {
+  if (!currentUserProfile || currentUserProfile.role !== 'admin') {
+    const el = document.getElementById('dashAudience');
+    if (el) el.innerHTML = '<div style="padding:4rem; text-align:center;"><h2>Access Denied</h2><p>You must be an admin to view this page.</p></div>';
+    return;
+  }
+  
+  const tbody = document.getElementById('audienceTableBody');
+  if (!tbody) return;
+  
+  try {
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    
+    if (!users || users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="padding:2rem; text-align:center;">No users found.</td></tr>';
+      return;
+    }
+    
+    let html = '';
+    for (const u of users) {
+      const name = `${u.first_name || 'Unknown'} ${u.last_name || ''}`;
+      const joined = u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A';
+      
+      let roleColor = 'var(--muted-fg)';
+      let roleBg = 'var(--muted)';
+      if (u.role === 'founder') { roleColor = '#2563eb'; roleBg = '#dbeafe'; }
+      if (u.role === 'investor') { roleColor = '#16a34a'; roleBg = '#dcfce7'; }
+      if (u.role === 'admin') { roleColor = '#dc2626'; roleBg = '#fee2e2'; }
+      
+      html += `
+        <tr style="border-bottom:1px solid var(--border); transition:background 0.2s;" onmouseover="this.style.background='var(--muted)'" onmouseout="this.style.background='transparent'">
+          <td style="padding:1rem;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+              <div class="app-avatar" style="width:32px; height:32px; font-size:0.8rem;">${name.charAt(0).toUpperCase()}</div>
+              <div>
+                <div style="font-weight:500;">${name}</div>
+                <div style="font-size:0.8rem; color:var(--muted-fg);">${u.email || ''}</div>
+              </div>
+            </div>
+          </td>
+          <td style="padding:1rem;">
+            <span style="background:${roleBg}; color:${roleColor}; padding:0.25rem 0.5rem; border-radius:99px; font-size:0.75rem; font-weight:600; text-transform:uppercase;">${u.role || 'Member'}</span>
+          </td>
+          <td style="padding:1rem; color:var(--muted-fg); font-size:0.9rem;">${joined}</td>
+        </tr>
+      `;
+    }
+    
+    tbody.innerHTML = html;
+    
+  } catch (err) {
+    console.error("Error loading audience:", err);
+    tbody.innerHTML = '<tr><td colspan="3" style="padding:2rem; text-align:center; color:red;">Failed to load audience data.</td></tr>';
+  }
+};
 
 
 

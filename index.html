@@ -18,6 +18,7 @@
   <script src="https://www.paypal.com/sdk/js?client-id=AcAt1OXiTscIzvWi4FvjHW895ThsSSOysjWVxcGPddqrMoWNZ-s1mwHMwvVQX78qevu4fl748ZIYfgY8&currency=USD"></script>
 </head>
 <body class="">
+  <div id="landingPage">
 
   <!-- ===== NAVBAR ===== -->
   <nav class="navbar" id="navbar">
@@ -699,6 +700,78 @@
       </div>
     </div>
   </footer>
+  </div> <!-- end #landingPage -->
+
+  <!-- ===== WEB APP SHELL ===== -->
+  <div id="webAppShell" style="display: none;" class="web-app-shell">
+    <header class="app-header">
+      <div class="app-header-left">
+        <div class="app-logo">
+          <img src="./investrade_logo.png" alt="Investrade" />
+        </div>
+      </div>
+      <div class="app-header-center">
+        <div class="app-search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" placeholder="Search..." />
+        </div>
+      </div>
+      <div class="app-header-right">
+        <button class="app-icon-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
+        <div class="app-user-menu" onclick="document.getElementById('userDropdown').classList.toggle('show')">
+          <div class="app-avatar" id="appAvatarTop">U</div>
+          <div class="app-dropdown" id="userDropdown">
+            <a href="#" onclick="switchAppView('profile')">Profile</a>
+            <a href="#" onclick="handleSignOut()">Sign Out</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="app-container">
+      <aside class="app-sidebar">
+        <div class="sidebar-group">
+          <div class="sidebar-title">Menu</div>
+          <button class="sidebar-item active" onclick="switchAppView('feed')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            Feed
+          </button>
+          <button class="sidebar-item" onclick="switchAppView('community')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            Community
+          </button>
+          <button class="sidebar-item" onclick="switchAppView('events')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            Events
+          </button>
+          <button class="sidebar-item" onclick="switchAppView('directory')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Directory
+          </button>
+          <button class="sidebar-item" onclick="switchAppView('courses')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            Courses
+          </button>
+          <button class="sidebar-item" onclick="switchAppView('messages')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            Messages
+          </button>
+        </div>
+        
+        <div class="sidebar-group" id="adminSidebarGroup" style="display:none;">
+          <div class="sidebar-title">Admin</div>
+          <button class="sidebar-item" onclick="switchAppView('audience')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            Audience
+          </button>
+        </div>
+      </aside>
+
+      <main class="app-main" id="appMainContent">
+        <!-- Views injected by JS -->
+      </main>
+    </div>
+  </div>
 
 <!-- ===== AUTH MODALS ===== -->
   <div class="modal-overlay" id="loginModal">

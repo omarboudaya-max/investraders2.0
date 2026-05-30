@@ -3315,3 +3315,212 @@ body::before {
     flex: 1;
   }
 }
+
+/* =========================================
+   WEB APP SHELL (Circle.so / LinkedIn style)
+   ========================================= */
+
+.web-app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.app-header {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 50;
+}
+
+.app-header-left, .app-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.app-logo img {
+  height: 24px;
+}
+
+.app-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--muted);
+  padding: 0.5rem 1rem;
+  border-radius: 99px;
+  width: 300px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.app-search:focus-within {
+  background: var(--background);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-subtle);
+}
+
+.app-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.app-search svg {
+  color: var(--muted-fg);
+}
+
+.app-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted-fg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.app-icon-btn:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.app-user-menu {
+  position: relative;
+  cursor: pointer;
+}
+
+.app-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.app-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  min-width: 180px;
+  display: none;
+  flex-direction: column;
+  padding: 0.5rem;
+  z-index: 100;
+}
+
+.app-dropdown.show {
+  display: flex;
+}
+
+.app-dropdown a {
+  padding: 0.5rem 1rem;
+  color: var(--foreground);
+  text-decoration: none;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.app-dropdown a:hover {
+  background: var(--muted);
+}
+
+.app-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.app-sidebar {
+  width: 260px;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 0;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.sidebar-group {
+  margin-bottom: 2rem;
+}
+
+.sidebar-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-fg);
+  padding: 0 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.5rem;
+  color: var(--muted-fg);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.sidebar-item:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.sidebar-item.active {
+  color: var(--primary);
+  background: var(--primary-subtle);
+  border-right: 3px solid var(--primary);
+}
+
+.app-main {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--background);
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .app-sidebar {
+    display: none; /* Mobile menu will need a toggle, ignoring for phase 1 initial draft */
+  }
+  .app-search {
+    display: none;
+  }
+}
