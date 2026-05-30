@@ -60,7 +60,7 @@ export default function AIAgentChat() {
           if (line.startsWith('data: ') && line !== 'data: [DONE]') {
             try {
               const data = JSON.parse(line.slice(6))
-              const textPart = data.candidates?.[0]?.content?.parts?.[0]?.text
+              const textPart = data.choices?.[0]?.delta?.content
               if (textPart) {
                 aiText += textPart
                 setMessages(prev => {
@@ -79,7 +79,7 @@ export default function AIAgentChat() {
       console.error('Error calling AI:', error)
       setMessages(prev => {
         const newMsgs = [...prev]
-        newMsgs[newMsgs.length - 1] = { role: 'ai', content: 'Sorry, I encountered an error. Please ensure the GEMINI_API_KEY is set in Supabase secrets.' }
+        newMsgs[newMsgs.length - 1] = { role: 'ai', content: 'Sorry, I encountered an error. Please ensure the GROQ_API_KEY is set in Supabase secrets.' }
         return newMsgs
       })
     } finally {

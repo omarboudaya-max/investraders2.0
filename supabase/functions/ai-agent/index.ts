@@ -14,42 +14,39 @@ Deno.serve(async (req) => {
 
   try {
     const { prompt } = await req.json()
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')
 
-    if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not set')
+    if (!GROQ_API_KEY) {
+      throw new Error('GROQ_API_KEY is not set')
     }
 
     if (!prompt) {
       throw new Error('Prompt is required')
     }
 
-    // Call Gemini API (stream=true)
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`
+    // Call Groq API (stream=true)
+    const groqUrl = `https://api.groq.com/openai/v1/chat/completions`
 
-    const response = await fetch(geminiUrl, {
+    const response = await fetch(groqUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }]
-          }
+        model: "llama3-8b-8192",
+        messages: [
+          { role: "system", content: "You are Investrade AI, a world-class Pitch Coach and Startup Advisor. Be concise, brilliant, and directly helpful to founders and investors. Format your responses in clean markdown." },
+          { role: "user", content: prompt }
         ],
-        systemInstruction: {
-          role: "user",
-          parts: [{ text: "You are Investrade AI, a world-class Pitch Coach and Startup Advisor. Be concise, brilliant, and directly helpful to founders and investors. Format your responses in clean markdown." }]
-        }
+        stream: true
       })
     })
 
     if (!response.ok) {
       const errText = await response.text()
-      console.error("Gemini Error:", errText)
-      throw new Error(`Gemini API error: ${response.status}`)
+      console.error("Groq Error:", errText)
+      throw new Error(`Groq API error: ${response.status}`)
     }
 
     // Return the stream directly to the client

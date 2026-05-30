@@ -58,8 +58,8 @@ export default function Sidebar() {
                   to={item.path}
                   className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
                     isActive 
-                      ? 'bg-red-500 text-white' 
-                      : 'text-red-500 hover:bg-red-500/10'
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
                 >
                   <Icon size={20} />
