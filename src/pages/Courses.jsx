@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { Play, CheckCircle, Search, CreditCard, Banknote, ShieldCheck, X, PlayCircle } from 'lucide-react'
 
 const MOCK_COURSE = {
-  id: 'investrade_ai_course_001',
+  id: 'how-to-build-startup-with-ai',
   title: 'How to Build Your Startup Using AI',
   description: 'Master the future of entrepreneurship with our comprehensive 8-module masterclass.',
   syllabus: [
