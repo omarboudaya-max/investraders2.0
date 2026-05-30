@@ -6,8 +6,19 @@ import { Play, CheckCircle, Search, CreditCard, Banknote, ShieldCheck, X } from 
 const MOCK_COURSE = {
   id: 'investrade_ai_course_001',
   title: 'How to Build Your Startup Using AI',
-  description: 'Learn how to leverage generative AI to 10x your productivity, write business plans, create MVP code, and pitch to investors faster than ever before.',
-  price: 99.00,
+  description: 'Master the future of entrepreneurship with our comprehensive 8-module masterclass.',
+  syllabus: [
+    { title: "Introduction to AI-Powered Entrepreneurship", desc: "Understanding how AI is transforming the startup landscape" },
+    { title: "Idea Validation with AI Tools", desc: "Use AI to validate your business idea before investing time and money" },
+    { title: "Market Research Using AI", desc: "Leverage AI for comprehensive market analysis and competitor research" },
+    { title: "Building Your MVP Strategy", desc: "Plan and design your Minimum Viable Product" },
+    { title: "AI-Assisted Business Model Canvas", desc: "Create a robust business model using AI frameworks" },
+    { title: "Pitch Deck Mastery", desc: "Create compelling pitch decks that attract investors" },
+    { title: "Financial Projections & Planning", desc: "Build realistic financial models for your startup" },
+    { title: "Go-to-Market Strategy", desc: "Launch your product with an AI-optimized marketing strategy" }
+  ],
+  price: 150.00,
+  original_price: 300.00,
   next_session: 'October 15th, 2026'
 }
 
@@ -141,13 +152,16 @@ export default function Courses() {
           {activeTab === 'market' ? (
             /* MARKETPLACE VIEW */
             <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm flex flex-col lg:flex-row">
-              {/* Course Media / Video Placeholder */}
-              <div className="lg:w-1/2 relative bg-muted flex items-center justify-center min-h-[300px]">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-purple-900/40 mix-blend-multiply pointer-events-none"></div>
-                <img src="/training_banner.png" alt="Course Banner" className="absolute inset-0 w-full h-full object-cover opacity-60" onError={(e) => e.target.style.display='none'} />
-                <button className="w-20 h-20 rounded-full bg-background/80 backdrop-blur flex items-center justify-center text-primary hover:scale-110 transition-transform shadow-xl relative z-10">
-                  <Play size={32} className="ml-2" />
-                </button>
+              {/* Course Media / Video iframe */}
+              <div className="lg:w-1/2 relative bg-black flex flex-col justify-center min-h-[300px] lg:min-h-full">
+                <iframe 
+                  className="w-full aspect-video" 
+                  src="https://www.youtube.com/embed/i_kmrDifdoI?rel=0" 
+                  title="Course Introduction" 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowFullScreen
+                ></iframe>
               </div>
               
               {/* Course Info */}
@@ -156,13 +170,30 @@ export default function Courses() {
                   Flagship Masterclass
                 </div>
                 <h2 className="text-3xl font-bold text-foreground mb-4">{MOCK_COURSE.title}</h2>
-                <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
                   {MOCK_COURSE.description}
                 </p>
                 
+                <div className="flex flex-col gap-3 mb-8 max-h-[300px] overflow-y-auto pr-2">
+                  {MOCK_COURSE.syllabus.map((module, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
+                      <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-foreground text-sm">{module.title}</h4>
+                        <p className="text-xs text-muted-foreground mt-0.5">{module.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
                 <div className="flex items-center gap-6 mb-8">
-                  <div className="text-3xl font-bold text-foreground">${MOCK_COURSE.price}</div>
-                  <div className="text-sm text-muted-foreground">Next session: {MOCK_COURSE.next_session}</div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-foreground">${MOCK_COURSE.price}</span>
+                    <span className="text-lg text-muted-foreground line-through">${MOCK_COURSE.original_price}</span>
+                  </div>
+                  <div className="text-sm text-amber-500 font-medium bg-amber-500/10 px-3 py-1 rounded-full">50% Off Limited Time</div>
                 </div>
 
                 {isEnrolled ? (

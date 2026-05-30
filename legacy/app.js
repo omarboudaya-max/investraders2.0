@@ -4,7 +4,7 @@
    ============================================= */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { supabaseConfig } from "./supabase-config.js";
+import { supabaseConfig } from "../supabase-config.js";
 import { inject } from "@vercel/analytics";
 
 // Initialize Vercel Analytics

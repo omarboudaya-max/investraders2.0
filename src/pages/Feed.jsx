@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Image, Send, Heart, MessageSquare, Share2, TrendingUp, Calendar as CalendarIcon } from 'lucide-react'
+import { Image, Send, Heart, MessageSquare, Share2, TrendingUp, Calendar as CalendarIcon, Repeat, Video, Briefcase, Plus, UserPlus, Users } from 'lucide-react'
 
 const DEFAULT_FEED_SPACE_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -62,10 +62,47 @@ export default function Feed() {
   }
 
   return (
-    <div className="flex w-full max-w-6xl mx-auto p-6 gap-6">
+    <div className="flex w-full max-w-7xl mx-auto p-4 lg:p-6 gap-6 justify-center">
       
+      {/* Left Sidebar (Profile Card) */}
+      <div className="hidden md:flex w-64 flex-col gap-4 flex-shrink-0">
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+          <div className="h-16 bg-gradient-to-r from-blue-600 to-indigo-600 relative">
+            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full border-4 border-card bg-primary/20 flex items-center justify-center text-primary font-bold text-xl">
+              {profile?.first_name?.charAt(0).toUpperCase() || 'U'}
+            </div>
+          </div>
+          <div className="pt-10 pb-4 px-4 text-center border-b border-border">
+            <h3 className="font-bold text-foreground text-lg">{profile?.first_name} {profile?.last_name}</h3>
+            <p className="text-sm text-muted-foreground capitalize mt-1">{profile?.role || 'Member'}</p>
+          </div>
+          <div className="py-3 px-4 flex flex-col gap-2 border-b border-border">
+            <div className="flex justify-between items-center cursor-pointer hover:bg-muted/50 p-1 rounded">
+              <span className="text-sm text-muted-foreground">Profile viewers</span>
+              <span className="text-sm font-bold text-primary">47</span>
+            </div>
+            <div className="flex justify-between items-center cursor-pointer hover:bg-muted/50 p-1 rounded">
+              <span className="text-sm text-muted-foreground">Connections</span>
+              <span className="text-sm font-bold text-primary">152</span>
+            </div>
+          </div>
+          <div className="p-4 hover:bg-muted/50 cursor-pointer transition-colors">
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Briefcase size={16} className="text-muted-foreground" />
+              My Items
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card rounded-xl border border-border shadow-sm p-4 sticky top-6">
+          <p className="text-sm font-semibold mb-3">Recent</p>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2 cursor-pointer"><Users size={16}/> Investraders Community</div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer"><CalendarIcon size={16}/> Seed Funding Q3</div>
+        </div>
+      </div>
+
       {/* Main Feed Column */}
-      <div className="flex-1 flex flex-col gap-6">
+      <div className="flex-1 max-w-2xl flex flex-col gap-4">
         
         {/* Create Post Card */}
         <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
@@ -80,16 +117,23 @@ export default function Feed() {
                 placeholder="Share an update, pitch a startup, or ask a question..."
                 className="w-full bg-transparent border-none resize-none outline-none text-foreground text-lg min-h-[80px]"
               />
-              <div className="flex justify-between items-center mt-4 pt-4 border-t border-border">
-                <button type="button" className="text-muted-foreground hover:text-primary transition-colors p-2 rounded-full hover:bg-primary/10">
-                  <Image size={20} />
-                </button>
+              <div className="flex justify-between items-center mt-3">
+                <div className="flex gap-1">
+                  <button type="button" className="flex items-center gap-2 text-muted-foreground hover:bg-muted px-3 py-2 rounded-lg transition-colors font-medium text-sm">
+                    <Image size={20} className="text-blue-500" /> <span className="hidden sm:inline">Media</span>
+                  </button>
+                  <button type="button" className="flex items-center gap-2 text-muted-foreground hover:bg-muted px-3 py-2 rounded-lg transition-colors font-medium text-sm">
+                    <Video size={20} className="text-amber-500" /> <span className="hidden sm:inline">Event</span>
+                  </button>
+                  <button type="button" className="flex items-center gap-2 text-muted-foreground hover:bg-muted px-3 py-2 rounded-lg transition-colors font-medium text-sm">
+                    <Briefcase size={20} className="text-emerald-500" /> <span className="hidden sm:inline">Job</span>
+                  </button>
+                </div>
                 <button 
                   type="submit" 
                   disabled={isPosting || !postContent.trim()}
-                  className="bg-primary text-primary-foreground px-6 py-2 rounded-full font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center gap-2"
+                  className="bg-primary text-primary-foreground px-5 py-1.5 rounded-full font-bold text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
                 >
-                  <Send size={18} />
                   {isPosting ? 'Posting...' : 'Post'}
                 </button>
               </div>
@@ -122,15 +166,18 @@ export default function Feed() {
                   {post.content}
                 </p>
                 
-                <div className="flex gap-6 mt-4 pt-4 border-t border-border">
-                  <button className="flex items-center gap-2 text-muted-foreground hover:text-red-500 transition-colors group">
-                    <Heart size={18} className="group-hover:fill-red-500" /> <span className="text-sm font-medium">Like</span>
+                <div className="flex justify-between mt-4 pt-2 border-t border-border">
+                  <button className="flex-1 flex justify-center items-center gap-2 text-muted-foreground hover:bg-muted py-3 rounded-lg transition-colors font-medium">
+                    <Heart size={20} /> <span className="text-sm">Like</span>
                   </button>
-                  <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
-                    <MessageSquare size={18} /> <span className="text-sm font-medium">Comment</span>
+                  <button className="flex-1 flex justify-center items-center gap-2 text-muted-foreground hover:bg-muted py-3 rounded-lg transition-colors font-medium">
+                    <MessageSquare size={20} /> <span className="text-sm">Comment</span>
                   </button>
-                  <button className="flex items-center gap-2 text-muted-foreground hover:text-emerald-500 transition-colors ml-auto">
-                    <Share2 size={18} /> <span className="text-sm font-medium">Share</span>
+                  <button className="flex-1 flex justify-center items-center gap-2 text-muted-foreground hover:bg-muted py-3 rounded-lg transition-colors font-medium">
+                    <Repeat size={20} /> <span className="text-sm">Repost</span>
+                  </button>
+                  <button className="flex-1 flex justify-center items-center gap-2 text-muted-foreground hover:bg-muted py-3 rounded-lg transition-colors font-medium">
+                    <Send size={20} /> <span className="text-sm">Send</span>
                   </button>
                 </div>
               </div>
@@ -140,43 +187,65 @@ export default function Feed() {
       </div>
 
       {/* Right Sidebar */}
-      <div className="hidden lg:flex w-80 flex-col gap-6">
-        {/* Trending */}
-        <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
-          <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><TrendingUp size={20} className="text-primary"/> Trending Topics</h3>
-          <ul className="flex flex-col gap-3">
-            <li className="text-sm font-medium hover:text-primary cursor-pointer transition-colors">#SaaSGrowth</li>
-            <li className="text-sm font-medium hover:text-primary cursor-pointer transition-colors">#SeedFunding</li>
-            <li className="text-sm font-medium hover:text-primary cursor-pointer transition-colors">#AIStartups</li>
-            <li className="text-sm font-medium hover:text-primary cursor-pointer transition-colors">#PitchDeck</li>
-          </ul>
-        </div>
+      <div className="hidden lg:flex w-80 flex-col gap-4 flex-shrink-0">
         
-        {/* Upcoming Events */}
-        <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
-          <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><CalendarIcon size={20} className="text-emerald-500"/> Upcoming</h3>
+        {/* Trending / News */}
+        <div className="bg-card rounded-xl border border-border shadow-sm p-4">
+          <h3 className="font-bold text-foreground mb-4">Investraders News</h3>
+          <ul className="flex flex-col gap-4">
+            <li className="cursor-pointer group">
+              <div className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">Top AI Startups to watch in Q4</div>
+              <div className="text-xs text-muted-foreground mt-1">Top news • 10,493 readers</div>
+            </li>
+            <li className="cursor-pointer group">
+              <div className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">Venture Capital shifts focus to Seed</div>
+              <div className="text-xs text-muted-foreground mt-1">12h ago • 5,231 readers</div>
+            </li>
+            <li className="cursor-pointer group">
+              <div className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">How to build an MVP in 7 days</div>
+              <div className="text-xs text-muted-foreground mt-1">1d ago • 8,924 readers</div>
+            </li>
+          </ul>
+          <button className="text-sm text-muted-foreground font-semibold hover:text-foreground mt-4 px-2 py-1 rounded hover:bg-muted inline-block transition-colors">
+            Show more
+          </button>
+        </div>
+
+        {/* Add to your feed */}
+        <div className="bg-card rounded-xl border border-border shadow-sm p-4 sticky top-6">
+          <h3 className="font-bold text-foreground mb-4">Add to your feed</h3>
           <div className="flex flex-col gap-4">
+            
             <div className="flex gap-3 items-start">
-              <div className="bg-muted rounded p-2 text-center min-w-[50px]">
-                <div className="text-xs font-bold text-red-500 uppercase">OCT</div>
-                <div className="text-lg font-bold">12</div>
+              <div className="w-12 h-12 rounded-full bg-indigo-500/20 text-indigo-500 flex items-center justify-center font-bold flex-shrink-0">
+                S
               </div>
-              <div>
-                <h4 className="font-semibold text-sm">Scaling Operations Masterclass</h4>
-                <p className="text-xs text-muted-foreground">2:00 PM EST</p>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-foreground">Sarah Jenkins</h4>
+                <p className="text-xs text-muted-foreground mb-2">Partner at Sequoia Capital | Fintech</p>
+                <button className="flex items-center justify-center gap-1 w-full py-1.5 rounded-full border border-border text-sm font-semibold hover:bg-muted hover:border-foreground transition-all">
+                  <Plus size={16} /> Follow
+                </button>
               </div>
             </div>
+
             <div className="flex gap-3 items-start">
-              <div className="bg-muted rounded p-2 text-center min-w-[50px]">
-                <div className="text-xs font-bold text-red-500 uppercase">OCT</div>
-                <div className="text-lg font-bold">15</div>
+              <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center font-bold flex-shrink-0">
+                M
               </div>
-              <div>
-                <h4 className="font-semibold text-sm">Founder/Investor Mixer</h4>
-                <p className="text-xs text-muted-foreground">5:00 PM EST</p>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-foreground">Marcus Doe</h4>
+                <p className="text-xs text-muted-foreground mb-2">Founder @ DataFlow | 3x Exited</p>
+                <button className="flex items-center justify-center gap-1 w-full py-1.5 rounded-full border border-border text-sm font-semibold hover:bg-muted hover:border-foreground transition-all">
+                  <Plus size={16} /> Follow
+                </button>
               </div>
             </div>
+
           </div>
+          <button className="text-sm text-primary font-semibold hover:underline mt-4 px-2 py-1 inline-block transition-colors">
+            View all recommendations
+          </button>
         </div>
       </div>
     </div>
