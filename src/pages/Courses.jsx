@@ -1,0 +1,381 @@
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
+import { Play, CheckCircle, Search, CreditCard, Banknote, ShieldCheck, X } from 'lucide-react'
+
+const MOCK_COURSE = {
+  id: 'investrade_ai_course_001',
+  title: 'How to Build Your Startup Using AI',
+  description: 'Learn how to leverage generative AI to 10x your productivity, write business plans, create MVP code, and pitch to investors faster than ever before.',
+  price: 99.00,
+  next_session: 'October 15th, 2026'
+}
+
+export default function Courses() {
+  const { profile } = useAuth()
+  const [activeTab, setActiveTab] = useState('market') // 'market' | 'enrolled'
+  const [enrolledCourses, setEnrolledCourses] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  // Modal State
+  const [showModal, setShowModal] = useState(false)
+  const [modalStep, setModalStep] = useState(1)
+  const [enrollmentId, setEnrollmentId] = useState(null)
+  
+  // Form State
+  const [formData, setFormData] = useState({
+    firstName: profile?.first_name || '',
+    lastName: profile?.last_name || '',
+    email: profile?.email || '',
+    age: '',
+    country: '',
+    education: '',
+    professional: '',
+    motivation: ''
+  })
+  
+  const [paymentMethod, setPaymentMethod] = useState('')
+
+  useEffect(() => {
+    if (profile) {
+      fetchEnrolledCourses()
+    }
+  }, [profile])
+
+  const fetchEnrolledCourses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('course_enrollments')
+        .select('*')
+        .eq('user_id', profile.id)
+        .order('date', { ascending: false })
+      
+      if (error) throw error
+      setEnrolledCourses(data || [])
+    } catch (err) {
+      console.error("Error fetching enrolled courses:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleStep1Submit = (e) => {
+    e.preventDefault()
+    setModalStep(2)
+  }
+
+  const handlePaymentSubmit = async () => {
+    if (!paymentMethod) {
+      alert("Please select a payment method")
+      return
+    }
+
+    try {
+      // Generate a mock unique ID for the enrollment
+      const newId = 'ENR-' + Math.random().toString(36).substr(2, 9).toUpperCase()
+      
+      const { error } = await supabase
+        .from('course_enrollments')
+        .insert([{
+          id: newId,
+          user_id: profile.id,
+          email: formData.email,
+          course_id: MOCK_COURSE.id,
+          course: MOCK_COURSE.title,
+          price: MOCK_COURSE.price,
+          amount_paid: paymentMethod === 'manual' ? 0 : MOCK_COURSE.price,
+          status: paymentMethod === 'manual' ? 'manual_pending' : 'completed',
+          applicant_data: formData
+        }])
+      
+      if (error) throw error
+
+      setEnrollmentId(newId)
+      setModalStep(3)
+      fetchEnrolledCourses()
+    } catch (err) {
+      console.error("Error processing enrollment:", err)
+      alert("Failed to process enrollment. Please try again.")
+    }
+  }
+
+  const resetModal = () => {
+    setShowModal(false)
+    setModalStep(1)
+    setEnrollmentId(null)
+    setPaymentMethod('')
+  }
+
+  const isEnrolled = enrolledCourses.some(c => c.course_id === MOCK_COURSE.id)
+
+  return (
+    <div className="flex flex-col w-full h-full bg-background overflow-y-auto">
+      
+      {/* Header */}
+      <div className="p-8 border-b border-border bg-card">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Investraders Academy</h1>
+            <p className="text-muted-foreground mt-1">Accelerate your startup journey with exclusive masterclasses.</p>
+          </div>
+          <div className="flex bg-muted p-1 rounded-lg">
+            <button 
+              onClick={() => setActiveTab('market')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${activeTab === 'market' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Course Marketplace
+            </button>
+            <button 
+              onClick={() => setActiveTab('enrolled')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${activeTab === 'enrolled' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              My Courses
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 p-8">
+        <div className="max-w-6xl mx-auto">
+          
+          {activeTab === 'market' ? (
+            /* MARKETPLACE VIEW */
+            <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm flex flex-col lg:flex-row">
+              {/* Course Media / Video Placeholder */}
+              <div className="lg:w-1/2 relative bg-muted flex items-center justify-center min-h-[300px]">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-purple-900/40 mix-blend-multiply pointer-events-none"></div>
+                <img src="/training_banner.png" alt="Course Banner" className="absolute inset-0 w-full h-full object-cover opacity-60" onError={(e) => e.target.style.display='none'} />
+                <button className="w-20 h-20 rounded-full bg-background/80 backdrop-blur flex items-center justify-center text-primary hover:scale-110 transition-transform shadow-xl relative z-10">
+                  <Play size={32} className="ml-2" />
+                </button>
+              </div>
+              
+              {/* Course Info */}
+              <div className="lg:w-1/2 p-8 lg:p-12 flex flex-col justify-center">
+                <div className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider rounded-full w-max mb-4">
+                  Flagship Masterclass
+                </div>
+                <h2 className="text-3xl font-bold text-foreground mb-4">{MOCK_COURSE.title}</h2>
+                <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                  {MOCK_COURSE.description}
+                </p>
+                
+                <div className="flex items-center gap-6 mb-8">
+                  <div className="text-3xl font-bold text-foreground">${MOCK_COURSE.price}</div>
+                  <div className="text-sm text-muted-foreground">Next session: {MOCK_COURSE.next_session}</div>
+                </div>
+
+                {isEnrolled ? (
+                  <button className="w-full py-4 rounded-xl font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 flex items-center justify-center gap-2 cursor-default">
+                    <CheckCircle size={20} /> You are enrolled in this course
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => setShowModal(true)}
+                    className="w-full py-4 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-lg hover:shadow-primary/25"
+                  >
+                    Enroll Now
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* MY COURSES VIEW */
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Enrolled Courses</h2>
+              {loading ? (
+                <div className="text-muted-foreground">Loading your courses...</div>
+              ) : enrolledCourses.length === 0 ? (
+                <div className="text-center p-16 bg-card rounded-2xl border border-border">
+                  <Play size={48} className="mx-auto text-muted-foreground mb-4 opacity-30" />
+                  <h3 className="text-xl font-semibold mb-2">No courses yet</h3>
+                  <p className="text-muted-foreground mb-6">You haven't enrolled in any masterclasses.</p>
+                  <button onClick={() => setActiveTab('market')} className="text-primary font-medium hover:underline">
+                    Browse Marketplace
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {enrolledCourses.map(enrollment => (
+                    <div key={enrollment.id} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col">
+                      <div className="h-40 bg-muted relative flex items-center justify-center">
+                        <img src="/training_banner.png" alt="Course Banner" className="absolute inset-0 w-full h-full object-cover opacity-40" onError={(e) => e.target.style.display='none'} />
+                        <div className="absolute top-4 right-4 bg-background/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-emerald-500 flex items-center gap-1">
+                          <CheckCircle size={14} /> Enrolled
+                        </div>
+                        <Play size={48} className="text-foreground/50" />
+                      </div>
+                      <div className="p-6">
+                        <h3 className="font-bold text-xl mb-2">{enrollment.course}</h3>
+                        <p className="text-sm text-muted-foreground mb-6">Enrollment ID: <span className="font-mono text-xs">{enrollment.id}</span></p>
+                        <div className="flex justify-between items-center pt-4 border-t border-border">
+                          <span className={`text-xs font-bold uppercase ${enrollment.status === 'completed' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                            {enrollment.status.replace('_', ' ')}
+                          </span>
+                          <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                            Enter Course
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ENROLLMENT MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+            <button onClick={resetModal} className="absolute top-4 right-4 p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors">
+              <X size={20} />
+            </button>
+            
+            <div className="p-8">
+              {/* Stepper */}
+              <div className="flex items-center justify-center mb-8">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${modalStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>1</div>
+                <div className={`w-16 h-1 mx-2 ${modalStep >= 2 ? 'bg-primary' : 'bg-muted'}`}></div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${modalStep >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
+                <div className={`w-16 h-1 mx-2 ${modalStep >= 3 ? 'bg-primary' : 'bg-muted'}`}></div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${modalStep >= 3 ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'}`}>3</div>
+              </div>
+
+              {/* STEP 1: APPLICATION */}
+              {modalStep === 1 && (
+                <form onSubmit={handleStep1Submit} className="flex flex-col gap-4">
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-bold text-foreground">Course Application</h2>
+                    <p className="text-muted-foreground">Please fill out your details to enroll in {MOCK_COURSE.title}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium">First Name</label>
+                      <input required type="text" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-primary" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium">Last Name</label>
+                      <input required type="text" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-primary" />
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium">Email</label>
+                    <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-primary" />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium">Age</label>
+                      <input required type="number" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} className="bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-primary" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium">Country</label>
+                      <input required type="text" value={formData.country} onChange={e => setFormData({...formData, country: e.target.value})} className="bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-primary" />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 mt-4">
+                    <button type="submit" className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                      Continue to Payment
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* STEP 2: PAYMENT */}
+              {modalStep === 2 && (
+                <div className="flex flex-col gap-6">
+                  <div className="text-center mb-2">
+                    <h2 className="text-2xl font-bold text-foreground">Select Payment Method</h2>
+                    <p className="text-muted-foreground">Total due: <span className="font-bold text-foreground">${MOCK_COURSE.price}</span></p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button 
+                      onClick={() => setPaymentMethod('card')}
+                      className={`flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 transition-all ${paymentMethod === 'card' ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/50'}`}
+                    >
+                      <CreditCard size={32} />
+                      <span className="font-semibold text-sm">Credit Card</span>
+                    </button>
+                    <button 
+                      onClick={() => setPaymentMethod('paypal')}
+                      className={`flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 transition-all ${paymentMethod === 'paypal' ? 'border-blue-500 bg-blue-500/5 text-blue-500' : 'border-border bg-background text-muted-foreground hover:border-blue-500/50'}`}
+                    >
+                      <ShieldCheck size={32} />
+                      <span className="font-semibold text-sm">PayPal</span>
+                    </button>
+                    <button 
+                      onClick={() => setPaymentMethod('manual')}
+                      className={`flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 transition-all ${paymentMethod === 'manual' ? 'border-amber-500 bg-amber-500/5 text-amber-500' : 'border-border bg-background text-muted-foreground hover:border-amber-500/50'}`}
+                    >
+                      <Banknote size={32} />
+                      <span className="font-semibold text-sm text-center">Bank Transfer / Cash</span>
+                    </button>
+                  </div>
+
+                  <div className="flex justify-between mt-4 pt-6 border-t border-border">
+                    <button onClick={() => setModalStep(1)} className="px-6 py-2 text-muted-foreground hover:text-foreground font-medium transition-colors">
+                      Back
+                    </button>
+                    <button 
+                      onClick={handlePaymentSubmit}
+                      disabled={!paymentMethod}
+                      className="px-8 py-2 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    >
+                      Complete Enrollment
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: SUCCESS & QR CODE */}
+              {modalStep === 3 && (
+                <div className="flex flex-col items-center text-center gap-6 py-4">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center mb-2">
+                    <CheckCircle size={32} />
+                  </div>
+                  
+                  <div>
+                    <h2 className="text-3xl font-bold text-foreground mb-2">Enrollment Successful!</h2>
+                    <p className="text-muted-foreground">You are now enrolled in {MOCK_COURSE.title}.</p>
+                    {paymentMethod === 'manual' && (
+                      <p className="text-amber-500 text-sm mt-2 font-medium bg-amber-500/10 px-4 py-2 rounded-lg inline-block">
+                        Your payment is pending manual verification.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-border mt-4">
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${enrollmentId}`} 
+                      alt="Enrollment QR Code" 
+                      className="w-[200px] h-[200px]"
+                    />
+                  </div>
+                  <p className="text-sm font-mono text-muted-foreground mt-2">ID: {enrollmentId}</p>
+                  
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto mt-4">
+                    Please save this QR code. You will need it to access the live sessions and course materials.
+                  </p>
+
+                  <button 
+                    onClick={resetModal}
+                    className="w-full py-3 mt-6 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors"
+                  >
+                    Go to My Courses
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
