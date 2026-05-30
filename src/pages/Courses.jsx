@@ -77,9 +77,11 @@ export default function Courses() {
         .from('course_enrollments')
         .select('*')
         .eq('user_id', profile.id)
-        .order('enrolled_at', { ascending: false })
       
-      if (error) throw error
+      if (error) {
+        alert("Fetch Error: " + error.message)
+        throw error
+      }
       setEnrolledCourses(data || [])
     } catch (err) {
       console.error("Error fetching enrolled courses:", err)
