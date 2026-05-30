@@ -51,8 +51,23 @@ export default function Courses() {
   
 
   useEffect(() => {
-    if (profile) {
-      fetchEnrolledCourses()
+    if (!profile) return
+    
+    fetchEnrolledCourses()
+
+    const subscription = supabase
+      .channel('public:course_enrollments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'course_enrollments', filter: `user_id=eq.${profile.id}` },
+        () => {
+          fetchEnrolledCourses()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(subscription)
     }
   }, [profile])
 
@@ -166,7 +181,9 @@ export default function Courses() {
     setPaymentMethod('')
   }
 
-  const isEnrolled = enrolledCourses.some(c => c.course_id === MOCK_COURSE.id)
+  const currentEnrollment = enrolledCourses.find(c => c.course_id === MOCK_COURSE.id)
+  const isEnrolled = !!currentEnrollment
+  const isFullyPaid = currentEnrollment?.payment_status === 'paid'
 
   return (
     <div className="flex flex-col w-full h-full bg-background overflow-y-auto">
@@ -246,8 +263,8 @@ export default function Courses() {
                 </div>
 
                 {isEnrolled ? (
-                  <button className="w-full py-4 rounded-xl font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 flex items-center justify-center gap-2 cursor-default">
-                    <CheckCircle size={20} /> You are enrolled in this course
+                  <button className={`w-full py-4 rounded-xl font-bold border flex items-center justify-center gap-2 cursor-default ${isFullyPaid ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30' : 'bg-amber-500/10 text-amber-500 border-amber-500/30'}`}>
+                    {isFullyPaid ? <><CheckCircle size={20} /> You are enrolled in this course</> : 'Your payment is pending review'}
                   </button>
                 ) : (
                   <button 
@@ -289,6 +306,11 @@ export default function Courses() {
                         <Play size={48} className="text-foreground/50" />
                       </div>
                       <div className="p-6">
+                        {isPaid && enrollment.qr_url && (
+                          <div className="mb-4 bg-white p-2 rounded-xl inline-block">
+                            <img src={enrollment.qr_url} alt="Access QR Code" className="w-24 h-24" />
+                          </div>
+                        )}
                         <h3 className="font-bold text-xl mb-2">{enrollment.course}</h3>
                         <p className="text-sm text-muted-foreground mb-6">Enrollment ID: <span className="font-mono text-xs">{enrollment.id}</span></p>
                         <div className="flex justify-between items-center pt-4 border-t border-border">
