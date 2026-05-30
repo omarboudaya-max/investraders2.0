@@ -77,7 +77,7 @@ export default function Courses() {
         .from('course_enrollments')
         .select('*')
         .eq('user_id', profile.id)
-        .order('date', { ascending: false })
+        .order('enrolled_at', { ascending: false })
       
       if (error) throw error
       setEnrolledCourses(data || [])
@@ -310,9 +310,10 @@ export default function Courses() {
                         <Play size={48} className="text-foreground/50" />
                       </div>
                       <div className="p-6">
-                        {isPaid && enrollment.qr_url && (
-                          <div className="mb-4 bg-white p-2 rounded-xl inline-block">
-                            <img src={enrollment.qr_url} alt="Access QR Code" className="w-24 h-24" />
+                        {isPaid && (
+                          <div className="mb-4 bg-white p-2 rounded-xl inline-block shadow-sm border border-gray-100">
+                            <img src={enrollment.qr_url || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${enrollment.id}`} alt="Access QR Code" className="w-24 h-24 mx-auto" />
+                            <div className="text-center text-[10px] mt-1 text-gray-800 font-bold uppercase tracking-wider">Access Pass</div>
                           </div>
                         )}
                         <h3 className="font-bold text-xl mb-2">{enrollment.course}</h3>
