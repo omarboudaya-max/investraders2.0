@@ -15,6 +15,12 @@ export default function Auth() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [role, setRole] = useState('founder') // 'founder' | 'investor'
+  
+  // Role specific details
+  const [startupName, setStartupName] = useState('')
+  const [startupField, setStartupField] = useState('')
+  const [investorFocus, setInvestorFocus] = useState('')
+  const [investorFund, setInvestorFund] = useState('')
 
   const validatePassword = (pass) => {
     const hasNum = /[0-9]/.test(pass)
@@ -40,6 +46,16 @@ export default function Auth() {
         return
       }
       
+      if (role === 'founder' && (!startupName || !startupField)) {
+        setError("Please provide your startup name and field.")
+        return
+      }
+
+      if (role === 'investor' && (!investorFocus || !investorFund)) {
+        setError("Please provide your investment focus and fund name.")
+        return
+      }
+      
       const passError = validatePassword(password)
       if (passError) {
         setError(passError)
@@ -57,18 +73,31 @@ export default function Auth() {
         })
         if (error) throw error
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               firstName,
               lastName,
-              role
+              role,
+              investorFund,
+              investorFocus
             }
           }
         })
         if (error) throw error
+        
+        if (data?.user && role === 'founder') {
+          const { error: startupError } = await supabase.from('startups').insert([{
+            id: `startup_${data.user.id}`,
+            owner_uid: data.user.id,
+            name: startupName,
+            field: startupField,
+            stage: 'Idea/Pre-seed'
+          }])
+          if (startupError) console.error("Error creating startup profile:", startupError)
+        }
         
         // Supabase auto-logins after signup if email confirmation isn't required.
         // The trigger in the DB will handle creating the public.users record.
@@ -162,6 +191,54 @@ export default function Auth() {
                   </button>
                 </div>
               </div>
+
+              {role === 'founder' ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-foreground">Startup Name</label>
+                    <input 
+                      type="text" 
+                      value={startupName}
+                      onChange={(e) => setStartupName(e.target.value)}
+                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 outline-none focus:border-primary transition-colors"
+                      placeholder="e.g. AeroSync"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-foreground">Startup Field</label>
+                    <input 
+                      type="text" 
+                      value={startupField}
+                      onChange={(e) => setStartupField(e.target.value)}
+                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 outline-none focus:border-primary transition-colors"
+                      placeholder="e.g. FinTech"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-foreground">Investment Focus</label>
+                    <input 
+                      type="text" 
+                      value={investorFocus}
+                      onChange={(e) => setInvestorFocus(e.target.value)}
+                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 outline-none focus:border-primary transition-colors"
+                      placeholder="e.g. AI / SaaS"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-foreground">Fund Name</label>
+                    <input 
+                      type="text" 
+                      value={investorFund}
+                      onChange={(e) => setInvestorFund(e.target.value)}
+                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 outline-none focus:border-primary transition-colors"
+                      placeholder="e.g. Sequoia"
+                    />
+                  </div>
+                </div>
+              )}
             </>
           )}
 
