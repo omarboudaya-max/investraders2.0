@@ -1,0 +1,1 @@
+drop policy if exists "course_enrollments_insert_own" on public.course_enrollments; create policy "course_enrollments_insert_own" on public.course_enrollments for insert with check (auth.uid() = user_id);
