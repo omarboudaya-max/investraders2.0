@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
+import Home from './pages/Home'
 import LiveRoom from './pages/LiveRoom'
 import AIAgentChat from './pages/AIAgentChat'
 import Feed from './pages/Feed'
@@ -15,7 +16,8 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Feed />} />
+        <Route index element={<Home />} />
+        <Route path="feed" element={<Feed />} />
         <Route path="community" element={<Community />} />
         <Route path="events" element={<Events />} />
         <Route path="live" element={<LiveRoom />} />

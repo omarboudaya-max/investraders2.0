@@ -34,7 +34,8 @@ export default function TopHeader() {
   }
 
   const navLinks = [
-    { name: 'Feed', path: '/' },
+    { name: 'Home', path: '/' },
+    { name: 'Feed', path: '/feed' },
     { name: 'Community', path: '/community' },
     { name: 'Events', path: '/events' },
     { name: 'Directory', path: '/directory' },
