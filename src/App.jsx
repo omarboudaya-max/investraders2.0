@@ -3,7 +3,6 @@ import Layout from './components/Layout'
 import Home from './pages/Home'
 import LiveRoom from './pages/LiveRoom'
 import AIAgentChat from './pages/AIAgentChat'
-import Feed from './pages/Feed'
 import Community from './pages/Community'
 import Messages from './pages/Messages'
 import Events from './pages/Events'
@@ -11,13 +10,13 @@ import Directory from './pages/Directory'
 import Courses from './pages/Courses'
 import Profile from './pages/Profile'
 import Audience from './pages/Audience'
+import Plans from './pages/Plans'
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
-        <Route path="feed" element={<Feed />} />
         <Route path="community" element={<Community />} />
         <Route path="events" element={<Events />} />
         <Route path="live" element={<LiveRoom />} />
@@ -27,6 +26,7 @@ function App() {
         <Route path="courses" element={<Courses />} />
         <Route path="profile/:id" element={<Profile />} />
         <Route path="audience" element={<Audience />} />
+        <Route path="plans" element={<Plans />} />
         <Route path="*" element={<div className="p-8 text-center">404 Not Found</div>} />
       </Route>
     </Routes>

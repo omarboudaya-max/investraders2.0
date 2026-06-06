@@ -6,9 +6,9 @@ export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
-    // Check local storage or system preference
+    // Check local storage, default to light mode
     const stored = localStorage.getItem('theme')
-    if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (stored === 'dark') {
       setIsDark(true)
       document.documentElement.classList.add('dark')
     } else {

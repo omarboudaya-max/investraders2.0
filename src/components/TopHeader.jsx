@@ -33,19 +33,7 @@ export default function TopHeader() {
     window.location.reload()
   }
 
-  const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Feed', path: '/feed' },
-    { name: 'Community', path: '/community' },
-    { name: 'Events', path: '/events' },
-    { name: 'Directory', path: '/directory' },
-    { name: 'Courses', path: '/courses' },
-    { name: 'AI Agents', path: '/ai' },
-  ]
 
-  if (profile?.role === 'admin') {
-    navLinks.push({ name: 'Admin', path: '/audience' })
-  }
 
   return (
     <div className="w-full flex justify-center pt-6 px-6 fixed top-0 z-50">
@@ -60,23 +48,7 @@ export default function TopHeader() {
             Investraders
           </Link>
           
-          <nav className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => {
-              const isActive = location.pathname === link.path
-              return (
-                <Link 
-                  key={link.name} 
-                  to={link.path}
-                  className={`text-sm font-medium transition-colors relative ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  {link.name}
-                  {isActive && (
-                    <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
-                  )}
-                </Link>
-              )
-            })}
-          </nav>
+
         </div>
         
         {/* Right: Actions */}
